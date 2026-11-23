@@ -1,67 +1,285 @@
-<style>
-	.btn-search {
-		background-color: #fe424d;
-		color: #fff;
-		border-radius: 25px;
-		padding: 0 1rem 0 1rem;
-	}
+<%
+  const navUser = (typeof currUser !== 'undefined' && currUser) ? currUser : ((typeof locals !== 'undefined' && locals.currUser) ? locals.currUser : null);
+  const pathStr = (typeof currentPath !== 'undefined' && currentPath) ? currentPath : ((typeof originalUrl !== 'undefined') ? originalUrl : '');
+  const isHomePage = (typeof isHome !== 'undefined' && isHome) || pathStr === '/' || pathStr === '/home';
+  const isHotelsPage = pathStr.startsWith('/listings') || pathStr === '/hotels';
+%>
 
-	.btn-search:hover {
-		background-color: #fe424d;
-		color: #fff;
-	}
-
-	.btn-search i {
-		display: inline;
-		margin-right: 0.5rem;
-	}
-
-	.search-inp{
-		border-radius: 25px;
-		padding: 0.5rem 3rem 0.5rem 3rem;
-	}
-</style>
-
-<nav class="navbar navbar-expand-md bg-body-light border-bottom sticky-top">
-	<div class="container-fluid">
-		<a class="navbar-brand" href="/listings"
-			><i class="fa-regular fa-compass"></i
-		></a>
-		<button
-			class="navbar-toggler"
-			type="button"
-			data-bs-toggle="collapse"
-			data-bs-target="#navbarNavAltMarkup"
-		>
-			<span class="navbar-toggler-icon"></span>
-		</button>
-		<div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-			<div class="navbar-nav">
-				<a class="nav-link" href="/listings">Explore</a>
+<!-- Unified Global Navigation Header -->
+<nav
+	class="navbar navbar-expand-lg site-header <%= isHomePage ? 'navbar-home-transparent fixed-top' : 'navbar-dark-theme sticky-top' %>"
+	aria-label="Main Navigation"
+	id="mainNavbar"
+>
+	<div class="container-fluid px-lg-4 px-md-3">
+		<!-- Left Section: Wander-Lust Logo & Brand Name -->
+		<a class="navbar-brand d-flex align-items-center gap-2" href="/home" aria-label="Wander-Lust Home">
+			<div class="brand-icon-wrapper d-flex align-items-center justify-content-center">
+				<i class="fa-regular fa-compass fa-lg"></i>
 			</div>
+			<span class="brand-wordmark">Wander-Lust</span>
+		</a>
 
-			<div class="navbar-nav ms-auto">
-				<form class="d-flex" role="search">
-					<input
-						class="form-control me-2 search-inp"
-						type="search"
-						placeholder="Search Destination"
-					/>
-					<button class="btn btn-search" type="submit">
-						<i class="fa-solid fa-magnifying-glass"></i>Search
-					</button>
-				</form>
+		<!-- Mobile Search & Menu Triggers (Below 992px) -->
+		<div class="d-flex align-items-center gap-2 d-lg-none">
+			<!-- Mobile Quick Search Trigger Pill -->
+			<button
+				type="button"
+				class="mobile-nav-search-btn rounded-pill border-0 d-flex align-items-center gap-2 px-3 py-1 shadow-sm"
+				data-bs-toggle="modal"
+				data-bs-target="#mobileSearchModal"
+				aria-label="Search destinations"
+			>
+				<i class="fa-solid fa-magnifying-glass text-warning" style="font-size: 0.85rem;"></i>
+				<span class="small fw-semibold mobile-nav-search-text" id="mobileSearchText">Where to?</span>
+			</button>
+
+			<!-- Mobile Notification Icon -->
+			<a class="nav-icon-link position-relative p-2" href="/notifications" title="Notifications" aria-label="Notifications">
+				<i class="fa-regular fa-bell"></i>
+				<span id="navUnreadBadgeMobile" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" style="font-size: 0.6rem;">0</span>
+			</a>
+
+			<!-- Mobile Navbar Hamburger Toggler -->
+			<button
+				class="navbar-toggler border-0 shadow-none p-1"
+				type="button"
+				data-bs-toggle="collapse"
+				data-bs-target="#navbarNavAltMarkup"
+				aria-controls="navbarNavAltMarkup"
+				aria-expanded="false"
+				aria-label="Toggle navigation"
+			>
+				<span class="navbar-toggler-icon"></span>
+			</button>
+		</div>
+
+		<!-- Center Section: Airbnb-Style Dynamic Transition (Desktop / Large Viewports) -->
+		<div class="nav-center-wrapper position-relative d-none d-lg-flex align-items-center justify-content-center mx-auto">
+			<!-- State A: Primary Center Navigation Links -->
+			<ul class="navbar-nav header-nav-links align-items-center gap-1 gap-xl-3 mb-0" id="headerNavLinks">
+				<li class="nav-item">
+					<a class="nav-link global-nav-link <%= isHomePage ? 'active' : '' %>" href="/home">Home</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link global-nav-link" href="<%= isHomePage ? '#destinations' : '/home#destinations' %>">Explore Destinations</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link global-nav-link <%= isHotelsPage ? 'active' : '' %>" href="/listings">Hotels</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link global-nav-link" href="<%= isHomePage ? '#experiences' : '/home#experiences' %>">Experiences</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link global-nav-link" href="<%= isHomePage ? '#why-choose-us' : '/home#why-choose-us' %>">About Us</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link global-nav-link" href="<%= isHomePage ? '#newsletter' : '/home#newsletter' %>">Contact</a>
+				</li>
+			</ul>
+
+			<!-- State B: Airbnb Compact Search Pill (Docked into Center Header on Scroll) -->
+			<div class="header-compact-search" id="headerCompactSearch" role="button" tabindex="0" aria-label="Open expanded search interface">
+				<div class="compact-search-pill d-flex align-items-center shadow-sm">
+					<!-- Where -->
+					<div class="compact-pill-segment compact-where">
+						<span class="compact-pill-text" id="compactWhereText">Where to?</span>
+					</div>
+					<div class="compact-pill-divider"></div>
+
+					<!-- When -->
+					<div class="compact-pill-segment compact-when">
+						<span class="compact-pill-text" id="compactWhenText">Any week</span>
+					</div>
+					<div class="compact-pill-divider"></div>
+
+					<!-- Who -->
+					<div class="compact-pill-segment compact-who">
+						<span class="compact-pill-text text-muted" id="compactWhoText">Add guests</span>
+					</div>
+
+					<!-- Search Icon Button -->
+					<div class="compact-pill-btn-wrapper ms-2">
+						<div class="compact-search-btn rounded-circle d-flex align-items-center justify-content-center">
+							<i class="fa-solid fa-magnifying-glass"></i>
+						</div>
+					</div>
+				</div>
 			</div>
+		</div>
 
-			<div class="navbar-nav ms-auto">
-				<a class="nav-link" href="/listings/new">Airbnb your home</a>
-				<% if(!currUser) {%>
-				<a class="nav-link" href="/signup"><b>Signup</b></a>
-				<a class="nav-link" href="/login"><b>Login</b></a>
-				<% } %> <% if(currUser) {%>
-				<a class="nav-link" href="/logout">Logout</a>
-				<% } %>
+		<!-- Right Section: Host Home, Notifications & User Profile Menu (Desktop) -->
+		<div class="d-none d-lg-flex align-items-center gap-3 ms-auto header-right-actions">
+			<a class="nav-link host-nav-link fw-semibold px-3 py-1 rounded-pill" href="/listings/new">
+				Host your home
+			</a>
+
+			<!-- Notification Bell Icon -->
+			<a class="nav-icon-link position-relative p-2 rounded-circle" href="/notifications" title="Notifications" aria-label="Notifications">
+				<i class="fa-regular fa-bell fa-lg"></i>
+				<span id="navUnreadBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" style="font-size: 0.65rem;">
+					0
+				</span>
+			</a>
+
+			<!-- User Profile / Menu Dropdown Button (Always rendered) -->
+			<div class="dropdown">
+				<button
+					class="user-menu-btn d-flex align-items-center gap-2"
+					type="button"
+					id="userDropdownMenu"
+					data-bs-toggle="dropdown"
+					aria-expanded="false"
+					aria-label="User account menu"
+				>
+					<i class="fa-solid fa-bars" style="font-size: 0.85rem;"></i>
+					<% if (navUser && navUser.avatar && navUser.avatar.url) { %>
+						<img src="<%= navUser.avatar.url %>" class="rounded-circle" style="width: 28px; height: 28px; object-fit: cover;" alt="<%= navUser.username %>" />
+					<% } else { %>
+						<i class="fa-solid fa-circle-user fa-lg"></i>
+					<% } %>
+				</button>
+				<ul class="dropdown-menu dropdown-menu-end shadow-lg rounded-4 border-0 mt-2 py-2" aria-labelledby="userDropdownMenu" style="min-width: 240px;">
+					<% if (navUser) { %>
+						<li class="px-3 py-2 text-muted small border-bottom mb-1">
+							<i class="fa-regular fa-user me-1 text-primary"></i> Signed in as <b class="text-dark"><%= navUser.username %></b>
+						</li>
+						<% if (navUser.role === 'admin') { %>
+							<li><a class="dropdown-item text-danger fw-bold" href="/admin"><i class="fa-solid fa-shield-halved me-2"></i>Admin Console</a></li>
+							<li><hr class="dropdown-divider my-1"></li>
+						<% } %>
+						<li><a class="dropdown-item" href="/profile"><i class="fa-regular fa-id-card me-2 text-muted"></i>My Profile</a></li>
+						<li><a class="dropdown-item" href="/notifications"><i class="fa-regular fa-bell me-2 text-muted"></i>Notifications</a></li>
+						<li><a class="dropdown-item" href="/host/dashboard"><i class="fa-solid fa-chart-line me-2 text-muted"></i>Host Dashboard</a></li>
+						<li><a class="dropdown-item" href="/messages"><i class="fa-regular fa-comment-dots me-2 text-muted"></i>Messages</a></li>
+						<li><a class="dropdown-item" href="/bookings"><i class="fa-solid fa-suitcase-rolling me-2 text-muted"></i>My Bookings &amp; Trips</a></li>
+						<li><a class="dropdown-item" href="/bookings/host"><i class="fa-solid fa-list-check me-2 text-muted"></i>Host Reservations</a></li>
+						<li><a class="dropdown-item" href="/listings/new"><i class="fa-solid fa-house-chimney me-2 text-muted"></i>Host your home</a></li>
+						<li><a class="dropdown-item" href="javascript:void(0)" onclick="openWishlistModal()"><i class="fa-regular fa-heart me-2 text-muted"></i>Saved Wishlist</a></li>
+						<li><hr class="dropdown-divider my-1"></li>
+						<li>
+							<a class="dropdown-item text-danger" href="/logout">
+								<i class="fa-solid fa-arrow-right-from-bracket me-2"></i>Log Out
+							</a>
+						</li>
+					<% } else { %>
+						<li><a class="dropdown-item fw-semibold" href="/login"><i class="fa-solid fa-arrow-right-to-bracket me-2 text-primary"></i>Log In</a></li>
+						<li><a class="dropdown-item fw-semibold" href="/signup"><i class="fa-solid fa-user-plus me-2 text-warning"></i>Sign Up</a></li>
+						<li><hr class="dropdown-divider my-1"></li>
+						<li><a class="dropdown-item" href="/listings/new"><i class="fa-solid fa-house-chimney me-2 text-muted"></i>Host your home</a></li>
+						<li><a class="dropdown-item" href="javascript:void(0)" onclick="openWishlistModal()"><i class="fa-regular fa-heart me-2 text-muted"></i>Saved Wishlist</a></li>
+						<li><a class="dropdown-item" href="/terms"><i class="fa-regular fa-file-lines me-2 text-muted"></i>Terms of Service</a></li>
+						<li><a class="dropdown-item" href="/privacy"><i class="fa-regular fa-shield me-2 text-muted"></i>Privacy Policy</a></li>
+					<% } %>
+				</ul>
+			</div>
+		</div>
+
+		<!-- Mobile Navigation Menu Drawer (Below 992px, strictly hidden on desktop) -->
+		<div class="collapse mobile-nav-drawer w-100 d-lg-none" id="navbarNavAltMarkup">
+			<div class="mobile-nav-drawer-content p-3 pt-2">
+				<ul class="navbar-nav gap-2">
+					<li class="nav-item">
+						<a class="nav-link mobile-nav-link <%= isHomePage ? 'active' : '' %>" href="/home">
+							<i class="fa-solid fa-house me-2"></i>Home
+						</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link mobile-nav-link" href="<%= isHomePage ? '#destinations' : '/home#destinations' %>">
+							<i class="fa-solid fa-location-dot me-2"></i>Explore Destinations
+						</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link mobile-nav-link <%= isHotelsPage ? 'active' : '' %>" href="/listings">
+							<i class="fa-solid fa-hotel me-2"></i>Hotels
+						</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link mobile-nav-link" href="<%= isHomePage ? '#experiences' : '/home#experiences' %>">
+							<i class="fa-solid fa-compass me-2"></i>Experiences
+						</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link mobile-nav-link" href="<%= isHomePage ? '#why-choose-us' : '/home#why-choose-us' %>">
+							<i class="fa-solid fa-circle-info me-2"></i>About Us
+						</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link mobile-nav-link" href="<%= isHomePage ? '#newsletter' : '/home#newsletter' %>">
+							<i class="fa-solid fa-envelope me-2"></i>Contact
+						</a>
+					</li>
+					<li class="nav-item border-top pt-2 mt-2">
+						<a class="nav-link mobile-nav-link text-warning fw-semibold" href="/listings/new">
+							<i class="fa-solid fa-house-circle-check me-2"></i>Host your home
+						</a>
+					</li>
+					<% if (!navUser) { %>
+						<li class="nav-item d-flex gap-2 mt-2">
+							<a class="btn btn-outline-light btn-sm flex-fill rounded-pill" href="/login">Log In</a>
+							<a class="btn btn-warm-orange btn-sm flex-fill rounded-pill" href="/signup">Sign Up</a>
+						</li>
+					<% } else { %>
+						<li class="nav-item">
+							<a class="nav-link mobile-nav-link" href="/profile">
+								<i class="fa-regular fa-user me-2"></i>My Profile (<%= navUser.username %>)
+							</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link mobile-nav-link text-danger" href="/logout">
+								<i class="fa-solid fa-arrow-right-from-bracket me-2"></i>Log Out
+							</a>
+						</li>
+					<% } %>
+				</ul>
+			</div>
+		</div>
+	</div>
+
+	<!-- Floating Dropdown Expanded Search Overlay (Opens when clicking compact pill in scrolled state) -->
+	<div class="header-search-overlay" id="headerSearchOverlay" aria-hidden="true">
+		<div class="container position-relative py-3">
+			<div class="header-search-dropdown-card p-3 p-md-4 rounded-4 shadow-2xl">
+				<div class="d-flex justify-content-between align-items-center mb-3">
+					<div class="d-flex align-items-center gap-2">
+						<span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-3 py-1 fw-bold">
+							<i class="fa-solid fa-sliders me-1"></i> Search Accommodations
+						</span>
+					</div>
+					<button type="button" class="btn-close shadow-none" id="closeHeaderSearchBtn" aria-label="Close search overlay"></button>
+				</div>
+				<%- include("../includes/search-bar.ejs", {
+					formId: "headerExpandedSearchForm",
+					isDropdown: true,
+					searchQuery: (typeof searchQuery !== 'undefined' ? searchQuery : ''),
+					filters: (typeof filters !== 'undefined' ? filters : {})
+				}) %>
 			</div>
 		</div>
 	</div>
 </nav>
+
+<!-- Backdrop overlay for header search dropdown -->
+<div class="header-search-backdrop d-none" id="headerSearchBackdrop"></div>
+
+<!-- Mobile Search Modal (Full-Screen Ergonomics on mobile) -->
+<div class="modal fade" id="mobileSearchModal" tabindex="-1" aria-labelledby="mobileSearchModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-fullscreen-md-down modal-dialog-centered">
+		<div class="modal-content rounded-4 border-0 shadow">
+			<div class="modal-header border-bottom pb-3">
+				<h5 class="modal-title fw-bold" id="mobileSearchModalLabel">
+					<i class="fa-solid fa-compass me-2 text-warning"></i>Find your stay
+				</h5>
+				<button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body p-3 p-md-4">
+				<%- include("../includes/search-bar.ejs", {
+					formId: "mobileSearchModalForm",
+					isDropdown: true,
+					searchQuery: (typeof searchQuery !== 'undefined' ? searchQuery : ''),
+					filters: (typeof filters !== 'undefined' ? filters : {})
+				}) %>
+			</div>
+		</div>
+	</div>
+</div>

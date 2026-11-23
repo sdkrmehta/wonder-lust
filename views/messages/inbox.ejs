@@ -1,0 +1,234 @@
+<% layout("layouts/boilerplate") %>
+
+<div class="container-wide my-4 my-md-5">
+	<div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-white" style="height: 750px; max-height: 85vh;">
+		<div class="row g-0 h-100">
+			<!-- Left Panel: Conversation Threads List -->
+			<div class="col-12 col-md-5 col-lg-4 border-end d-flex flex-column h-100" style="background-color: var(--paper-100);">
+				<!-- Header -->
+				<div class="p-3 bg-white border-bottom d-flex justify-content-between align-items-center">
+					<h5 class="editorial-title fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+						<i class="fa-regular fa-comments text-forest"></i>
+						<span>Messages</span>
+					</h5>
+					<span class="badge rounded-pill text-white px-2 py-1 font-tabular" style="background-color: var(--forest-800);">
+						<%= conversations.length %>
+					</span>
+				</div>
+
+				<!-- Conversation Threads List -->
+				<div class="flex-grow-1 overflow-auto p-2" id="conversationThreadsList">
+					<% if (!conversations || conversations.length === 0) { %>
+						<div class="text-center py-5 text-muted small">
+							<div class="mb-3">
+								<i class="fa-regular fa-paper-plane fa-3x" style="color: var(--forest-700); opacity: 0.35;"></i>
+							</div>
+							<h6 class="fw-semibold text-dark mb-1">No messages yet</h6>
+							<p class="text-muted mb-0 col-10 mx-auto">When you inquire about a property or communicate with a guest, conversations will appear here.</p>
+						</div>
+					<% } else { %>
+						<div class="list-group list-group-flush gap-1">
+							<% for (let conv of conversations) { %>
+								<% const isSelected = activeConversation && String(activeConversation._id) === String(conv._id); %>
+								<% const other = conv.otherUser || {}; %>
+								<% const listing = conv.listing || {}; %>
+								<a
+									href="/messages/<%= conv._id %>"
+									class="list-group-item list-group-item-action rounded-3 border-0 p-3 transition <%= isSelected ? 'bg-white shadow-sm border-start border-4' : 'bg-transparent' %>"
+									style="<%= isSelected ? 'border-color: var(--forest-800) !important;' : '' %>"
+								>
+									<div class="d-flex align-items-center gap-3">
+										<!-- Avatar -->
+										<div class="position-relative flex-shrink-0">
+											<% if (other.avatar && other.avatar.url) { %>
+												<img
+													src="<%= other.avatar.url %>"
+													alt="<%= other.username %>"
+													class="rounded-circle shadow-sm"
+													style="width: 48px; height: 48px; object-fit: cover;"
+												/>
+											<% } else { %>
+												<div
+													class="rounded-circle shadow-sm d-flex align-items-center justify-content-center text-white fw-bold small"
+													style="width: 48px; height: 48px; background-color: var(--forest-900);"
+												>
+													<%= (other.fullName || other.username || 'U').charAt(0).toUpperCase() %>
+												</div>
+											<% } %>
+
+											<% if (conv.unreadCount > 0) { %>
+												<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-white font-tabular" style="font-size: 0.65rem;">
+													<%= conv.unreadCount %>
+												</span>
+											<% } %>
+										</div>
+
+										<!-- Preview Info -->
+										<div class="flex-grow-1 overflow-hidden">
+											<div class="d-flex justify-content-between align-items-baseline mb-1">
+												<h6 class="fw-bold text-dark mb-0 text-truncate small">
+													<%= other.fullName || other.username || "Traveler" %>
+												</h6>
+												<% if (conv.lastMessage && conv.lastMessage.createdAt) { %>
+													<span class="text-muted font-tabular" style="font-size: 0.7rem;">
+														<%= new Date(conv.lastMessage.createdAt).toLocaleDateString("en-IN", { month: 'short', day: 'numeric' }) %>
+													</span>
+												<% } %>
+											</div>
+
+											<% if (listing && listing.title) { %>
+												<div class="small text-truncate fw-semibold mb-1" style="font-size: 0.72rem; color: var(--terracotta);">
+													<i class="fa-solid fa-house-chimney me-1"></i> <%= listing.title %>
+												</div>
+											<% } %>
+
+											<p class="text-muted small mb-0 text-truncate" style="font-size: 0.8rem;">
+												<%= conv.lastMessage && conv.lastMessage.text ? conv.lastMessage.text : "Started conversation" %>
+											</p>
+										</div>
+									</div>
+								</a>
+							<% } %>
+						</div>
+					<% } %>
+				</div>
+			</div>
+
+			<!-- Right Panel: Active Chat Thread -->
+			<div class="col-12 col-md-7 col-lg-8 d-flex flex-column h-100 bg-white">
+				<% if (activeConversation && otherUser) { %>
+					<!-- Chat Top Bar -->
+					<div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-white shadow-sm z-2">
+						<div class="d-flex align-items-center gap-3">
+							<!-- Back on mobile -->
+							<a href="/messages" class="d-md-none text-dark fs-5 text-decoration-none me-1">
+								<i class="fa-solid fa-arrow-left"></i>
+							</a>
+
+							<!-- Other user avatar -->
+							<% if (otherUser.avatar && otherUser.avatar.url) { %>
+								<img
+									src="<%= otherUser.avatar.url %>"
+									alt="<%= otherUser.username %>"
+									class="rounded-circle shadow-sm"
+									style="width: 44px; height: 44px; object-fit: cover;"
+								/>
+							<% } else { %>
+								<div
+									class="rounded-circle shadow-sm d-flex align-items-center justify-content-center text-white fw-bold small"
+									style="width: 44px; height: 44px; background-color: var(--forest-900);"
+								>
+									<%= (otherUser.fullName || otherUser.username || 'U').charAt(0).toUpperCase() %>
+								</div>
+							<% } %>
+
+							<div>
+								<h6 class="fw-bold mb-0 text-dark">
+									<%= otherUser.fullName || otherUser.username %>
+								</h6>
+								<span class="text-muted small">@<%= otherUser.username %></span>
+							</div>
+						</div>
+
+						<!-- Linked Property Card Context -->
+						<% const listing = activeConversation.listing || {}; %>
+						<% if (listing && listing.title) { %>
+							<a href="/listings/<%= listing._id %>" class="d-flex align-items-center gap-2 p-1 pe-3 bg-light rounded-pill text-decoration-none text-dark border shadow-sm">
+								<img
+									src="<%= listing.image && listing.image.url ? listing.image.url : '/images/listing-placeholder.jpg' %>"
+									alt="<%= listing.title %>"
+									class="rounded-circle"
+									style="width: 32px; height: 32px; object-fit: cover;"
+								/>
+								<span class="small fw-semibold text-truncate d-none d-sm-inline" style="max-width: 180px;">
+									<%= listing.title %>
+								</span>
+								<i class="fa-solid fa-chevron-right text-muted small ms-1"></i>
+							</a>
+						<% } %>
+					</div>
+
+					<!-- Chat Message Stream -->
+					<div class="flex-grow-1 overflow-auto p-3 p-md-4 d-flex flex-column gap-3" id="chatMessageStream" style="background-color: var(--paper-50);">
+						<% if (!messages || messages.length === 0) { %>
+							<div class="text-center my-auto py-5 text-muted small">
+								<div class="mb-2">
+									<i class="fa-regular fa-comment-dots fa-3x" style="color: var(--forest-700); opacity: 0.35;"></i>
+								</div>
+								<p class="mb-0">This is the start of your message thread with <strong><%= otherUser.fullName || otherUser.username %></strong>.</p>
+							</div>
+						<% } else { %>
+							<% for (let msg of messages) { %>
+								<% const isMe = String(msg.sender._id || msg.sender) === String(currUser._id); %>
+								<div class="d-flex <%= isMe ? 'justify-content-end' : 'justify-content-start' %>">
+									<div class="d-flex flex-column <%= isMe ? 'align-items-end' : 'align-items-start' %>" style="max-width: 75%;">
+										<div
+											class="p-3 rounded-4 shadow-sm small <%= isMe ? 'text-white' : 'bg-white text-dark border' %>"
+											style="white-space: pre-wrap; word-break: break-word; <%= isMe ? 'background-color: var(--forest-900); border-bottom-right-radius: 4px !important;' : 'border-bottom-left-radius: 4px !important; border-color: var(--paper-200) !important;' %>"
+										><%= msg.body %></div>
+										<div class="d-flex align-items-center gap-1 mt-1 text-muted font-tabular" style="font-size: 0.68rem;">
+											<span><%= new Date(msg.createdAt).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit' }) %></span>
+											<% if (isMe) { %>
+												<% if (msg.read) { %>
+													<i class="fa-solid fa-check-double text-forest" title="Read"></i>
+												<% } else { %>
+													<i class="fa-solid fa-check text-muted" title="Sent"></i>
+												<% } %>
+											<% } %>
+										</div>
+									</div>
+								</div>
+							<% } %>
+						<% } %>
+					</div>
+
+					<!-- Message Composer Bar -->
+					<div class="p-3 bg-white border-top">
+						<form
+							action="/messages/<%= activeConversation._id %>"
+							method="POST"
+							id="chatComposerForm"
+							class="d-flex align-items-center gap-2"
+						>
+							<input
+								type="text"
+								name="body"
+								id="chatMessageInput"
+								class="form-control rounded-pill px-4 py-2 border bg-light shadow-none"
+								placeholder="Type a message to <%= otherUser.fullName || otherUser.username %>..."
+								autocomplete="off"
+								required
+							/>
+							<button type="submit" class="btn btn-forest add-btn rounded-circle d-flex align-items-center justify-content-center shadow-sm flex-shrink-0" style="width: 44px; height: 44px;">
+								<i class="fa-solid fa-paper-plane small"></i>
+							</button>
+						</form>
+					</div>
+				<% } else { %>
+					<!-- Empty State: No active thread selected -->
+					<div class="d-flex flex-column align-items-center justify-content-center h-100 text-center p-5 text-muted">
+						<div class="mb-3">
+							<i class="fa-regular fa-comment-dots fa-4x" style="color: var(--forest-700); opacity: 0.25;"></i>
+						</div>
+						<h5 class="editorial-title fw-bold text-dark">Your Messages</h5>
+						<p class="small text-muted col-md-6 mb-0">Select a conversation from the left to read messages, communicate with your hosts, and organize your trip inquiries.</p>
+					</div>
+				<% } %>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	// Auto-scroll message stream to the bottom
+	const stream = document.getElementById("chatMessageStream");
+	if (stream) {
+		stream.scrollTop = stream.scrollHeight;
+	}
+
+	// Focus input
+	const input = document.getElementById("chatMessageInput");
+	if (input) {
+		input.focus();
+	}
+</script>

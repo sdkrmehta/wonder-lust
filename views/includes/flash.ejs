@@ -1,28 +1,35 @@
-<% if(success && success.length){ %>
-<div
-	class="alert alert-success alert-dismissible fade show col-6 offset-3"
-	role="alert"
->
-	<%= success %>
-	<button
-		type="button"
-		class="btn-close"
-		data-bs-dismiss="alert"
-		aria-label="close"
-	></button>
-</div>
+<div class="toast-container-custom" aria-live="polite" aria-atomic="true">
+	<% const flashSuccess = (typeof success !== 'undefined' && success) ? success : ((typeof locals !== 'undefined' && locals.success) ? locals.success : null); %>
+	<% if (flashSuccess && flashSuccess.length) { %>
+	<div
+		class="alert alert-success alert-dismissible fade show d-flex align-items-center"
+		role="alert"
+	>
+		<i class="fa-solid fa-circle-check fa-lg text-success me-2 flex-shrink-0"></i>
+		<div class="flex-grow-1 fw-medium" style="font-size: 0.92rem;"><%= flashSuccess %></div>
+		<button
+			type="button"
+			class="btn-close"
+			data-bs-dismiss="alert"
+			aria-label="Close notification"
+		></button>
+	</div>
+	<% } %>
 
-<% } %> <% if(error && error.length){ %>
-<div
-	class="alert alert-danger alert-dismissible fade show col-6 offset-3"
-	role="alert"
->
-	<%= error %>
-	<button
-		type="button"
-		class="btn-close"
-		data-bs-dismiss="alert"
-		aria-label="close"
-	></button>
+	<% const flashError = (typeof error !== 'undefined' && error) ? error : ((typeof locals !== 'undefined' && locals.error) ? locals.error : null); %>
+	<% if (flashError && flashError.length) { %>
+	<div
+		class="alert alert-danger alert-dismissible fade show d-flex align-items-center"
+		role="alert"
+	>
+		<i class="fa-solid fa-circle-exclamation fa-lg text-danger me-2 flex-shrink-0"></i>
+		<div class="flex-grow-1 fw-medium" style="font-size: 0.92rem;"><%= flashError %></div>
+		<button
+			type="button"
+			class="btn-close"
+			data-bs-dismiss="alert"
+			aria-label="Close alert"
+		></button>
+	</div>
+	<% } %>
 </div>
-<% } %>

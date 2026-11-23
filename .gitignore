@@ -1,2 +1,152 @@
+# ==============================================================================
+# WANDER-LUST - GITHUB VERSION CONTROL IGNORE RULES (.gitignore)
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. ENVIRONMENT VARIABLES & SECRETS
+# ------------------------------------------------------------------------------
+# Never commit real credentials, secret tokens, or local environment configurations
 .env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.staging
+.env.*
+!.env.example
+
+# Cryptographic keys, SSL certs, and auth secrets
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+*.p12
+
+# ------------------------------------------------------------------------------
+# 2. DEPENDENCY DIRECTORIES
+# ------------------------------------------------------------------------------
 node_modules/
+jspm_packages/
+web_modules/
+
+# ------------------------------------------------------------------------------
+# 3. USER UPLOADS & LOCAL MEDIA STORAGE
+# ------------------------------------------------------------------------------
+# Exclude uploaded images and binary attachments while preserving folder structure
+/uploads/*
+!/uploads/.gitkeep
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# ------------------------------------------------------------------------------
+# 4. LARGE DATASETS, DATA DUMPS & LOCAL DATABASES
+# ------------------------------------------------------------------------------
+# Exclude massive raw CSV dumps (100MB+) & archives used for optional ETL
+/dataset/*.csv
+/dataset/*.zip
+/dataset/*.gz
+/dataset/*.tar
+/dataset/*.tsv
+/dataset/*.jsonl
+!/dataset/README.md
+!/dataset/.gitkeep
+
+# Local database files & dumps
+*.sqlite
+*.sqlite3
+*.db
+dump/
+*.dump
+*.sql
+mongo-data/
+data/
+
+# ------------------------------------------------------------------------------
+# 5. SCRATCHPADS & TEMPORARY FILES
+# ------------------------------------------------------------------------------
+/scratch/
+tmp/
+temp/
+*.tmp
+*.temp
+
+# ------------------------------------------------------------------------------
+# 6. LOGS & DIAGNOSTIC RUNTIME ARTIFACTS
+# ------------------------------------------------------------------------------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+.pnpm-debug.log*
+
+# ------------------------------------------------------------------------------
+# 7. RUNTIME, PROCESS & DEPLOYMENT ARTIFACTS
+# ------------------------------------------------------------------------------
+pids/
+*.pid
+*.seed
+*.pid.lock
+dist/
+build/
+out/
+.pm2/
+
+# Docker local overrides
+docker-compose.override.yml
+
+# ------------------------------------------------------------------------------
+# 8. TEST REPORTS & CODE COVERAGE
+# ------------------------------------------------------------------------------
+coverage/
+.nyc_output/
+*.lcov
+.clinic/
+
+# ------------------------------------------------------------------------------
+# 9. IDE, EDITOR & OS METADATA
+# ------------------------------------------------------------------------------
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+desktop.ini
+$RECYCLE.BIN/
+
+# JetBrains / IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+
+# Visual Studio Code (ignore user state, retain shared config if added)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Visual Studio / Windows Dev
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Vim / Emacs swap and backup files
+*~
+*.swp
+*.swo

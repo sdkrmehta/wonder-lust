@@ -1,0 +1,103 @@
+<%
+  const qVal = (typeof searchQuery !== 'undefined' && searchQuery) ? searchQuery : ((typeof filters !== 'undefined' && filters.q) ? filters.q : '');
+  const inVal = (typeof filters !== 'undefined' && filters.checkIn) ? filters.checkIn : '';
+  const outVal = (typeof filters !== 'undefined' && filters.checkOut) ? filters.checkOut : '';
+  const roomVal = (typeof filters !== 'undefined' && filters.bedrooms) ? String(filters.bedrooms) : '1';
+  const guestVal = (typeof filters !== 'undefined' && filters.guests) ? String(filters.guests) : '2';
+  const fid = (typeof formId !== 'undefined' && formId) ? formId : 'searchBarForm';
+  const isDropdownForm = (typeof isDropdown !== 'undefined' && isDropdown);
+  const containerClass = (typeof extraClass !== 'undefined' && extraClass) ? extraClass : '';
+%>
+<form action="/listings" method="GET" class="hero-search-card wanderlust-search-form shadow-lg p-3 p-md-4 rounded-4 <%= isDropdownForm ? 'dropdown-search-card' : '' %> <%= containerClass %>" id="<%= fid %>" novalidate>
+	<div class="row g-2 g-md-3 align-items-center">
+		<!-- 1. Destination Input -->
+		<div class="col-12 col-md-6 col-lg-3 position-relative search-col-destination">
+			<label class="form-label search-field-label" for="<%= fid %>_q">
+				<i class="fa-solid fa-location-dot text-danger me-1"></i> Destination
+			</label>
+			<div class="input-wrapper position-relative">
+				<input
+					type="search"
+					name="q"
+					id="<%= fid %>_q"
+					class="form-control hero-input search-inp destination-input"
+					placeholder="Where to? City or country"
+					value="<%= qVal %>"
+					autocomplete="off"
+					aria-label="Where to? City or country"
+				/>
+			</div>
+		</div>
+
+		<!-- 2. Check-in Date -->
+		<div class="col-6 col-md-3 col-lg-2 search-col-checkin">
+			<label class="form-label search-field-label" for="<%= fid %>_checkIn">
+				<i class="fa-regular fa-calendar text-primary me-1"></i> Check-in
+			</label>
+			<input
+				type="date"
+				name="checkIn"
+				id="<%= fid %>_checkIn"
+				class="form-control hero-input checkin-input"
+				value="<%= inVal %>"
+				aria-label="Check-in date"
+			/>
+		</div>
+
+		<!-- 3. Check-out Date -->
+		<div class="col-6 col-md-3 col-lg-2 search-col-checkout">
+			<label class="form-label search-field-label" for="<%= fid %>_checkOut">
+				<i class="fa-regular fa-calendar-check text-success me-1"></i> Check-out
+			</label>
+			<input
+				type="date"
+				name="checkOut"
+				id="<%= fid %>_checkOut"
+				class="form-control hero-input checkout-input"
+				value="<%= outVal %>"
+				aria-label="Check-out date"
+			/>
+		</div>
+
+		<!-- 4. Rooms Selector -->
+		<div class="col-6 col-md-3 col-lg-2 search-col-rooms">
+			<label class="form-label search-field-label" for="<%= fid %>_rooms">
+				<i class="fa-solid fa-door-open text-secondary me-1"></i> Rooms
+			</label>
+			<select name="bedrooms" id="<%= fid %>_rooms" class="form-select hero-input rooms-input" aria-label="Number of rooms">
+				<option value="1" <%= roomVal === '1' ? 'selected' : '' %>>1 Room</option>
+				<option value="2" <%= roomVal === '2' ? 'selected' : '' %>>2 Rooms</option>
+				<option value="3" <%= roomVal === '3' ? 'selected' : '' %>>3 Rooms</option>
+				<option value="4" <%= (roomVal === '4' || parseInt(roomVal) >= 4) ? 'selected' : '' %>>4+ Rooms</option>
+			</select>
+		</div>
+
+		<!-- 5. Guests Selector -->
+		<div class="col-6 col-md-3 col-lg-1 search-col-guests">
+			<label class="form-label search-field-label" for="<%= fid %>_guests">
+				<i class="fa-solid fa-user-group text-info me-1"></i> Guests
+			</label>
+			<select name="guests" id="<%= fid %>_guests" class="form-select hero-input guests-input" aria-label="Number of guests">
+				<option value="1" <%= guestVal === '1' ? 'selected' : '' %>>1</option>
+				<option value="2" <%= guestVal === '2' ? 'selected' : '' %>>2</option>
+				<option value="3" <%= guestVal === '3' ? 'selected' : '' %>>3</option>
+				<option value="4" <%= guestVal === '4' ? 'selected' : '' %>>4</option>
+				<option value="6" <%= (guestVal === '6' || parseInt(guestVal) >= 6) ? 'selected' : '' %>>6+</option>
+			</select>
+		</div>
+
+		<!-- 6. Search Submit Button -->
+		<div class="col-12 col-lg-2 search-col-submit">
+			<label class="form-label d-none d-lg-block search-field-label invisible">&nbsp;</label>
+			<button type="submit" class="btn btn-warm-orange w-100 py-3 rounded-pill fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm hero-search-btn">
+				<i class="fa-solid fa-magnifying-glass"></i>
+				<span>Search Stays</span>
+			</button>
+		</div>
+	</div>
+
+	<!-- Client Date Validation Error Toast / Alert -->
+	<div class="search-date-alert alert alert-danger py-2 px-3 small mt-2 mb-0 d-none" role="alert">
+		<i class="fa-solid fa-circle-exclamation me-1"></i> Check-out date must be after check-in date.
+	</div>
+</form>

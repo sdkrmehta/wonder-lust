@@ -1,0 +1,253 @@
+<% layout("layouts/boilerplate") %>
+
+<div class="container-standard my-4 my-md-5">
+	<!-- Profile Hero Banner Card -->
+	<div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bg-white">
+		<div class="p-4 p-md-5" style="background: linear-gradient(135deg, var(--paper-100) 0%, var(--paper-50) 100%); border-bottom: 1px solid var(--paper-200);">
+			<div class="d-flex flex-column flex-md-row align-items-center align-items-md-start gap-4">
+				<!-- Member Avatar with Verification Badge -->
+				<div class="position-relative flex-shrink-0">
+					<% if (profileUser.avatar && profileUser.avatar.url) { %>
+						<img
+							src="<%= profileUser.avatar.url %>"
+							alt="<%= profileUser.fullName || profileUser.username %>"
+							class="rounded-circle shadow border border-3 border-white"
+							style="width: 120px; height: 120px; object-fit: cover;"
+						/>
+					<% } else { %>
+						<div
+							class="rounded-circle shadow border border-3 border-white d-flex align-items-center justify-content-center text-white fw-bold display-6"
+							style="width: 120px; height: 120px; background-color: var(--forest-900);"
+						>
+							<%= (profileUser.fullName || profileUser.username || "U").charAt(0).toUpperCase() %>
+						</div>
+					<% } %>
+
+					<% if (profileUser.isSuperhost) { %>
+						<span
+							class="position-absolute bottom-0 end-0 badge rounded-pill shadow-sm px-2 py-1 text-white"
+							style="background-color: var(--gold); border: 2px solid white;"
+							title="Recognized Superhost"
+						>
+							<i class="fa-solid fa-crown me-1"></i> Superhost
+						</span>
+					<% } else if (stats && stats.isHost) { %>
+						<span
+							class="position-absolute bottom-0 end-0 badge rounded-pill shadow-sm px-2 py-1 text-white"
+							style="background-color: var(--forest-800); border: 2px solid white;"
+							title="Verified Host"
+						>
+							<i class="fa-solid fa-medal me-1"></i> Host
+						</span>
+					<% } %>
+				</div>
+
+				<!-- Member Bio & Meta Summary -->
+				<div class="text-center text-md-start flex-grow-1">
+					<div class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-start gap-2 mb-2">
+						<h1 class="editorial-title h2 fw-bold mb-0 text-dark">
+							<%= profileUser.fullName || profileUser.username %>
+						</h1>
+						<span class="badge rounded-pill bg-light text-muted border px-2 py-1 small">
+							@<%= profileUser.username %>
+						</span>
+					</div>
+
+					<div class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-start gap-3 text-muted small mb-3">
+						<span>
+							<i class="fa-regular fa-calendar-check text-forest me-1"></i>
+							Member since <%= new Date(profileUser.createdAt).toLocaleDateString("en-IN", { month: 'long', year: 'numeric' }) %>
+						</span>
+						<% if (profileUser.city || profileUser.country) { %>
+							<span>
+								<i class="fa-solid fa-location-dot text-terracotta me-1"></i>
+								<%= [profileUser.city, profileUser.country].filter(Boolean).join(", ") %>
+							</span>
+						<% } %>
+					</div>
+
+					<% if (profileUser.bio) { %>
+						<p class="text-secondary small mb-3 col-lg-10" style="line-height: 1.6;">
+							<%= profileUser.bio %>
+						</p>
+					<% } else if (isOwner) { %>
+						<p class="text-muted small fst-italic mb-3">
+							Tell other travelers and hosts about your travel passions and hosting philosophy!
+						</p>
+					<% } %>
+
+					<!-- Owner Action Links -->
+					<% if (isOwner) { %>
+						<div class="d-flex flex-wrap gap-2 justify-content-center justify-content-md-start pt-2">
+							<a href="/profile/edit" class="btn btn-sm btn-forest-outline rounded-pill px-3">
+								<i class="fa-solid fa-pen-to-square me-1"></i> Edit Profile
+							</a>
+							<a href="/bookings" class="btn btn-sm btn-forest-ghost rounded-pill px-3">
+								<i class="fa-solid fa-suitcase-rolling me-1"></i> My Bookings & Trips
+							</a>
+							<% if (stats.isHost) { %>
+								<a href="/host/dashboard" class="btn btn-sm btn-forest add-btn rounded-pill px-3">
+									<i class="fa-solid fa-chart-line me-1"></i> Host Dashboard
+								</a>
+							<% } else { %>
+								<a href="/listings/new" class="btn btn-sm btn-forest add-btn rounded-pill px-3">
+									<i class="fa-solid fa-house-chimney-medical me-1"></i> Become a Host
+								</a>
+							<% } %>
+						</div>
+					<% } %>
+				</div>
+			</div>
+		</div>
+
+		<!-- Activity Metrics Ribbon -->
+		<div class="row g-0 text-center border-top bg-white">
+			<div class="col-4 py-3 border-end">
+				<span class="fs-4 fw-bold font-tabular text-dark d-block"><%= stats.tripsCount || 0 %></span>
+				<span class="text-muted small text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.05em;">Trips Booked</span>
+			</div>
+			<div class="col-4 py-3 border-end">
+				<span class="fs-4 fw-bold font-tabular text-dark d-block"><%= stats.reviewsCount || 0 %></span>
+				<span class="text-muted small text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.05em;">Reviews Written</span>
+			</div>
+			<div class="col-4 py-3">
+				<span class="fs-4 fw-bold font-tabular text-dark d-block"><%= stats.listingsCount || 0 %></span>
+				<span class="text-muted small text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.05em;">Properties Hosted</span>
+			</div>
+		</div>
+	</div>
+
+	<!-- Profile Body Columns -->
+	<div class="row g-4">
+		<!-- Left: Recent Trips & Activity -->
+		<div class="col-12 col-lg-7">
+			<div class="card border-0 shadow-sm rounded-4 p-4 p-md-4 bg-white mb-4">
+				<div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+					<h5 class="fw-bold mb-0 d-flex align-items-center gap-2">
+						<i class="fa-solid fa-suitcase-rolling text-forest"></i>
+						<span>Recent Trips</span>
+					</h5>
+					<% if (isOwner && recentTrips && recentTrips.length > 0) { %>
+						<a href="/bookings" class="small text-forest text-decoration-none fw-semibold">
+							View All Trips <i class="fa-solid fa-arrow-right ms-1"></i>
+						</a>
+					<% } %>
+				</div>
+
+				<% if (!recentTrips || recentTrips.length === 0) { %>
+					<div class="text-center py-5 text-muted small">
+						<div class="mb-3">
+							<i class="fa-regular fa-compass fa-3x" style="color: var(--forest-700); opacity: 0.35;"></i>
+						</div>
+						<h6 class="fw-semibold text-dark mb-1">No vacation trips booked yet</h6>
+						<p class="text-muted mb-3">Begin exploring curated sanctuaries and handcrafted getaways.</p>
+						<a href="/listings" class="btn btn-sm btn-forest-outline rounded-pill px-3">
+							Explore Sanctuaries
+						</a>
+					</div>
+				<% } else { %>
+					<div class="list-group list-group-flush">
+						<% for (let trip of recentTrips) { %>
+							<% const listing = trip.listing || {}; %>
+							<div class="list-group-item px-0 py-3 border-bottom d-flex flex-column flex-sm-row align-items-sm-center gap-3">
+								<img
+									src="<%= listing.image && listing.image.url ? listing.image.url : '/images/listing-placeholder.jpg' %>"
+									alt="<%= listing.title %>"
+									class="rounded-3 shadow-sm flex-shrink-0"
+									style="width: 80px; height: 80px; object-fit: cover;"
+								/>
+								<div class="flex-grow-1">
+									<h6 class="fw-bold mb-1 text-dark">
+										<%= listing.title || "Vacation Property" %>
+									</h6>
+									<div class="text-muted small mb-1">
+										<i class="fa-regular fa-calendar me-1"></i>
+										<%= new Date(trip.checkIn).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' }) %> &ndash;
+										<%= new Date(trip.checkOut).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' }) %>
+										&bull; <span class="fw-semibold"><%= trip.totalNights %> night<%= trip.totalNights > 1 ? 's' : '' %></span>
+									</div>
+									<div class="d-flex align-items-center gap-2">
+										<span class="badge rounded-pill bg-light text-forest border font-tabular fw-semibold">
+											&#x20B9;<%= trip.totalPrice.toLocaleString("en-IN") %>
+										</span>
+										<span class="badge rounded-pill bg-success-subtle text-success border-0 small">
+											<i class="fa-solid fa-check me-1"></i>Confirmed
+										</span>
+									</div>
+								</div>
+								<% if (isOwner) { %>
+									<div class="align-self-sm-center">
+										<a href="/bookings/<%= trip._id %>" class="btn btn-sm btn-forest-outline rounded-pill px-3">
+											Receipt
+										</a>
+									</div>
+								<% } %>
+							</div>
+						<% } %>
+					</div>
+				<% } %>
+			</div>
+		</div>
+
+		<!-- Right: Properties Hosted -->
+		<div class="col-12 col-lg-5">
+			<div class="card border-0 shadow-sm rounded-4 p-4 p-md-4 bg-white mb-4">
+				<div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+					<h5 class="fw-bold mb-0 d-flex align-items-center gap-2">
+						<i class="fa-solid fa-house-chimney text-terracotta"></i>
+						<span>Hosted Properties</span>
+					</h5>
+					<% if (isOwner && stats.isHost) { %>
+						<a href="/host/dashboard" class="small text-forest text-decoration-none fw-semibold">
+							Dashboard <i class="fa-solid fa-arrow-right ms-1"></i>
+						</a>
+					<% } %>
+				</div>
+
+				<% if (!userListings || userListings.length === 0) { %>
+					<div class="text-center py-5 text-muted small">
+						<div class="mb-3">
+							<i class="fa-solid fa-house-chimney-user fa-3x" style="color: var(--terracotta); opacity: 0.35;"></i>
+						</div>
+						<h6 class="fw-semibold text-dark mb-1">No properties listed yet</h6>
+						<p class="text-muted mb-3">Earn revenue and welcome travelers from around the world.</p>
+						<% if (isOwner) { %>
+							<a href="/listings/new" class="btn btn-sm btn-forest rounded-pill px-3">
+								List Your Property
+							</a>
+						<% } %>
+					</div>
+				<% } else { %>
+					<div class="row g-3">
+						<% for (let l of userListings) { %>
+							<div class="col-12">
+								<a href="/listings/<%= l._id %>" class="text-decoration-none text-dark">
+									<div class="p-2 border rounded-3 d-flex align-items-center gap-3 transition-hover bg-light-subtle">
+										<img
+											src="<%= l.image && l.image.url ? l.image.url : '/images/listing-placeholder.jpg' %>"
+											alt="<%= l.title %>"
+											class="rounded-2 shadow-sm flex-shrink-0"
+											style="width: 64px; height: 64px; object-fit: cover;"
+										/>
+										<div class="flex-grow-1 overflow-hidden">
+											<div class="fw-semibold text-truncate small text-dark"><%= l.title %></div>
+											<div class="text-muted small">
+												<i class="fa-solid fa-location-dot me-1 text-terracotta"></i> <%= l.location %>
+											</div>
+											<div class="small fw-bold text-forest font-tabular mt-1">
+												&#x20B9;<%= (l.price || 0).toLocaleString("en-IN") %> <span class="text-muted fw-normal">/ night</span>
+											</div>
+										</div>
+										<div class="text-end small text-muted font-tabular pe-2">
+											<i class="fa-regular fa-eye me-1"></i> <%= l.views || 0 %>
+										</div>
+									</div>
+								</a>
+							</div>
+						<% } %>
+					</div>
+				<% } %>
+			</div>
+		</div>
+	</div>
+</div>

@@ -1,21 +1,8 @@
-const cloudinary = require("cloudinary").v2;
-const { CloudinaryStorage } = require("multer-storage-cloudinary");
-
-cloudinary.config({
-	cloud_name: process.env.CLOUD_NAME,
-	api_key: process.env.CLOUD_API,
-	api_secret: process.env.CLOUD_API_SECRET,
-});
-
-const storage = new CloudinaryStorage({
-	cloudinary: cloudinary,
-	params: {
-		folder: "wondelust_DEV",
-		allowedFormat: ["png", "jpg", "jpeg"], // supports promises as well
-	},
-});
+// Backward-compatibility proxy for config/storage.js
+const { storage, upload, cleanupLocalFile } = require("./config/storage.js");
 
 module.exports = {
-	cloudinary,
 	storage,
+	upload,
+	cleanupLocalFile,
 };

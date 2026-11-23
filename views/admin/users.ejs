@@ -1,0 +1,146 @@
+<% layout("/layouts/boilerplate") %>
+
+<div class="container-wide py-4 my-2">
+	<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-3 border-bottom">
+		<div>
+			<nav aria-label="breadcrumb">
+				<ol class="breadcrumb small mb-1">
+					<li class="breadcrumb-item"><a href="/admin" class="text-decoration-none text-forest">Admin Console</a></li>
+					<li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Users Directory</li>
+				</ol>
+			</nav>
+			<h1 class="editorial-title h2 fw-bold mb-1 d-flex align-items-center gap-2 text-dark">
+				<i class="fa-solid fa-users text-forest"></i>
+				<span>User Management &amp; Roles</span>
+			</h1>
+			<p class="text-muted small mb-0">View registered platform users, assign role authorizations, and designate Superhost status.</p>
+		</div>
+		<a href="/admin" class="btn btn-forest-outline btn-sm rounded-pill px-3">
+			<i class="fa-solid fa-arrow-left me-1"></i> Back to Dashboard
+		</a>
+	</div>
+
+	<!-- Search & Filters -->
+	<div class="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4">
+		<form method="GET" action="/admin/users" class="row g-2 align-items-center">
+			<div class="col-12 col-md-5">
+				<div class="input-group">
+					<span class="input-group-text bg-light border-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+					<input type="text" name="search" class="form-control bg-light border-0" placeholder="Search by username, full name, or email..." value="<%= search %>">
+				</div>
+			</div>
+			<div class="col-6 col-md-3">
+				<select name="role" class="form-select bg-light border-0">
+					<option value="" <%= !role ? 'selected' : '' %>>All Roles</option>
+					<option value="traveler" <%= role === 'traveler' ? 'selected' : '' %>>Travelers Only</option>
+					<option value="host" <%= role === 'host' ? 'selected' : '' %>>Hosts Only</option>
+					<option value="admin" <%= role === 'admin' ? 'selected' : '' %>>Admins Only</option>
+				</select>
+			</div>
+			<div class="col-6 col-md-2">
+				<button type="submit" class="btn btn-forest w-100 rounded-pill">Filter</button>
+			</div>
+			<div class="col-12 col-md-2">
+				<a href="/admin/users" class="btn btn-forest-outline w-100 rounded-pill">Reset</a>
+			</div>
+		</form>
+	</div>
+
+	<!-- Users Table -->
+	<div class="card border-0 shadow-sm rounded-4 p-0 bg-white overflow-hidden mb-4">
+		<div class="table-responsive">
+			<table class="table table-hover align-middle mb-0">
+				<thead class="table-light small text-uppercase">
+					<tr>
+						<th class="ps-4">User</th>
+						<th>Email</th>
+						<th>Current Role</th>
+						<th>Superhost</th>
+						<th>Joined</th>
+						<th class="text-end pe-4">Actions</th>
+					</tr>
+				</thead>
+				<tbody class="small">
+					<% if (!users || users.length === 0) { %>
+						<tr>
+							<td colspan="6" class="text-center py-5 text-muted">
+								<i class="fa-regular fa-user fa-2x mb-2 d-block opacity-50"></i>
+								No users matched your query.
+							</td>
+						</tr>
+					<% } else { %>
+						<% for (const u of users) { %>
+							<tr>
+								<td class="ps-4">
+									<div class="d-flex align-items-center gap-3">
+										<% if (u.avatar && u.avatar.url) { %>
+											<img src="<%= u.avatar.url %>" class="rounded-circle shadow-sm" style="width: 36px; height: 36px; object-fit: cover;" alt="<%= u.username %>">
+										<% } else { %>
+											<div class="rounded-circle text-white d-flex align-items-center justify-content-center fw-bold small flex-shrink-0" style="width: 36px; height: 36px; background-color: var(--forest-900);">
+												<%= (u.fullName || u.username || 'U').charAt(0).toUpperCase() %>
+											</div>
+										<% } %>
+										<div>
+											<div class="fw-bold text-dark"><%= u.username %></div>
+											<% if (u.fullName) { %>
+												<div class="text-muted small" style="font-size: 0.75rem;"><%= u.fullName %></div>
+											<% } %>
+										</div>
+									</div>
+								</td>
+								<td class="text-secondary"><%= u.email %></td>
+								<td>
+									<form action="/admin/users/<%= u._id %>/role" method="POST" class="d-inline">
+										<select name="role" class="form-select form-select-sm rounded-pill d-inline-block w-auto border" onchange="this.form.submit()">
+											<option value="traveler" <%= u.role === 'traveler' ? 'selected' : '' %>>Traveler</option>
+											<option value="host" <%= u.role === 'host' ? 'selected' : '' %>>Host</option>
+											<option value="admin" <%= u.role === 'admin' ? 'selected' : '' %>>Admin</option>
+										</select>
+									</form>
+								</td>
+								<td>
+									<form action="/admin/users/<%= u._id %>/superhost" method="POST" class="d-inline">
+										<button type="submit" class="btn btn-sm rounded-pill px-2 py-0 <%= u.isSuperhost ? 'btn-warning text-dark fw-semibold' : 'btn-outline-secondary' %>" title="Toggle Superhost badge">
+											<i class="fa-solid fa-award me-1"></i><%= u.isSuperhost ? 'Superhost' : 'Standard' %>
+										</button>
+									</form>
+								</td>
+								<td class="text-muted font-tabular"><%= new Date(u.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) %></td>
+								<td class="text-end pe-4">
+									<a href="/users/<%= u._id %>" class="btn btn-sm btn-forest-outline rounded-pill px-3 py-1">
+										View Profile
+									</a>
+								</td>
+							</tr>
+						<% } %>
+					<% } %>
+				</tbody>
+			</table>
+		</div>
+	</div>
+
+	<!-- Pagination -->
+	<% if (totalPages > 1) { %>
+		<nav class="d-flex justify-content-center" aria-label="Users pagination">
+			<ul class="pagination pagination-sm gap-1">
+				<li class="page-item <%= page <= 1 ? 'disabled' : '' %>">
+					<a class="page-link rounded-circle px-3" href="/admin/users?search=<%= search %>&role=<%= role %>&page=<%= page - 1 %>">
+						<i class="fa-solid fa-chevron-left"></i>
+					</a>
+				</li>
+				<% for (let p = 1; p <= totalPages; p++) { %>
+					<li class="page-item <%= p === page ? 'active' : '' %>">
+						<a class="page-link rounded-circle px-3 <%= p === page ? 'btn-forest border-0 text-white' : '' %>" href="/admin/users?search=<%= search %>&role=<%= role %>&page=<%= p %>">
+							<%= p %>
+						</a>
+					</li>
+				<% } %>
+				<li class="page-item <%= page >= totalPages ? 'disabled' : '' %>">
+					<a class="page-link rounded-circle px-3" href="/admin/users?search=<%= search %>&role=<%= role %>&page=<%= page + 1 %>">
+						<i class="fa-solid fa-chevron-right"></i>
+					</a>
+				</li>
+			</ul>
+		</nav>
+	<% } %>
+</div>

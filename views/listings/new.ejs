@@ -1,101 +1,418 @@
 <% layout("/layouts/boilerplate") %>
 
-<div class="row mt-3">
-	<div class="col-8 offset-2">
-		<br />
+<style>
+	.form-section-card {
+		background: #ffffff;
+		border: 1px solid var(--border-color);
+		border-radius: 1.25rem;
+		padding: 2rem;
+		margin-bottom: 1.75rem;
+		box-shadow: var(--shadow-subtle);
+		transition: border-color 0.2s ease, box-shadow 0.2s ease;
+	}
 
-		<h3>Create a new listings</h3>
+	.form-section-card:focus-within {
+		border-color: var(--forest-200);
+		box-shadow: var(--shadow-card);
+	}
+
+	.section-indicator {
+		width: 32px;
+		height: 32px;
+		border-radius: 50%;
+		background-color: var(--forest-100);
+		color: var(--forest-800);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		font-weight: 700;
+		font-size: 0.85rem;
+		margin-right: 0.75rem;
+		flex-shrink: 0;
+	}
+
+	.upload-dropzone {
+		border: 2px dashed var(--border-color);
+		border-radius: 1rem;
+		padding: 2rem 1.5rem;
+		text-align: center;
+		background: var(--paper-50);
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.upload-dropzone:hover {
+		border-color: var(--forest-700);
+		background: var(--paper-100);
+	}
+
+	.amenity-checkbox-card {
+		border: 1px solid var(--border-color);
+		border-radius: 0.75rem;
+		padding: 0.75rem 1rem;
+		background: var(--paper-50);
+		transition: all 0.15s ease;
+		cursor: pointer;
+	}
+
+	.amenity-checkbox-card:hover {
+		background: #ffffff;
+		border-color: var(--forest-200);
+	}
+
+	.amenity-checkbox-card .form-check-input:checked ~ .form-check-label {
+		color: var(--forest-900);
+		font-weight: 600;
+	}
+</style>
+
+<div class="row mt-3 mb-5">
+	<div class="col-12 col-lg-10 offset-lg-1 col-xl-8 offset-xl-2">
+		<!-- Header Banner -->
+		<div class="mb-4">
+			<a href="/listings" class="text-muted small text-decoration-none d-inline-flex align-items-center gap-1 mb-2">
+				<i class="fa-solid fa-arrow-left"></i> Back to all listings
+			</a>
+			<h1 class="editorial-title mb-2">Host a New Sanctuary</h1>
+			<p class="text-muted">Publish your home, villa, or retreat to our curated global network of discerning travellers.</p>
+		</div>
+
 		<form
 			method="POST"
 			action="/listings"
 			novalidate
 			class="needs-validation"
 			enctype="multipart/form-data"
+			id="createListingForm"
 		>
-			<div class="mb-3">
-				<label for="title" class="form-label">Title</label>
-				<input
-					name="listing[title]"
-					placeholder="Add a Title"
-					type="text"
-					class="form-control"
-					required
-				/>
-				<div class="invalid-feedback">
-					*Please add a title for the listing
-				</div>
-			</div>
-			<div class="mb-3">
-				<label for="description" class="form-label">Description</label>
-				<textarea
-					name="listing[description]"
-					placeholder="Enter Description"
-					type="text"
-					class="form-control"
-					required
-				></textarea>
-				<div class="invalid-feedback">
-					*Please provide a description.
-				</div>
-			</div>
-
-			<div class="mb-3">
-				<label for="image" class="form-label"
-					>Upload Listing Image</label
-				>
-				<input
-					name="listing[image]"
-					type="file"
-					class="form-control"
-					required
-				/>
-			</div>
-
-			<div class="row">
-				<div class="mb-3 col-md-4">
-					<label for="price" class="form-label">Price</label>
-
-					<input
-						name="listing[price]"
-						placeholder="Enter Price"
-						type="number"
-						class="form-control"
-						required
-					/>
-					<div class="invalid-feedback">
-						*Enter a price for your listing.
+			<!-- 1. Basic Information -->
+			<div class="form-section-card">
+				<div class="d-flex align-items-center mb-3">
+					<span class="section-indicator">1</span>
+					<div>
+						<h5 class="fw-bold mb-0">Overview &amp; Concept</h5>
+						<p class="text-muted small mb-0">Highlight the character and charm of your space.</p>
 					</div>
 				</div>
-				<div class="mb-3 col-md-8">
-					<label for="country" class="form-label">Country</label>
 
+				<div class="mb-3">
+					<label for="title" class="form-label fw-semibold">Property Title</label>
 					<input
-						name="listing[country]"
-						placeholder="India"
+						name="listing[title]"
+						id="title"
+						placeholder="e.g. Royal Heritage Haveli with Private Courtyard Pool"
 						type="text"
 						class="form-control"
 						required
 					/>
+					<div class="form-text">Choose a descriptive, poetic name that captures the atmosphere.</div>
 					<div class="invalid-feedback">
-						*Please add the country name.
+						*Please add a title for the listing.
+					</div>
+				</div>
+
+				<div class="mb-3">
+					<label for="description" class="form-label fw-semibold">Description</label>
+					<textarea
+						name="listing[description]"
+						id="description"
+						placeholder="Describe your property, architectural features, neighborhood atmosphere, views, and bespoke amenities..."
+						class="form-control"
+						rows="4"
+						required
+					></textarea>
+					<div class="invalid-feedback">
+						*Please provide a description.
+					</div>
+				</div>
+
+				<div class="row g-3">
+					<div class="col-md-6">
+						<label for="category" class="form-label fw-semibold">Discovery Category</label>
+						<select name="listing[category]" id="category" class="form-select">
+							<option value="General" selected>General</option>
+							<option value="Trending">Trending</option>
+							<option value="Rooms">Rooms</option>
+							<option value="Iconic Cities">Iconic Cities</option>
+							<option value="Mountains">Mountains</option>
+							<option value="Castles">Castles</option>
+							<option value="Amazing Pools">Amazing Pools</option>
+							<option value="Camping">Camping</option>
+							<option value="Farms">Farms</option>
+							<option value="Arctic">Arctic</option>
+							<option value="Domes">Domes</option>
+							<option value="Boats">Boats</option>
+						</select>
+					</div>
+
+					<div class="col-md-6">
+						<label for="propertyType" class="form-label fw-semibold">Property Type</label>
+						<select name="listing[propertyType]" id="propertyType" class="form-select">
+							<option value="Villa" selected>Villa</option>
+							<option value="Apartment">Apartment</option>
+							<option value="House">House</option>
+							<option value="Cabin">Cabin</option>
+							<option value="Cottage">Cottage</option>
+							<option value="Beachfront">Beachfront</option>
+							<option value="Farmhouse">Farmhouse</option>
+						</select>
 					</div>
 				</div>
 			</div>
 
-			<div class="mb-3">
-				<label for="location" class="form-label">Location</label>
+			<!-- 2. Location & Setting -->
+			<div class="form-section-card">
+				<div class="d-flex align-items-center mb-3">
+					<span class="section-indicator">2</span>
+					<div>
+						<h5 class="fw-bold mb-0">Location &amp; Geography</h5>
+						<p class="text-muted small mb-0">Where is your sanctuary situated?</p>
+					</div>
+				</div>
 
-				<input
-					name="listing[location]"
-					placeholder="Enter Location"
-					type="text"
-					class="form-control"
-					required
-				/>
-				<div class="invalid-feedback">*Please add the location.</div>
+				<div class="row g-3">
+					<div class="col-md-6">
+						<label for="location" class="form-label fw-semibold">City / Region</label>
+						<div class="input-group">
+							<span class="input-group-text bg-white text-muted"><i class="fa-solid fa-location-dot text-danger"></i></span>
+							<input
+								name="listing[location]"
+								id="location"
+								placeholder="e.g. Udaipur, Rajasthan"
+								type="text"
+								class="form-control"
+								required
+							/>
+						</div>
+						<div class="invalid-feedback">*Please add the location.</div>
+					</div>
+
+					<div class="col-md-6">
+						<label for="country" class="form-label fw-semibold">Country</label>
+						<div class="input-group">
+							<span class="input-group-text bg-white text-muted"><i class="fa-solid fa-earth-americas text-primary"></i></span>
+							<input
+								name="listing[country]"
+								id="country"
+								placeholder="e.g. India"
+								type="text"
+								class="form-control"
+								required
+							/>
+						</div>
+						<div class="invalid-feedback">
+							*Please specify the country.
+						</div>
+					</div>
+				</div>
 			</div>
-			<br />
-			<button class="btn btn-dark add-btn">ADD</button>
+
+			<!-- 3. Capacity & Accommodations -->
+			<div class="form-section-card">
+				<div class="d-flex align-items-center mb-3">
+					<span class="section-indicator">3</span>
+					<div>
+						<h5 class="fw-bold mb-0">Capacity &amp; Layout</h5>
+						<p class="text-muted small mb-0">Number of guests and spaces available.</p>
+					</div>
+				</div>
+
+				<div class="row g-3">
+					<div class="col-6 col-md-4">
+						<label for="guests" class="form-label fw-semibold">Max Guests</label>
+						<div class="input-group">
+							<span class="input-group-text bg-white text-muted"><i class="fa-solid fa-users"></i></span>
+							<input name="listing[guests]" id="guests" type="number" min="1" value="2" class="form-control" />
+						</div>
+					</div>
+					<div class="col-6 col-md-4">
+						<label for="bedrooms" class="form-label fw-semibold">Bedrooms</label>
+						<div class="input-group">
+							<span class="input-group-text bg-white text-muted"><i class="fa-solid fa-bed"></i></span>
+							<input name="listing[bedrooms]" id="bedrooms" type="number" min="1" value="1" class="form-control" />
+						</div>
+					</div>
+					<div class="col-12 col-md-4">
+						<label for="bathrooms" class="form-label fw-semibold">Bathrooms</label>
+						<div class="input-group">
+							<span class="input-group-text bg-white text-muted"><i class="fa-solid fa-bath"></i></span>
+							<input name="listing[bathrooms]" id="bathrooms" type="number" min="1" value="1" class="form-control" />
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- 4. Media & Gallery Upload -->
+			<div class="form-section-card">
+				<div class="d-flex align-items-center mb-3">
+					<span class="section-indicator">4</span>
+					<div>
+						<h5 class="fw-bold mb-0">Gallery &amp; Photography</h5>
+						<p class="text-muted small mb-0">Showcase high-resolution photographs of your space.</p>
+					</div>
+				</div>
+
+				<div class="mb-3">
+					<label for="imageInput" class="form-label fw-semibold">Upload Property Photos</label>
+					<input
+						name="listing[image]"
+						id="imageInput"
+						type="file"
+						class="form-control"
+						accept="image/jpeg,image/png,image/webp,image/gif"
+						multiple
+						required
+					/>
+					<div class="form-text">
+						Upload high-resolution photography (JPEG, PNG, WebP &bull; Max 5MB per photo). The first photo will be used as the primary cover.
+					</div>
+					<div class="invalid-feedback">
+						*Please upload at least one property photo.
+					</div>
+
+					<!-- Client-side Preview Container -->
+					<div id="imagePreviewContainer" class="row g-2 mt-3 d-none"></div>
+					<div id="fileSizeWarning" class="alert alert-danger py-2 mt-2 d-none small">
+						<i class="fa-solid fa-triangle-exclamation me-1"></i> One or more selected images exceed the 5MB file limit. Please choose smaller images.
+					</div>
+				</div>
+			</div>
+
+			<!-- 5. Pricing & Publishing Status -->
+			<div class="form-section-card">
+				<div class="d-flex align-items-center mb-3">
+					<span class="section-indicator">5</span>
+					<div>
+						<h5 class="fw-bold mb-0">Pricing &amp; Availability</h5>
+						<p class="text-muted small mb-0">Set your base nightly rate and publishing visibility.</p>
+					</div>
+				</div>
+
+				<div class="row g-3">
+					<div class="col-md-6">
+						<label for="price" class="form-label fw-semibold">Nightly Rate (&#x20B9;)</label>
+						<div class="input-group">
+							<span class="input-group-text">&#x20B9;</span>
+							<input
+								name="listing[price]"
+								id="price"
+								placeholder="e.g. 7500"
+								type="number"
+								min="0"
+								class="form-control tabular-nums"
+								required
+							/>
+							<span class="input-group-text text-muted small">/ night</span>
+							<div class="invalid-feedback">
+								*Enter a valid nightly price.
+							</div>
+						</div>
+					</div>
+
+					<div class="col-md-6">
+						<label for="status" class="form-label fw-semibold">Publishing Status</label>
+						<select name="listing[status]" id="status" class="form-select">
+							<option value="published" selected>Published (Publicly Visible)</option>
+							<option value="draft">Draft (Save Privately)</option>
+						</select>
+					</div>
+				</div>
+			</div>
+
+			<!-- 6. Amenities Checklist -->
+			<div class="form-section-card">
+				<div class="d-flex align-items-center mb-3">
+					<span class="section-indicator">6</span>
+					<div>
+						<h5 class="fw-bold mb-0">Featured Amenities</h5>
+						<p class="text-muted small mb-0">Select all amenities available to guests during their stay.</p>
+					</div>
+				</div>
+
+				<div class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-2">
+					<% const allAmenities = ["Wifi", "Pool", "Air Conditioning", "Free Parking", "Kitchen", "TV", "Hot Tub", "Dedicated Workspace"]; %>
+					<% for (let am of allAmenities) { %>
+						<div class="col">
+							<div class="amenity-checkbox-card d-flex align-items-center gap-2">
+								<input class="form-check-input mt-0" type="checkbox" name="listing[amenities]" value="<%= am %>" id="new_am_<%= am.replace(/\s+/g, '_') %>">
+								<label class="form-check-label small w-100 cursor-pointer" for="new_am_<%= am.replace(/\s+/g, '_') %>"><%= am %></label>
+							</div>
+						</div>
+					<% } %>
+				</div>
+			</div>
+
+			<!-- Sticky / Actions Bar -->
+			<div class="d-flex flex-wrap align-items-center gap-3 pt-2">
+				<button class="btn btn-forest px-4 py-2 rounded-pill fw-semibold" id="submitBtn">
+					<i class="fa-solid fa-house-circle-check me-1"></i> Publish Listing
+				</button>
+				<a href="/listings" class="btn btn-outline-secondary px-4 py-2 rounded-pill">
+					Cancel
+				</a>
+			</div>
 		</form>
 	</div>
 </div>
+
+<!-- Image Preview & File Size Validation Script -->
+<script>
+	const imageInput = document.getElementById("imageInput");
+	const previewContainer = document.getElementById("imagePreviewContainer");
+	const warningEl = document.getElementById("fileSizeWarning");
+	const submitBtn = document.getElementById("submitBtn");
+
+	if (imageInput) {
+		imageInput.addEventListener("change", (e) => {
+			previewContainer.innerHTML = "";
+			warningEl.classList.add("d-none");
+			submitBtn.disabled = false;
+
+			const files = Array.from(e.target.files);
+			if (files.length === 0) {
+				previewContainer.classList.add("d-none");
+				return;
+			}
+
+			previewContainer.classList.remove("d-none");
+			let hasOversized = false;
+
+			files.forEach((file, idx) => {
+				const sizeKB = Math.round(file.size / 1024);
+				const isOversized = file.size > 5 * 1024 * 1024;
+				if (isOversized) hasOversized = true;
+
+				const col = document.createElement("div");
+				col.className = "col-6 col-sm-4 col-md-3";
+
+				const card = document.createElement("div");
+				card.className = `card h-100 p-1 position-relative ${isOversized ? 'border-danger' : 'border'}`;
+				card.style.borderRadius = "0.75rem";
+
+				const img = document.createElement("img");
+				img.src = URL.createObjectURL(file);
+				img.className = "card-img-top rounded";
+				img.style.height = "95px";
+				img.style.objectFit = "cover";
+
+				const info = document.createElement("div");
+				info.className = "card-body p-2 text-center";
+				info.innerHTML = `
+					<p class="card-text text-truncate mb-1 small fw-medium" title="${file.name}">${file.name}</p>
+					<span class="badge ${isOversized ? 'bg-danger' : 'bg-light text-dark'} small" style="font-size: 0.7rem;">${sizeKB} KB</span>
+					${idx === 0 ? '<span class="badge bg-success ms-1 small" style="font-size: 0.7rem;">Cover</span>' : ''}
+				`;
+
+				card.appendChild(img);
+				card.appendChild(info);
+				col.appendChild(card);
+				previewContainer.appendChild(col);
+			});
+
+			if (hasOversized) {
+				warningEl.classList.remove("d-none");
+				submitBtn.disabled = true;
+			}
+		});
+	}
+</script>

@@ -1,0 +1,29 @@
+# Version Control
+.git
+.gitignore
+
+# Environment & Credentials
+.env
+.env.*
+!.env.example
+
+# Dependencies & Build Output
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test Suites & QA Logs
+tests
+coverage
+.nyc_output
+*.log
+
+# Workspace & Agent Scratchpads
+.system_generated
+.gemini
+scratch
+
+# Local Media Temp Files
+uploads/tmp
+uploads/*.tmp

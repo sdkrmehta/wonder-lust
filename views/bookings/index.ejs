@@ -1,0 +1,175 @@
+<% layout("layouts/boilerplate") %>
+
+<style>
+	.trip-card {
+		background: #ffffff;
+		border: 1px solid var(--border-color);
+		border-radius: 1.25rem;
+		overflow: hidden;
+		transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+	}
+
+	.trip-card:hover {
+		transform: translateY(-3px);
+		box-shadow: var(--shadow-hover);
+		border-color: var(--forest-200);
+	}
+
+	.trip-img-wrapper {
+		height: 100%;
+		min-height: 200px;
+		background: var(--paper-200);
+		overflow: hidden;
+		position: relative;
+	}
+
+	.trip-img-wrapper img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transition: transform 0.4s ease;
+	}
+
+	.trip-card:hover .trip-img-wrapper img {
+		transform: scale(1.04);
+	}
+
+	.stay-info-box {
+		background: var(--paper-50);
+		border: 1px solid var(--border-color);
+		border-radius: 0.85rem;
+		padding: 0.85rem 1rem;
+	}
+</style>
+
+<div class="row my-4">
+	<div class="col-12 col-xl-10 offset-xl-1">
+		<!-- Header Banner -->
+		<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom" style="border-color: var(--border-color) !important;">
+			<div>
+				<h1 class="editorial-title mb-1" style="font-size: 2.1rem;">My Bookings &amp; Trips</h1>
+				<p class="text-muted small mb-0">View, manage, and review your upcoming retreats and past vacation reservations.</p>
+			</div>
+			<div class="mt-3 mt-md-0">
+				<a href="/listings" class="btn btn-forest rounded-pill px-4">
+					<i class="fa-solid fa-compass me-1"></i> Explore More Properties
+				</a>
+			</div>
+		</div>
+
+		<% if (!bookings || bookings.length === 0) { %>
+			<div class="text-center my-5 py-5 border rounded-4 bg-white shadow-sm" style="border-color: var(--border-color) !important;">
+				<div class="mb-3 d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 80px; height: 80px; background: var(--forest-50); color: var(--forest-800);">
+					<i class="fa-solid fa-suitcase-rolling fa-2x"></i>
+				</div>
+				<h4 class="fw-bold mb-2">No trips booked yet</h4>
+				<p class="text-muted col-md-6 mx-auto mb-4" style="line-height: 1.6;">
+					When you reserve an accommodation, your trip details, receipts, and host contact information will appear right here.
+				</p>
+				<a href="/listings" class="btn btn-forest rounded-pill px-4 py-2">
+					Start Exploring Now
+				</a>
+			</div>
+		<% } else { %>
+			<div class="row row-cols-1 row-cols-md-2 g-4">
+				<% for (let booking of bookings) { %>
+					<% const listing = booking.listing || {}; %>
+					<div class="col">
+						<div class="trip-card h-100 d-flex flex-column position-relative">
+							<!-- Status Stamp Badge (Top Right) -->
+							<div class="position-absolute top-0 end-0 m-3 z-3">
+								<% if (booking.status === 'confirmed') { %>
+									<span class="stamp stamp-confirmed shadow-sm">
+										<i class="fa-solid fa-circle-check"></i> Confirmed
+									</span>
+								<% } else if (booking.status === 'cancelled') { %>
+									<span class="stamp stamp-cancelled shadow-sm">
+										<i class="fa-solid fa-ban"></i> Cancelled
+									</span>
+								<% } else { %>
+									<span class="stamp stamp-pending shadow-sm">
+										<%= booking.status %>
+									</span>
+								<% } %>
+							</div>
+
+							<div class="row g-0 h-100">
+								<!-- Property Media Left -->
+								<div class="col-sm-5">
+									<div class="trip-img-wrapper">
+										<img
+											src="<%= listing.image && listing.image.url ? listing.image.url : '/images/listing-placeholder.jpg' %>"
+											alt="<%= listing.title %>"
+											onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';"
+										/>
+									</div>
+								</div>
+
+								<!-- Booking Details Right -->
+								<div class="col-sm-7 d-flex flex-column">
+									<div class="p-3 d-flex flex-column h-100">
+										<h5 class="fw-bold text-truncate mb-1" style="font-size: 1.05rem; color: var(--ink-900);" title="<%= listing.title %>">
+											<%= listing.title || "Vacation Rental" %>
+										</h5>
+										<p class="text-muted small mb-2">
+											<i class="fa-solid fa-location-dot me-1 text-danger"></i>
+											<%= listing.location %>, <%= listing.country %>
+										</p>
+
+										<div class="stay-info-box my-2 small">
+											<div class="d-flex justify-content-between mb-1">
+												<span class="text-muted">Check-in:</span>
+												<span class="fw-semibold text-dark"><%= new Date(booking.checkIn).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' }) %></span>
+											</div>
+											<div class="d-flex justify-content-between mb-1">
+												<span class="text-muted">Check-out:</span>
+												<span class="fw-semibold text-dark"><%= new Date(booking.checkOut).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' }) %></span>
+											</div>
+											<div class="d-flex justify-content-between">
+												<span class="text-muted">Duration:</span>
+												<span><%= booking.totalNights %> night<%= booking.totalNights > 1 ? 's' : '' %> &bull; <%= booking.guests %> guest<%= booking.guests > 1 ? 's' : '' %></span>
+											</div>
+										</div>
+
+										<div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top" style="border-color: var(--border-color) !important;">
+											<div>
+												<span class="text-muted small d-block" style="font-size: 0.72rem;">Total Paid</span>
+												<span class="fw-bold fs-5 tabular-nums" style="color: var(--forest-900);">&#x20B9;<%= booking.totalPrice.toLocaleString("en-IN") %></span>
+											</div>
+											<div class="d-flex flex-wrap gap-1 justify-content-end">
+												<% if (booking.payment) { %>
+													<a href="/payments/receipt/<%= booking.payment._id || booking.payment %>" class="btn btn-sm btn-forest-outline rounded-pill px-2 py-1" style="font-size: 0.75rem;">
+														Invoice
+													</a>
+												<% } else if (booking.status === 'confirmed' && booking.paymentStatus === 'unpaid') { %>
+													<a href="/payments/checkout/<%= booking._id %>" class="btn btn-sm btn-forest rounded-pill px-3 py-1" style="font-size: 0.75rem;">
+														Pay
+													</a>
+												<% } %>
+												<a href="/bookings/<%= booking._id %>" class="btn btn-sm btn-outline-dark rounded-pill px-2 py-1" style="font-size: 0.75rem;">
+													Receipt
+												</a>
+												<% if (booking.status === 'confirmed') { %>
+													<form
+														action="/bookings/<%= booking._id %>/cancel"
+														method="POST"
+														onsubmit="return confirm('Are you sure you want to cancel this reservation?');"
+														class="d-inline"
+													>
+														<button class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1" style="font-size: 0.75rem;">
+															Cancel
+														</button>
+													</form>
+												<% } %>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				<% } %>
+			</div>
+		<% } %>
+	</div>
+</div>

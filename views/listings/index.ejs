@@ -1,123 +1,900 @@
 <% layout("layouts/boilerplate") %>
 
 <style>
-	#filters {
+	/* Category Filter Carousel Styling */
+	#filters-container {
 		display: flex;
-		flex-wrap: wrap;
 		align-items: center;
+		overflow-x: auto;
+		white-space: nowrap;
+		scrollbar-width: thin;
+		padding: 0.75rem 0 0.5rem;
+		border-bottom: 1px solid var(--border-color);
+		gap: 1.5rem;
+		-webkit-overflow-scrolling: touch;
 	}
 
-	.filter {
+	#filters-container::-webkit-scrollbar {
+		height: 3px;
+	}
+
+	#filters-container::-webkit-scrollbar-thumb {
+		background: var(--paper-300);
+		border-radius: 3px;
+	}
+
+	.filter-item {
+		display: inline-flex;
+		flex-direction: column;
+		align-items: center;
 		text-align: center;
-		margin-right: 2rem;
-		margin-top: 1rem;
 		opacity: 0.7;
-	}
-
-	.filter:hover {
-		opacity: 1;
+		text-decoration: none;
+		color: var(--ink-700);
+		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 		cursor: pointer;
+		padding: 0.35rem 0.65rem 0.5rem;
+		border-bottom: 2px solid transparent;
+		min-width: 60px;
+		flex-shrink: 0;
 	}
 
-	.tax-info {
-		display: none;
+	.filter-item:hover {
+		opacity: 1;
+		color: var(--navy-800);
+		transform: translateY(-1px);
 	}
 
+	.filter-item.active {
+		opacity: 1;
+		color: var(--navy-900);
+		font-weight: 600;
+		border-bottom: 2px solid var(--navy-800);
+	}
+
+	.filter-item i {
+		font-size: 1.28rem;
+		margin-bottom: 0.45rem;
+		transition: transform 0.2s ease;
+	}
+
+	.filter-item:hover i {
+		transform: scale(1.1);
+	}
+
+	.filter-item p {
+		font-size: 0.75rem;
+		letter-spacing: -0.01em;
+		margin-bottom: 0;
+	}
+
+	/* Tax Toggle Pill */
 	.tax-toggle {
-		border: 1px solid black;
-		border-radius: 1rem;
-		height: 3.25rem;
-		padding: 1rem;
-		margin-left: 5rem;
+		border: 1px solid var(--border-color);
+		border-radius: 2rem;
+		padding: 0.45rem 1.15rem;
 		display: flex;
 		align-items: center;
+		background-color: var(--paper-100);
+		transition: all 0.2s ease;
+	}
+
+	.tax-toggle:hover {
+		background-color: #ffffff;
+		border-color: var(--navy-100);
+	}
+
+	/* Filter Modal Styling */
+	.filter-modal-section {
+		border-bottom: 1px solid var(--border-color);
+		padding-bottom: 1.25rem;
+		margin-bottom: 1.25rem;
+	}
+
+	.filter-modal-section:last-child {
+		border-bottom: none;
+		margin-bottom: 0;
+		padding-bottom: 0;
+	}
+
+	.filter-modal-section h6 {
+		font-size: 0.92rem;
+		font-weight: 600;
+		color: var(--ink-900);
+	}
+
+	/* Editorial Hero Header Banner */
+	.discovery-hero {
+		background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-800) 100%);
+		border-radius: 1.25rem;
+		padding: 2.25rem 2rem;
+		color: #ffffff;
+		margin-bottom: 1.5rem;
+		box-shadow: 0 10px 30px rgba(16, 42, 67, 0.15);
+		position: relative;
+		overflow: hidden;
+	}
+
+	.discovery-hero::after {
+		content: "";
+		position: absolute;
+		right: -40px;
+		bottom: -40px;
+		width: 220px;
+		height: 220px;
+		border-radius: 50%;
+		background: rgba(255, 255, 255, 0.05);
+		pointer-events: none;
+	}
+
+	.discovery-hero h1 {
+		font-family: var(--font-display);
+		font-size: 2.15rem;
+		font-weight: 600;
+		color: #ffffff;
+		letter-spacing: -0.03em;
+		margin-bottom: 0.4rem;
+	}
+
+	.discovery-hero p {
+		color: rgba(255, 255, 255, 0.82);
+		font-size: 0.98rem;
+		max-width: 580px;
+		margin-bottom: 0;
+	}
+
+	.property-badge-glass {
+		background: rgba(252, 251, 247, 0.92);
+		backdrop-filter: blur(8px);
+		border: 1px solid rgba(255, 255, 255, 0.5);
+		color: var(--ink-900);
+		font-size: 0.74rem;
+		font-weight: 600;
+		padding: 0.35rem 0.75rem;
+		border-radius: 2rem;
+		letter-spacing: 0.02em;
 	}
 </style>
 
-<div id="filters">
-	<div class="filter">
-		<div><i class="fa-solid fa-fire"></i></div>
-		<p>Trending</p>
-	</div>
-	<div class="filter">
-		<div><i class="fa-solid fa-bed"></i></div>
-		<p>Rooms</p>
-	</div>
-	<div class="filter">
-		<div><i class="fa-solid fa-mountain-city"></i></div>
-		<p>Iconic Cities</p>
-	</div>
-	<div class="filter">
-		<div><i class="fa-solid fa-mountain"></i></div>
-		<p>Mountains</p>
-	</div>
-	<!-- <div class="filter">
-		<div><i class="fa-solid fa-bed"></i></div>
-		<p>Castles</p>
-	</div> -->
-	<div class="filter">
-		<div><i class="fa-solid fa-person-swimming"></i></div>
-		<p>Amazing Pools</p>
-	</div>
-	<div class="filter">
-		<div><i class="fa-solid fa-tractor"></i></div>
-		<p>Farms</p>
-	</div>
-	<div class="filter">
-		<div><i class="fa-solid fa-snowflake"></i></div>
-		<p>Arctic</p>
-	</div>
-	<div class="tax-toggle">
-		<div class="form-check-reverse form-switch">
-			<input
-				class="form-check-input"
-				type="checkbox"
-				role="switch"
-				id="flexSwitchCheckDefault"
-			/>
-			<label class="form-check-label" for="flexSwitchCheckDefault"
-				>Display total after taxes</label
-			>
-		</div>
-	</div>
+<!-- Expanded Search Interface (Unified Search Engine) -->
+<div class="listings-search-wrapper mb-4 expanded-search-container" id="listingsSearchWrapper">
+	<%- include("../includes/search-bar.ejs", {
+		formId: "listingsSearchForm",
+		searchQuery: (typeof searchQuery !== 'undefined' ? searchQuery : ''),
+		filters: (typeof filters !== 'undefined' ? filters : {})
+	}) %>
 </div>
 
-<div class="row row-cols-lg-3 row-cols-md-2 row-cols-sm-1 mt-3">
-	<!-- orientation in different screen sizes-->
-	<% for (let listing of allListings) { %>
-	<a href="/listings/<%= listing._id %>" class="listing-link">
-		<div class="card col listing-card">
-			<img
-				src="<%= listing.image.url%>"
-				class="card-img-top"
-				alt="listing_image"
-				style="height: 20rem"
-			/>
-			<div class="card-img-overlay"></div>
-			<div class="card-body">
-				<p class="card-text">
-					<b><%= listing.title%></b>
-					<br />
-					&#x20B9;<%= (listing.price || 0).toLocaleString("en-IN")
-					%>/night
-					<i class="tax-info"> &nbsp;+18% GST</i>
-				</p>
+<!-- Categories Bar Carousel -->
+<div id="filters-container" role="navigation" aria-label="Property Categories">
+	<a href="<%= buildUrl({ category: null, page: 1 }) %>" class="filter-item <%= !filters.category || filters.category === 'All' ? 'active' : '' %>">
+		<i class="fa-solid fa-border-all"></i>
+		<p>All</p>
+	</a>
+	<a href="<%= buildUrl({ category: 'Trending', page: 1 }) %>" class="filter-item <%= filters.category === 'Trending' ? 'active' : '' %>">
+		<i class="fa-solid fa-fire"></i>
+		<p>Trending</p>
+	</a>
+	<a href="<%= buildUrl({ category: 'Rooms', page: 1 }) %>" class="filter-item <%= filters.category === 'Rooms' ? 'active' : '' %>">
+		<i class="fa-solid fa-bed"></i>
+		<p>Rooms</p>
+	</a>
+	<a href="<%= buildUrl({ category: 'Iconic Cities', page: 1 }) %>" class="filter-item <%= filters.category === 'Iconic Cities' ? 'active' : '' %>">
+		<i class="fa-solid fa-mountain-city"></i>
+		<p>Iconic Cities</p>
+	</a>
+	<a href="<%= buildUrl({ category: 'Mountains', page: 1 }) %>" class="filter-item <%= filters.category === 'Mountains' ? 'active' : '' %>">
+		<i class="fa-solid fa-mountain"></i>
+		<p>Mountains</p>
+	</a>
+	<a href="<%= buildUrl({ category: 'Castles', page: 1 }) %>" class="filter-item <%= filters.category === 'Castles' ? 'active' : '' %>">
+		<i class="fa-brands fa-fort-awesome"></i>
+		<p>Castles</p>
+	</a>
+	<a href="<%= buildUrl({ category: 'Amazing Pools', page: 1 }) %>" class="filter-item <%= filters.category === 'Amazing Pools' ? 'active' : '' %>">
+		<i class="fa-solid fa-person-swimming"></i>
+		<p>Amazing Pools</p>
+	</a>
+	<a href="<%= buildUrl({ category: 'Camping', page: 1 }) %>" class="filter-item <%= filters.category === 'Camping' ? 'active' : '' %>">
+		<i class="fa-solid fa-campground"></i>
+		<p>Camping</p>
+	</a>
+	<a href="<%= buildUrl({ category: 'Farms', page: 1 }) %>" class="filter-item <%= filters.category === 'Farms' ? 'active' : '' %>">
+		<i class="fa-solid fa-tractor"></i>
+		<p>Farms</p>
+	</a>
+	<a href="<%= buildUrl({ category: 'Arctic', page: 1 }) %>" class="filter-item <%= filters.category === 'Arctic' ? 'active' : '' %>">
+		<i class="fa-solid fa-snowflake"></i>
+		<p>Arctic</p>
+	</a>
+	<a href="<%= buildUrl({ category: 'Domes', page: 1 }) %>" class="filter-item <%= filters.category === 'Domes' ? 'active' : '' %>">
+		<i class="fa-solid fa-igloo"></i>
+		<p>Domes</p>
+	</a>
+	<a href="<%= buildUrl({ category: 'Boats', page: 1 }) %>" class="filter-item <%= filters.category === 'Boats' ? 'active' : '' %>">
+		<i class="fa-solid fa-ship"></i>
+		<p>Boats</p>
+	</a>
+</div>
+
+<!-- Control Bar: Quick Filter Chips, Sorting, Map Toggle, and Tax Switch -->
+<% 
+	let activeFilterCount = 0;
+	if (filters.minPrice) activeFilterCount++;
+	if (filters.maxPrice) activeFilterCount++;
+	if (filters.propertyType && filters.propertyType !== 'All') activeFilterCount++;
+	if (filters.bedrooms) activeFilterCount++;
+	if (filters.bathrooms) activeFilterCount++;
+	if (filters.guests) activeFilterCount++;
+	if (filters.rating) activeFilterCount++;
+	if (filters.amenities && (Array.isArray(filters.amenities) ? filters.amenities.length > 0 : filters.amenities)) activeFilterCount++;
+	
+	const currentAmenities = Array.isArray(filters.amenities)
+		? filters.amenities
+		: (filters.amenities ? filters.amenities.split(',').map(a => a.trim()) : []);
+%>
+
+<div class="serp-toolbar my-3">
+	<!-- Top Row: Filters Button & Action Controls -->
+	<div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+		<!-- Main Filter Modal Trigger Button -->
+		<div>
+			<button
+				type="button"
+				class="btn btn-forest-outline rounded-pill px-3 py-2 d-flex align-items-center text-nowrap shadow-sm"
+				data-bs-toggle="modal"
+				data-bs-target="#filterModal"
+			>
+				<i class="fa-solid fa-sliders me-2"></i>
+				<span class="fw-semibold">Filters</span>
+				<% if (activeFilterCount > 0) { %>
+					<span class="badge bg-danger rounded-pill ms-2"><%= activeFilterCount %></span>
+				<% } %>
+			</button>
+		</div>
+
+		<!-- Right Side Controls: Sort & Tax Switch -->
+		<div class="d-flex align-items-center gap-3 ms-auto">
+			<!-- Sort Dropdown -->
+			<div class="d-flex align-items-center gap-2">
+				<label for="sortDropdown" class="text-muted small text-nowrap d-none d-lg-inline fw-medium">
+					<i class="fa-solid fa-arrow-down-short-wide me-1"></i>Sort:
+				</label>
+				<select
+					id="sortDropdown"
+					class="form-select form-select-sm rounded-pill py-2 shadow-sm"
+					style="min-width: 195px; width: auto; font-size: 0.88rem; padding-left: 1.15rem; padding-right: 2.6rem; border-color: var(--border-color); background-color: #ffffff; cursor: pointer;"
+					onchange="window.location.href = this.value"
+				>
+					<option value="<%= buildUrl({ sort: 'recommended', page: 1 }) %>" <%= filters.sort === 'recommended' ? 'selected' : '' %>>Recommended</option>
+					<option value="<%= buildUrl({ sort: 'price_asc', page: 1 }) %>" <%= filters.sort === 'price_asc' ? 'selected' : '' %>>Price: Low to High</option>
+					<option value="<%= buildUrl({ sort: 'price_desc', page: 1 }) %>" <%= filters.sort === 'price_desc' ? 'selected' : '' %>>Price: High to Low</option>
+					<option value="<%= buildUrl({ sort: 'newest', page: 1 }) %>" <%= filters.sort === 'newest' ? 'selected' : '' %>>Newest First</option>
+					<option value="<%= buildUrl({ sort: 'rating', page: 1 }) %>" <%= filters.sort === 'rating' ? 'selected' : '' %>>Highest Rated</option>
+				</select>
+			</div>
+
+			<!-- Tax Switch Toggle -->
+			<div class="tax-toggle border-start ps-3 d-none d-md-block" style="border-color: var(--border-color) !important;">
+				<div class="form-check form-switch m-0 d-flex align-items-center gap-2">
+					<input
+						class="form-check-input"
+						type="checkbox"
+						role="switch"
+						id="taxSwitch"
+						style="cursor: pointer;"
+					/>
+					<label class="form-check-label small text-muted fw-medium text-nowrap" for="taxSwitch" style="cursor: pointer;">
+						Total after taxes
+					</label>
+				</div>
 			</div>
 		</div>
-	</a>
-	<% } %>
+	</div>
 </div>
 
+<!-- Active Filter Pills & Results Count -->
+<% 
+	const hasActiveSearch = Boolean(filters.q);
+	const hasActiveCategory = Boolean(filters.category && filters.category !== 'All');
+	const hasActiveFilters = hasActiveSearch || hasActiveCategory || activeFilterCount > 0;
+%>
+<% if (hasActiveFilters || pagination.totalListings >= 0) { %>
+	<div class="d-flex flex-wrap align-items-center justify-content-between my-2 p-2 px-3 rounded-3" style="background-color: var(--paper-100); border: 1px solid var(--border-color);">
+		<div class="d-flex flex-wrap align-items-center gap-2">
+			<span class="text-muted small fw-semibold me-1">
+				Showing <%= (pagination.currentPage - 1) * pagination.limit + (allListings.length > 0 ? 1 : 0) %> - <%= (pagination.currentPage - 1) * pagination.limit + allListings.length %> of <%= pagination.totalListings %> properties
+			</span>
+
+			<% if (hasActiveSearch) { %>
+				<span class="active-filter-badge">
+					<i class="fa-solid fa-magnifying-glass text-muted"></i> "<%= filters.q %>"
+					<a href="<%= buildUrl({ q: null, page: 1 }) %>" title="Remove search filter">&times;</a>
+				</span>
+			<% } %>
+
+			<% if (hasActiveCategory) { %>
+				<span class="active-filter-badge">
+					<i class="fa-solid fa-tag text-muted"></i> <%= filters.category %>
+					<a href="<%= buildUrl({ category: null, page: 1 }) %>" title="Remove category filter">&times;</a>
+				</span>
+			<% } %>
+
+			<% if (filters.propertyType && filters.propertyType !== 'All') { %>
+				<span class="active-filter-badge">
+					<i class="fa-solid fa-house text-muted"></i> <%= filters.propertyType %>
+					<a href="<%= buildUrl({ propertyType: null, page: 1 }) %>" title="Remove type filter">&times;</a>
+				</span>
+			<% } %>
+
+			<% if (filters.minPrice || filters.maxPrice) { %>
+				<span class="active-filter-badge">
+					<i class="fa-solid fa-indian-rupee-sign text-muted"></i> 
+					<%= filters.minPrice ? '₹' + Number(filters.minPrice).toLocaleString("en-IN") : '₹0' %> - 
+					<%= filters.maxPrice ? '₹' + Number(filters.maxPrice).toLocaleString("en-IN") : 'Any' %>
+					<a href="<%= buildUrl({ minPrice: null, maxPrice: null, page: 1 }) %>" title="Remove price filter">&times;</a>
+				</span>
+			<% } %>
+
+			<% if (filters.bedrooms) { %>
+				<span class="active-filter-badge">
+					<i class="fa-solid fa-bed text-muted"></i> <%= filters.bedrooms %>+ Beds
+					<a href="<%= buildUrl({ bedrooms: null, page: 1 }) %>" title="Remove beds filter">&times;</a>
+				</span>
+			<% } %>
+
+			<% if (filters.bathrooms) { %>
+				<span class="active-filter-badge">
+					<i class="fa-solid fa-bath text-muted"></i> <%= filters.bathrooms %>+ Baths
+					<a href="<%= buildUrl({ bathrooms: null, page: 1 }) %>" title="Remove baths filter">&times;</a>
+				</span>
+			<% } %>
+
+			<% if (filters.guests) { %>
+				<span class="active-filter-badge">
+					<i class="fa-solid fa-users text-muted"></i> <%= filters.guests %>+ Guests
+					<a href="<%= buildUrl({ guests: null, page: 1 }) %>" title="Remove guests filter">&times;</a>
+				</span>
+			<% } %>
+
+			<% if (filters.rating) { %>
+				<span class="active-filter-badge">
+					<i class="fa-solid fa-star text-warning"></i> <%= filters.rating == 4.5 ? 'Guest Favorites (4.5+)' : filters.rating + '+ Rating' %>
+					<a href="<%= buildUrl({ rating: null, page: 1 }) %>" title="Remove rating filter">&times;</a>
+				</span>
+			<% } %>
+
+			<% for (let am of currentAmenities) { %>
+				<span class="active-filter-badge">
+					<i class="fa-solid fa-check text-muted"></i> <%= am %>
+					<a href="<%= buildUrl({ amenities: currentAmenities.filter(a => a !== am), page: 1 }) %>" title="Remove <%= am %> filter">&times;</a>
+				</span>
+			<% } %>
+		</div>
+
+		<% if (hasActiveFilters) { %>
+			<a href="/listings" class="btn btn-sm btn-link text-danger text-decoration-none fw-semibold">
+				<i class="fa-solid fa-rotate-left me-1"></i>Clear all filters
+			</a>
+		<% } %>
+	</div>
+<% } %>
+
+<!-- Listings Showcase Grid -->
+<% if (!allListings || allListings.length === 0) { %>
+	<div class="text-center my-5 py-5 border rounded-4 bg-white shadow-sm" style="border-color: var(--border-color) !important;">
+		<div class="mb-3 d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 80px; height: 80px; background-color: var(--navy-50); color: var(--navy-800);">
+			<i class="fa-solid fa-house-circle-xmark fa-2x"></i>
+		</div>
+		<h4 class="fw-bold mb-2">No listings found</h4>
+		<p class="text-muted col-md-6 mx-auto mb-4" style="line-height: 1.6;">
+			No properties match your search or filter combinations. Try resetting filters or searching for another destination.
+		</p>
+		<a href="/listings" class="btn btn-forest rounded-pill px-4 py-2">
+			<i class="fa-solid fa-arrow-rotate-left me-2"></i>Reset All Filters
+		</a>
+	</div>
+<% } else { %>
+	<div class="row row-cols-lg-3 row-cols-md-2 row-cols-sm-1 g-4 mt-1" id="listingsGridContainer">
+		<% for (let listing of allListings) { %>
+			<div class="col">
+				<div class="card h-100 listing-card shadow-sm position-relative property-card-enhanced" data-listing-id="<%= listing._id %>">
+					<!-- Floating Wishlist Heart Button -->
+					<button
+						type="button"
+						class="wishlist-btn"
+						data-listing-id="<%= listing._id %>"
+						aria-label="Save to wishlist"
+						onclick="toggleWishlist(event, '<%= listing._id %>')"
+						title="Save to Wishlist"
+					>
+						<i class="fa-regular fa-heart"></i>
+					</button>
+
+					<a href="/listings/<%= listing._id %>" class="listing-link d-flex flex-column h-100">
+						<!-- Property Media Frame -->
+						<div class="card-img-wrapper position-relative overflow-hidden rounded-4">
+							<img
+								src="<%= listing.image && listing.image.url ? listing.image.url : '/images/listing-placeholder.jpg' %>"
+								class="card-img-top property-thumb-img"
+								alt="<%= listing.title %>"
+								loading="lazy"
+								onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';"
+							/>
+							
+							<!-- Top-Left Trust Badges Stack -->
+							<div class="position-absolute top-0 start-0 m-2 d-flex flex-column gap-1" style="z-index: 2;">
+								<% if (listing.avgRating && listing.avgRating >= 4.8) { %>
+									<span class="badge-guest-favorite shadow-sm">
+										<i class="fa-solid fa-award me-1"></i> Guest Favorite
+									</span>
+								<% } else if (listing.propertyType) { %>
+									<span class="property-badge-glass shadow-sm">
+										<%= listing.propertyType %>
+									</span>
+								<% } %>
+							</div>
+
+							<!-- Bottom-Right Rating Chip -->
+							<% if (listing.avgRating && listing.avgRating > 0) { %>
+								<span class="position-absolute bottom-0 end-0 m-2 property-badge-glass shadow-sm d-flex align-items-center gap-1" style="z-index: 2;">
+									<i class="fa-solid fa-star text-warning" style="font-size: 0.75rem;"></i>
+									<span class="fw-bold"><%= Number(listing.avgRating).toFixed(1) %></span>
+								</span>
+							<% } %>
+						</div>
+
+						<!-- Property Details Body -->
+						<div class="card-body p-3 d-flex flex-column flex-grow-1">
+							<div class="d-flex justify-content-between align-items-start mb-1">
+								<h6 class="card-title fw-bold text-truncate mb-0" style="color: var(--ink-900); font-size: 1.02rem;" title="<%= listing.title %>">
+									<%= listing.title %>
+								</h6>
+							</div>
+							<p class="card-text text-muted small mb-1">
+								<i class="fa-solid fa-location-dot me-1 text-danger"></i>
+								<%= listing.location %>, <%= listing.country %>
+							</p>
+							<% if (listing.bedrooms || listing.guests) { %>
+								<p class="card-text text-muted mb-2" style="font-size: 0.82rem;">
+									<% if (listing.guests) { %><span><%= listing.guests %> guest<%= listing.guests > 1 ? 's' : '' %></span> &middot; <% } %>
+									<% if (listing.bedrooms) { %><span><%= listing.bedrooms %> bed<%= listing.bedrooms > 1 ? 's' : '' %></span><% } %>
+								</p>
+							<% } %>
+
+							<!-- Trust / Free Cancellation Cue -->
+							<div class="d-flex align-items-center gap-1 text-success small fw-medium mb-2">
+								<i class="fa-solid fa-check" style="font-size: 0.72rem;"></i> Free cancellation available
+							</div>
+
+							<div class="mt-auto pt-2 border-top" style="border-color: var(--paper-200) !important;">
+								<p class="card-text price-display mb-0">
+									<span class="base-price-container">
+										<span class="fw-bold fs-6" style="color: var(--navy-900);">&#x20B9;<%= (listing.price || 0).toLocaleString("en-IN") %></span>
+										<span class="text-muted fw-normal small"> / night</span>
+									</span>
+									<span class="tax-price-container d-none text-dark">
+										<span class="fw-bold fs-6" style="color: var(--navy-900);">&#x20B9;<%= Math.round((listing.price || 0) * 1.18).toLocaleString("en-IN") %></span>
+										<span class="text-muted fw-normal small"> / night (incl. 18% GST)</span>
+									</span>
+								</p>
+							</div>
+						</div>
+					</a>
+				</div>
+			</div>
+		<% } %>
+	</div>
+
+	<!-- Server-Side Pagination Bar -->
+	<% if (pagination.totalPages > 1) { %>
+		<nav aria-label="Listings navigation" class="my-5">
+			<ul class="pagination justify-content-center flex-wrap align-items-center gap-1">
+				<!-- Previous Button -->
+				<li class="page-item <%= !pagination.hasPrevPage ? 'disabled' : '' %>">
+					<a
+						class="page-link rounded-pill px-3"
+						href="<%= pagination.hasPrevPage ? buildUrl({ page: pagination.prevPage }) : '#' %>"
+						aria-label="Previous"
+					>
+						<i class="fa-solid fa-chevron-left me-1"></i> Prev
+					</a>
+				</li>
+
+				<!-- Page Numbers -->
+				<% 
+					const current = pagination.currentPage;
+					const total = pagination.totalPages;
+					let startPage = Math.max(1, current - 2);
+					let endPage = Math.min(total, current + 2);
+					if (endPage - startPage < 4) {
+						if (startPage === 1) endPage = Math.min(total, startPage + 4);
+						else if (endPage === total) startPage = Math.max(1, endPage - 4);
+					}
+				%>
+
+				<% if (startPage > 1) { %>
+					<li class="page-item">
+						<a class="page-link rounded-pill" href="<%= buildUrl({ page: 1 }) %>">1</a>
+					</li>
+					<% if (startPage > 2) { %>
+						<li class="page-item disabled"><span class="page-link border-0 bg-transparent">...</span></li>
+					<% } %>
+				<% } %>
+
+				<% for (let p = startPage; p <= endPage; p++) { %>
+					<li class="page-item <%= p === current ? 'active' : '' %>">
+						<a
+							class="page-link rounded-pill <%= p === current ? 'bg-dark border-dark text-white' : '' %>"
+							href="<%= buildUrl({ page: p }) %>"
+						>
+							<%= p %>
+						</a>
+					</li>
+				<% } %>
+
+				<% if (endPage < total) { %>
+					<% if (endPage < total - 1) { %>
+						<li class="page-item disabled"><span class="page-link border-0 bg-transparent">...</span></li>
+					<% } %>
+					<li class="page-item">
+						<a class="page-link rounded-pill" href="<%= buildUrl({ page: total }) %>"><%= total %></a>
+					</li>
+				<% } %>
+
+				<!-- Next Button -->
+				<li class="page-item <%= !pagination.hasNextPage ? 'disabled' : '' %>">
+					<a
+						class="page-link rounded-pill px-3"
+						href="<%= pagination.hasNextPage ? buildUrl({ page: pagination.nextPage }) : '#' %>"
+						aria-label="Next"
+					>
+						Next <i class="fa-solid fa-chevron-right ms-1"></i>
+					</a>
+				</li>
+			</ul>
+		</nav>
+	<% } %>
+<% } %>
+
+<!-- Comprehensive Filter Modal -->
+<div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+		<div class="modal-content rounded-4 border-0 shadow">
+			<div class="modal-header border-bottom pb-3">
+				<h5 class="modal-title fw-bold" id="filterModalLabel">Filters</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body p-4">
+				<form id="filterModalForm" action="/listings" method="GET">
+					<!-- Retain Search Query & Category & Sort -->
+					<% if (filters.q) { %>
+						<input type="hidden" name="q" value="<%= filters.q %>" />
+					<% } %>
+					<% if (filters.category && filters.category !== 'All') { %>
+						<input type="hidden" name="category" value="<%= filters.category %>" />
+					<% } %>
+					<!-- Sort Order Section -->
+					<div class="filter-modal-section">
+						<h6 class="mb-2">Sort Results By</h6>
+						<select class="form-select" name="sort" id="modalSortSelect">
+							<option value="recommended" <%= (!filters.sort || filters.sort === 'recommended') ? 'selected' : '' %>>Recommended</option>
+							<option value="price_asc" <%= filters.sort === 'price_asc' ? 'selected' : '' %>>Price: Low to High</option>
+							<option value="price_desc" <%= filters.sort === 'price_desc' ? 'selected' : '' %>>Price: High to Low</option>
+							<option value="newest" <%= filters.sort === 'newest' ? 'selected' : '' %>>Newest First</option>
+							<option value="rating" <%= filters.sort === 'rating' ? 'selected' : '' %>>Highest Rated</option>
+						</select>
+					</div>
+
+					<!-- Price Range Section -->
+					<div class="filter-modal-section">
+						<h6 class="mb-2">Price Range (per night)</h6>
+						<div class="row g-2 align-items-center">
+							<div class="col-6">
+								<label for="minPriceInput" class="form-label small text-muted">Minimum (&#x20B9;)</label>
+								<div class="input-group">
+									<span class="input-group-text">&#x20B9;</span>
+									<input
+										type="number"
+										class="form-control"
+										id="minPriceInput"
+										name="minPrice"
+										placeholder="0"
+										min="0"
+										step="100"
+										value="<%= filters.minPrice %>"
+									/>
+								</div>
+							</div>
+							<div class="col-6">
+								<label for="maxPriceInput" class="form-label small text-muted">Maximum (&#x20B9;)</label>
+								<div class="input-group">
+									<span class="input-group-text">&#x20B9;</span>
+									<input
+										type="number"
+										class="form-control"
+										id="maxPriceInput"
+										name="maxPrice"
+										placeholder="No max"
+										min="0"
+										step="100"
+										value="<%= filters.maxPrice %>"
+									/>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Property Type Section -->
+					<div class="filter-modal-section">
+						<h6 class="mb-2">Property Type</h6>
+						<select class="form-select" name="propertyType">
+							<option value="All" <%= !filters.propertyType || filters.propertyType === 'All' ? 'selected' : '' %>>Any property type</option>
+							<option value="Villa" <%= filters.propertyType === 'Villa' ? 'selected' : '' %>>Villa</option>
+							<option value="Apartment" <%= filters.propertyType === 'Apartment' ? 'selected' : '' %>>Apartment</option>
+							<option value="House" <%= filters.propertyType === 'House' ? 'selected' : '' %>>House</option>
+							<option value="Cabin" <%= filters.propertyType === 'Cabin' ? 'selected' : '' %>>Cabin</option>
+							<option value="Cottage" <%= filters.propertyType === 'Cottage' ? 'selected' : '' %>>Cottage</option>
+							<option value="Beachfront" <%= filters.propertyType === 'Beachfront' ? 'selected' : '' %>>Beachfront</option>
+							<option value="Farmhouse" <%= filters.propertyType === 'Farmhouse' ? 'selected' : '' %>>Farmhouse</option>
+						</select>
+					</div>
+
+					<!-- Minimum Rating Section -->
+					<div class="filter-modal-section">
+						<h6 class="mb-2">Guest Rating</h6>
+						<select class="form-select" name="rating" id="modalRatingSelect">
+							<option value="" <%= !filters.rating ? 'selected' : '' %>>Any rating</option>
+							<option value="4.0" <%= filters.rating == 4.0 ? 'selected' : '' %>>4.0+ Stars</option>
+							<option value="4.5" <%= filters.rating == 4.5 ? 'selected' : '' %>>4.5+ Stars (Guest Favorites)</option>
+							<option value="4.8" <%= filters.rating == 4.8 ? 'selected' : '' %>>4.8+ Stars</option>
+						</select>
+					</div>
+
+					<!-- Rooms & Guests Section -->
+					<div class="filter-modal-section">
+						<h6 class="mb-3">Rooms and Guests</h6>
+						<div class="row g-3">
+							<div class="col-4">
+								<label class="form-label small text-muted">Bedrooms</label>
+								<select class="form-select form-select-sm" name="bedrooms">
+									<option value="" <%= !filters.bedrooms ? 'selected' : '' %>>Any</option>
+									<option value="1" <%= filters.bedrooms == 1 ? 'selected' : '' %>>1+</option>
+									<option value="2" <%= filters.bedrooms == 2 ? 'selected' : '' %>>2+</option>
+									<option value="3" <%= filters.bedrooms == 3 ? 'selected' : '' %>>3+</option>
+									<option value="4" <%= filters.bedrooms == 4 ? 'selected' : '' %>>4+</option>
+								</select>
+							</div>
+							<div class="col-4">
+								<label class="form-label small text-muted">Bathrooms</label>
+								<select class="form-select form-select-sm" name="bathrooms">
+									<option value="" <%= !filters.bathrooms ? 'selected' : '' %>>Any</option>
+									<option value="1" <%= filters.bathrooms == 1 ? 'selected' : '' %>>1+</option>
+									<option value="2" <%= filters.bathrooms == 2 ? 'selected' : '' %>>2+</option>
+									<option value="3" <%= filters.bathrooms == 3 ? 'selected' : '' %>>3+</option>
+								</select>
+							</div>
+							<div class="col-4">
+								<label class="form-label small text-muted">Guests</label>
+								<select class="form-select form-select-sm" name="guests">
+									<option value="" <%= !filters.guests ? 'selected' : '' %>>Any</option>
+									<option value="1" <%= filters.guests == 1 ? 'selected' : '' %>>1+</option>
+									<option value="2" <%= filters.guests == 2 ? 'selected' : '' %>>2+</option>
+									<option value="4" <%= filters.guests == 4 ? 'selected' : '' %>>4+</option>
+									<option value="6" <%= filters.guests == 6 ? 'selected' : '' %>>6+</option>
+								</select>
+							</div>
+						</div>
+					</div>
+
+					<!-- Amenities Section -->
+					<div class="filter-modal-section">
+						<h6 class="mb-3">Amenities & Features</h6>
+						<% 
+							const activeAmenities = Array.isArray(filters.amenities)
+								? filters.amenities
+								: (filters.amenities ? filters.amenities.split(',').map(a => a.trim()) : []);
+							const amenityOptions = [
+								{ name: "Pool", icon: "fa-solid fa-person-swimming" },
+								{ name: "Wifi", icon: "fa-solid fa-wifi" },
+								{ name: "Air Conditioning", icon: "fa-solid fa-snowflake" },
+								{ name: "Free Parking", icon: "fa-solid fa-square-parking" },
+								{ name: "Kitchen", icon: "fa-solid fa-kitchen-set" },
+								{ name: "TV", icon: "fa-solid fa-tv" },
+								{ name: "Hot Tub", icon: "fa-solid fa-hot-tub-person" },
+								{ name: "Dedicated Workspace", icon: "fa-solid fa-laptop" },
+							];
+						%>
+						<div class="row g-2">
+							<% for (let am of amenityOptions) { %>
+								<div class="col-6">
+									<div class="form-check p-2 rounded-3 border bg-light-subtle d-flex align-items-center gap-2">
+										<input
+											class="form-check-input ms-0 me-1"
+											type="checkbox"
+											name="amenities"
+											value="<%= am.name %>"
+											id="amenity_<%= am.name.replace(/\s+/g, '_') %>"
+											<%= activeAmenities.includes(am.name) ? 'checked' : '' %>
+										/>
+										<label class="form-check-label small d-flex align-items-center gap-2 w-100 cursor-pointer mb-0" for="amenity_<%= am.name.replace(/\s+/g, '_') %>">
+											<i class="<%= am.icon %> text-muted" style="width: 18px; text-align: center;"></i>
+											<span><%= am.name %></span>
+										</label>
+									</div>
+								</div>
+							<% } %>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer border-top d-flex justify-content-between p-3">
+				<a href="/listings" class="btn btn-forest-outline rounded-pill px-3">
+					Reset All
+				</a>
+				<button type="submit" form="filterModalForm" class="btn btn-forest rounded-pill px-4">
+					Show Results
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Saved Wishlist Modal -->
+<div class="modal fade" id="wishlistModal" tabindex="-1" aria-labelledby="wishlistModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content rounded-4 border-0 shadow">
+			<div class="modal-header border-bottom pb-3">
+				<h5 class="modal-title fw-bold" id="wishlistModalLabel">
+					<i class="fa-solid fa-heart text-danger me-2"></i>My Wishlist
+				</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body p-4" id="wishlistModalContent">
+				<div class="text-center py-4">
+					<div class="spinner-border text-danger" role="status">
+						<span class="visually-hidden">Loading wishlist...</span>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Interactive Full-Screen Listings Map Modal -->
+<div class="modal fade" id="listingsMapModal" tabindex="-1" aria-labelledby="listingsMapModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-fullscreen">
+		<div class="modal-content border-0">
+			<div class="modal-header border-bottom py-2 px-3 bg-white d-flex justify-content-between align-items-center">
+				<div class="d-flex align-items-center gap-2">
+					<i class="fa-solid fa-map-location-dot text-success fs-5"></i>
+					<h6 class="modal-title fw-bold mb-0" id="listingsMapModalLabel">
+						Interactive Map &bull; <%= allListings ? allListings.length : 0 %> properties in view
+					</h6>
+				</div>
+				<button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body p-0 position-relative" style="height: calc(100vh - 60px);">
+				<div id="allListingsMap" style="width: 100%; height: 100%;"></div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- GST Tax Toggle & Map Script -->
 <script>
-	let taxSwitch = document.getElementById("flexSwitchCheckDefault");
-	taxSwitch.addEventListener("click", () => {
-		let taxInfo = document.getElementsByClassName("tax-info");
-		for (info of taxInfo) {
-			if (info.style.display != "inline") {
-				info.style.display = "inline";
+	const taxSwitch = document.getElementById("taxSwitch");
+	if (taxSwitch) {
+		taxSwitch.addEventListener("change", () => {
+			const basePrices = document.querySelectorAll(".base-price-container");
+			const taxPrices = document.querySelectorAll(".tax-price-container");
+
+			if (taxSwitch.checked) {
+				basePrices.forEach((el) => el.classList.add("d-none"));
+				taxPrices.forEach((el) => el.classList.remove("d-none"));
 			} else {
-				info.style.display = "none";
+				basePrices.forEach((el) => el.classList.remove("d-none"));
+				taxPrices.forEach((el) => el.classList.add("d-none"));
 			}
-		}
-	});
+		});
+	}
+
+	// Sort Dropdown Navigation Listener
+	const sortDropdown = document.getElementById("sortDropdown");
+	if (sortDropdown) {
+		sortDropdown.addEventListener("change", function () {
+			if (this.value) {
+				window.location.href = this.value;
+			}
+		});
+	}
+
+	// Interactive Map Initialization when Modal Opens
+	let allListingsMapInstance = null;
+	const listingsMapModalEl = document.getElementById("listingsMapModal");
+
+	if (listingsMapModalEl) {
+		listingsMapModalEl.addEventListener("shown.bs.modal", () => {
+			const mapContainer = document.getElementById("allListingsMap");
+			if (!mapContainer || typeof L === "undefined") return;
+
+			if (!allListingsMapInstance) {
+				allListingsMapInstance = L.map("allListingsMap", { scrollWheelZoom: true });
+				L.tileLayer(
+					"https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+					{
+						attribution:
+							'Tiles &copy; <a href="https://www.esri.com/" target="_blank">Esri</a> &mdash; Source: Esri, USGS, TomTom',
+						maxZoom: 19,
+					}
+				).addTo(allListingsMapInstance);
+
+				const rawListings = <%- JSON.stringify(allListings.map(l => ({
+					id: l._id,
+					title: l.title,
+					location: l.location,
+					country: l.country,
+					price: l.price,
+					rating: l.avgRating || 4.9,
+					image: (l.image && l.image.url) ? l.image.url : '/images/listing-placeholder.jpg',
+					coords: (l.geometry && l.geometry.coordinates && l.geometry.coordinates.length >= 2) ? l.geometry.coordinates : null
+				}))) %>;
+
+				const bounds = [];
+				rawListings.forEach((item) => {
+					let lat = 28.6139;
+					let lng = 77.209;
+					const isDelhi = (item.location || "").toLowerCase().includes("delhi") || (item.country || "").toLowerCase().includes("delhi");
+					const isPlaceholder = item.coords && 
+						Math.abs(Number(item.coords[0]) - 77.209) < 0.005 && 
+						Math.abs(Number(item.coords[1]) - 28.6139) < 0.005 && 
+						!isDelhi;
+
+					if (item.coords && item.coords.length >= 2 && !isPlaceholder) {
+						lng = Number(item.coords[0]) || lng;
+						lat = Number(item.coords[1]) || lat;
+					} else {
+						lat += (Math.random() - 0.5) * 0.15;
+						lng += (Math.random() - 0.5) * 0.15;
+					}
+
+					bounds.push([lat, lng]);
+
+					const priceTagHtml = `<div class="map-price-pill shadow-sm">&#x20B9;${(item.price || 0).toLocaleString("en-IN")}</div>`;
+					const customIcon = L.divIcon({
+						html: priceTagHtml,
+						className: "map-price-marker-wrapper",
+						iconSize: [68, 28],
+						iconAnchor: [34, 14]
+					});
+
+					const popupContent = `
+						<div class="map-popup-card" style="min-width: 180px;">
+							<a href="/listings/${item.id}" class="text-decoration-none text-dark">
+								<img src="${item.image}" alt="${item.title}" class="w-100 rounded-3 mb-2" style="height: 105px; object-fit: cover;" onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';">
+								<div class="fw-bold small text-truncate mb-1">${item.title}</div>
+								<div class="text-muted small mb-1">${item.location}, ${item.country}</div>
+								<div class="mt-1 d-flex justify-content-between align-items-center">
+									<span class="fw-bold" style="color: var(--navy-900);">&#x20B9;${(item.price || 0).toLocaleString("en-IN")} <span class="fw-normal text-muted small">/ night</span></span>
+									<span class="small fw-semibold"><i class="fa-solid fa-star text-warning"></i> ${Number(item.rating).toFixed(1)}</span>
+								</div>
+							</a>
+						</div>
+					`;
+
+					L.marker([lat, lng], { icon: customIcon })
+						.addTo(allListingsMapInstance)
+						.bindPopup(popupContent, { maxWidth: 220 });
+				});
+
+				if (bounds.length > 0) {
+					allListingsMapInstance.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+				} else {
+					allListingsMapInstance.setView([20.5937, 78.9629], 5);
+				}
+			} else {
+				allListingsMapInstance.invalidateSize();
+			}
+		});
+	}
 </script>

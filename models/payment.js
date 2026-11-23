@@ -1,0 +1,102 @@
+const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
+
+const paymentSchema = new Schema(
+	{
+		booking: {
+			type: Schema.Types.ObjectId,
+			ref: "Booking",
+			required: [true, "Booking reference is required"],
+		},
+		user: {
+			type: Schema.Types.ObjectId,
+			ref: "User",
+			required: [true, "User reference is required"],
+		},
+		transactionId: {
+			type: String,
+			required: [true, "Transaction ID is required"],
+			unique: true,
+		},
+		orderId: {
+			type: String,
+			required: [true, "Order ID is required"],
+			unique: true,
+		},
+		receiptNumber: {
+			type: String,
+			required: [true, "Receipt number is required"],
+			unique: true,
+		},
+		amount: {
+			type: Number,
+			required: [true, "Payment amount is required"],
+			min: [0, "Amount cannot be negative"],
+		},
+		currency: {
+			type: String,
+			default: "INR",
+			uppercase: true,
+		},
+		paymentMethod: {
+			type: String,
+			enum: ["card", "upi", "netbanking", "wallet"],
+			default: "card",
+		},
+		status: {
+			type: String,
+			enum: ["pending", "succeeded", "failed", "refunded"],
+			default: "succeeded",
+		},
+		gateway: {
+			type: String,
+			default: "wanderlust_pay",
+		},
+		cardDetails: {
+			brand: { type: String, default: "Visa" },
+			last4: { type: String, default: "4242" },
+			expiry: { type: String, default: "12/28" },
+		},
+		upiDetails: {
+			vpa: { type: String },
+		},
+		netbankingDetails: {
+			bankName: { type: String },
+		},
+		billingDetails: {
+			fullName: { type: String, trim: true },
+			email: { type: String, trim: true, lowercase: true },
+			phone: { type: String, trim: true },
+			address: { type: String, trim: true },
+			city: { type: String, trim: true },
+			state: { type: String, trim: true },
+			postalCode: { type: String, trim: true },
+			country: { type: String, default: "India" },
+		},
+		refundId: {
+			type: String,
+		},
+		refundAmount: {
+			type: Number,
+			default: 0,
+		},
+		refundReason: {
+			type: String,
+		},
+		refundedAt: {
+			type: Date,
+		},
+	},
+	{ timestamps: true },
+);
+
+// Indexes for rapid lookups and reporting
+paymentSchema.index({ transactionId: 1 }, { unique: true });
+paymentSchema.index({ orderId: 1 }, { unique: true });
+paymentSchema.index({ booking: 1 });
+paymentSchema.index({ booking: 1, status: 1 });
+paymentSchema.index({ user: 1, createdAt: -1 });
+paymentSchema.index({ status: 1, createdAt: -1 });
+
+const Payment = mongoose.model("Payment", paymentSchema);
+module.exports = Payment;

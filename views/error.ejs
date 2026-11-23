@@ -1,7 +1,57 @@
 <% layout("/layouts/boilerplate") %>
 
-<div class="row mt-3">
-	<div class="alert alert-danger col-6 offset-3" role="alert">
-		<h4 class="alert-handling"><%= message%></h4>
+<div class="container-narrow py-5 my-md-5">
+	<div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white text-center">
+		<!-- Compass Emblem -->
+		<div class="mb-4">
+			<div class="d-inline-flex p-4 rounded-circle shadow-sm mb-3" style="background-color: var(--paper-100); border: 1px solid var(--paper-200);">
+				<i class="fa-solid fa-compass-drafting fa-3x" style="color: var(--forest-800) !important;"></i>
+			</div>
+			<div class="mb-2">
+				<span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-3 py-1 small fw-semibold">
+					Notice &bull; <%= (typeof message !== 'undefined' && message) ? message : "Page Not Found" %>
+				</span>
+			</div>
+			<h1 class="editorial-title display-6 fw-bold text-dark mt-2 mb-2">
+				Page or Resource Unavailable
+			</h1>
+		</div>
+
+		<!-- Explanatory Copy -->
+		<p class="text-secondary small mx-auto mb-4" style="max-width: 480px; line-height: 1.6;">
+			<%= (typeof message !== 'undefined' && message && message !== "Page Not Found") ? message : "We couldn't find the page or property you're looking for. It might have been moved, renamed, or is temporarily offline." %>
+		</p>
+
+		<!-- Action Buttons -->
+		<div class="d-flex flex-wrap justify-content-center gap-3 pt-2">
+			<a href="/listings" class="btn btn-forest add-btn px-4 py-2 rounded-pill shadow-sm">
+				<i class="fa-solid fa-house me-2"></i>Explore All Listings
+			</a>
+			<button onclick="window.history.back()" class="btn btn-forest-outline px-4 py-2 rounded-pill">
+				<i class="fa-solid fa-arrow-left me-2"></i>Go Back
+			</button>
+		</div>
+
+		<!-- Helpful Direct Links -->
+		<div class="mt-5 pt-4 border-top">
+			<span class="text-muted small d-block mb-3">Popular Navigation Destinations</span>
+			<div class="d-flex flex-wrap justify-content-center gap-3 small">
+				<a href="/listings" class="text-forest text-decoration-none fw-semibold">
+					<i class="fa-solid fa-house-chimney me-1"></i> All Listings
+				</a>
+				<span class="text-muted">&bull;</span>
+				<a href="/bookings" class="text-forest text-decoration-none fw-semibold">
+					<i class="fa-solid fa-suitcase-rolling me-1"></i> My Trips
+				</a>
+				<span class="text-muted">&bull;</span>
+				<a href="/profile" class="text-forest text-decoration-none fw-semibold">
+					<i class="fa-regular fa-user me-1"></i> Profile
+				</a>
+				<span class="text-muted">&bull;</span>
+				<a href="/privacy" class="text-forest text-decoration-none fw-semibold">
+					<i class="fa-solid fa-shield-halved me-1"></i> Privacy Policy
+				</a>
+			</div>
+		</div>
 	</div>
 </div>

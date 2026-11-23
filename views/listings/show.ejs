@@ -1,149 +1,1696 @@
 <% layout("layouts/boilerplate") %>
 
-<div class="row mt-3">
-	<div class="col-8 offset-1">
-		<h3 class="show-heading offset-3"><%= listing.title %></h3>
-	</div>
-	<div class="card col-6 offset-3 show-card listing-card">
-		<img
-			src="<%= listing.image.url %>"
-			class="card-img-top show-img"
-			alt="listing-image"
-		/>
-		<div class="card-body">
-			<p class="card-text">
-				Owned By: <i><b><%= listing.owner.username %></b></i>
-			</p>
-			<p class="card-text"><%= listing.description %></p>
-			<p class="card-text">
-				&#x20B9;<%= listing.price.toLocaleString("en-IN") %>
-			</p>
-			<p class="card-text"><%= listing.location %></p>
-			<p class="card-text"><%= listing.country %></p>
-		</div>
-	</div>
+<style>
+	/* Media Showcase & Gallery */
+	.gallery-thumb {
+		height: 85px;
+		object-fit: cover;
+		border-radius: 0.65rem;
+		cursor: pointer;
+		opacity: 0.72;
+		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+		border: 2px solid transparent;
+	}
+	.gallery-thumb:hover, .gallery-thumb.active {
+		opacity: 1;
+		border-color: var(--forest-800);
+		transform: scale(1.03);
+	}
+	.show-hero-img {
+		width: 100%;
+		max-height: 480px;
+		object-fit: cover;
+		border-radius: 1.25rem;
+		transition: opacity 0.25s ease;
+		background-color: var(--paper-200);
+	}
 
-	<br />
+	/* Sticky Booking Engine Card */
+	.booking-card-sticky {
+		position: sticky;
+		top: 6.2rem;
+		z-index: 20;
+		background: #ffffff;
+		border: 1px solid var(--border-color) !important;
+		border-radius: 1.25rem !important;
+		box-shadow: var(--shadow-card) !important;
+	}
 
-	<% if(currUser && currUser._id.equals(listing.owner._id)) { %>
-	<div class="btns">
-		<a
-			href="/listings/<%=listing._id%>/edit"
-			class="btn btn-dark offset-3 add-btn"
-		>
-			Edit
-		</a>
-		<!-- <br /><br /> -->
-		<form
-			action="/listings/<%= listing._id %>?_method=DELETE"
-			method="POST"
-		>
-			<button class="btn btn-dark offset-5">Delete</button>
-		</form>
-	</div>
-	<% } %>
+	/* Spec Chips */
+	.spec-chip {
+		background: var(--paper-100);
+		border: 1px solid var(--border-color);
+		border-radius: 0.85rem;
+		padding: 0.85rem 1rem;
+		transition: all 0.2s ease;
+	}
+	.spec-chip:hover {
+		background: #ffffff;
+		border-color: var(--forest-200);
+	}
 
-	<div class="col-8 offset-3 mb-3">
-		<hr />
-		<% if(currUser) { %>
-		<h4>Leave a Review</h4>
-		<form
-			action="/listings/<%= listing.id %>/reviews"
-			method="POST"
-			novalidate
-			class="needs-validation"
-		>
-			<div class="mb-3 mt-3">
-				<label for="rating" class="form-label">Rating</label>
-				<fieldset class="starability-slot">
-					<input
-						type="radio"
-						id="no-rate"
-						class="input-no-rate"
-						name="review[rating]"
-						value="1"
-						checked
-						aria-label="No rating."
-					/>
-					<input
-						type="radio"
-						id="first-rate1"
-						name="review[rating]"
-						value="1"
-					/>
-					<label for="first-rate1" title="Terrible">1 star</label>
-					<input
-						type="radio"
-						id="first-rate2"
-						name="review[rating]"
-						value="2"
-					/>
-					<label for="first-rate2" title="Not good">2 stars</label>
-					<input
-						type="radio"
-						id="first-rate3"
-						name="review[rating]"
-						value="3"
-					/>
-					<label for="first-rate3" title="Average">3 stars</label>
-					<input
-						type="radio"
-						id="first-rate4"
-						name="review[rating]"
-						value="4"
-					/>
-					<label for="first-rate4" title="Very good">4 stars</label>
-					<input
-						type="radio"
-						id="first-rate5"
-						name="review[rating]"
-						value="5"
-					/>
-					<label for="first-rate5" title="Amazing">5 stars</label>
-				</fieldset>
-			</div>
+	/* Rating Score Hero */
+	.rating-hero-score {
+		font-family: var(--font-display);
+		font-size: 2.8rem;
+		font-weight: 700;
+		line-height: 1;
+		color: var(--forest-900);
+	}
 
-			<div class="mb-3 mt-3">
-				<label for="comment" class="form-label">Comments</label>
-				<textarea
-					name="review[comment]"
-					id="comment"
-					cols="30"
-					rows="5"
-					class="form-control"
-					required
-				></textarea>
-				<div class="invalid-feedback">
-					Please submit some comments for review
+	/* Dimension Cards */
+	.dimension-card {
+		background: var(--paper-50);
+		border: 1px solid var(--border-color);
+		border-radius: 0.75rem;
+		padding: 0.75rem 0.95rem;
+		transition: background-color 0.15s ease;
+	}
+	.dimension-card:hover {
+		background: #ffffff;
+		border-color: var(--forest-200);
+	}
+
+	/* Review Card Styling */
+	.review-card {
+		background: #ffffff;
+		border: 1px solid var(--border-color) !important;
+		border-radius: 1.15rem !important;
+		padding: 1.5rem;
+		transition: box-shadow 0.2s ease;
+	}
+	.review-card:hover {
+		box-shadow: var(--shadow-subtle) !important;
+	}
+
+	/* Host Reply Bubble */
+	.host-reply-bubble {
+		background: var(--paper-100);
+		border-left: 3px solid var(--forest-700);
+		border-radius: 0 0.85rem 0.85rem 0;
+		padding: 1rem 1.25rem;
+	}
+
+	/* Interactive Availability Calendar */
+	.availability-calendar-card {
+		background: #ffffff;
+		border: 1px solid var(--border-color);
+		border-radius: 1.25rem;
+		padding: 1.5rem;
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+	}
+	.calendar-grid-wrapper {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 2rem;
+	}
+	@media (max-width: 991px) {
+		.calendar-grid-wrapper {
+			grid-template-columns: 1fr;
+			gap: 1.5rem;
+		}
+	}
+	.calendar-month-table {
+		width: 100%;
+		table-layout: fixed;
+		border-collapse: separate;
+		border-spacing: 3px;
+	}
+	.calendar-month-table th {
+		font-size: 0.76rem;
+		font-weight: 600;
+		color: #64748b;
+		text-align: center;
+		padding: 0.35rem 0;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+	}
+	.calendar-day-cell {
+		height: 48px;
+		text-align: center;
+		vertical-align: middle;
+		font-size: 0.92rem;
+		font-weight: 500;
+		border-radius: 0.65rem;
+		position: relative;
+		user-select: none;
+		transition: all 0.15s ease;
+	}
+	.calendar-day-empty {
+		visibility: hidden;
+	}
+	.calendar-day-num {
+		line-height: 1.2;
+		display: block;
+	}
+	.calendar-day-available {
+		cursor: pointer;
+		background: #ffffff;
+		border: 1px solid #f1f5f9;
+		color: var(--ink-900, #1e293b);
+	}
+	.calendar-day-available:hover {
+		background: var(--forest-100, #e8f0eb);
+		color: var(--forest-900, #1b382b);
+		border-color: var(--forest-800, #2d5a43);
+		transform: scale(1.04);
+		z-index: 2;
+	}
+	.calendar-day-booked {
+		cursor: not-allowed !important;
+		background-color: #fff1f2 !important;
+		border: 1px dashed #fecdd3 !important;
+		color: #be123c !important;
+		opacity: 0.9;
+	}
+	.calendar-day-booked .calendar-day-num {
+		text-decoration: line-through;
+		color: #e11d48;
+		font-weight: 600;
+	}
+	.calendar-day-booked .booked-tag {
+		display: block;
+		font-size: 0.58rem;
+		font-weight: 700;
+		line-height: 1;
+		color: #e11d48;
+		letter-spacing: -0.02em;
+		margin-top: 1px;
+	}
+	.calendar-day-booked:hover {
+		background-color: #ffe4e6 !important;
+		border-color: #f43f5e !important;
+	}
+	.calendar-day-past {
+		cursor: not-allowed;
+		color: #cbd5e1 !important;
+		background: transparent;
+		opacity: 0.45;
+	}
+	.calendar-day-selected-start {
+		background: var(--forest-900, #1b382b) !important;
+		color: #ffffff !important;
+		font-weight: 700 !important;
+		border-radius: 0.65rem 0 0 0.65rem !important;
+		box-shadow: 0 2px 6px rgba(27, 56, 43, 0.35);
+	}
+	.calendar-day-selected-end {
+		background: var(--forest-900, #1b382b) !important;
+		color: #ffffff !important;
+		font-weight: 700 !important;
+		border-radius: 0 0.65rem 0.65rem 0 !important;
+		box-shadow: 0 2px 6px rgba(27, 56, 43, 0.35);
+	}
+	.calendar-day-selected-start.calendar-day-selected-end {
+		border-radius: 0.65rem !important;
+	}
+	.calendar-day-in-range {
+		background: #eaf3ed !important;
+		color: var(--forest-900, #1b382b) !important;
+		border-radius: 0 !important;
+		font-weight: 600;
+	}
+	.calendar-legend-box {
+		width: 14px;
+		height: 14px;
+		border-radius: 4px;
+		display: inline-block;
+	}
+	.legend-available {
+		background: #ffffff;
+		border: 1px solid #cbd5e1;
+	}
+	.legend-booked {
+		background: #fff1f2;
+		border: 1px dashed #fecdd3;
+	}
+	.legend-selected {
+		background: var(--forest-900, #1b382b);
+		border: 1px solid var(--forest-900, #1b382b);
+	}
+	@keyframes shake-booked {
+		0%, 100% { transform: translateX(0); }
+		20%, 60% { transform: translateX(-4px); }
+		40%, 80% { transform: translateX(4px); }
+	}
+	.shake-booked {
+		animation: shake-booked 0.4s ease;
+	}
+	.booking-toast-popup {
+		position: fixed;
+		bottom: 2rem;
+		left: 50%;
+		transform: translateX(-50%) translateY(100px);
+		z-index: 9999;
+		opacity: 0;
+		transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+		pointer-events: none;
+	}
+	.booking-toast-popup.show {
+		transform: translateX(-50%) translateY(0);
+		opacity: 1;
+		pointer-events: auto;
+	}
+	.booking-toast-content {
+		background: #991b1b;
+		color: #ffffff;
+		padding: 0.85rem 1.4rem;
+		border-radius: 2rem;
+		box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		font-size: 0.92rem;
+		font-weight: 500;
+		border: 1px solid rgba(255, 255, 255, 0.2);
+	}
+</style>
+
+<div class="row mt-3 mb-5">
+	<div class="col-12 col-xl-10 offset-xl-1">
+		<!-- Header & Title with Badges -->
+		<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+			<div>
+				<h1 class="editorial-title mb-2" style="font-size: 2.2rem;"><%= listing.title %></h1>
+				<div class="d-flex flex-wrap align-items-center gap-3 text-muted small">
+					<span>
+						<i class="fa-solid fa-location-dot me-1 text-danger"></i>
+						<%= listing.location %>, <%= listing.country %>
+					</span>
+					<% if (listing.avgRating && listing.avgRating > 0) { %>
+						<span>&bull;</span>
+						<span class="d-inline-flex align-items-center gap-1 fw-semibold text-dark">
+							<i class="fa-solid fa-star text-warning"></i>
+							<%= Number(listing.avgRating).toFixed(1) %>
+							<% if (listing.reviews && listing.reviews.length) { %>
+								<span class="text-muted fw-normal">(<%= listing.reviews.length %> reviews)</span>
+							<% } %>
+						</span>
+					<% } %>
 				</div>
 			</div>
-			<button class="btn btn-outline-dark">Submit</button>
-		</form>
-		<hr />
-		<% } %>
 
-		<p><b>All Reviews</b></p>
-		<div class="row">
-			<% for(review of listing.reviews) { %>
-			<div class="card col-5 ms-3 mb-3">
-				<div class="card-body">
-					<h5 class="card-title">@<%= review.author.username %>></h5>
-					<p
-						class="starability-result card-text"
-						data-rating="<%= review.rating %>"
-					></p>
-					<p class="card-text"><%= review.comment %></p>
+			<!-- Meta Badges & Quick Action Controls -->
+			<div class="d-flex flex-wrap align-items-center gap-2">
+				<% if (listing.status === 'draft') { %>
+					<span class="stamp stamp-draft"><i class="fa-solid fa-file-pen"></i> Draft</span>
+				<% } %>
+				<% if (listing.category) { %>
+					<span class="stamp stamp-info"><i class="fa-solid fa-tag"></i> <%= listing.category %></span>
+				<% } %>
+				<span class="stamp bg-white border text-muted" title="Total listing views">
+					<i class="fa-regular fa-eye"></i> <%= listing.views || 1 %> views
+				</span>
+			</div>
+		</div>
 
+		<!-- Multi-Image Luxury Mosaic Showcase (5-Photo Grid on Desktop, Slider on Mobile) -->
+		<% 
+			const galleryImages = (listing.images && listing.images.length > 0)
+				? listing.images
+				: (listing.image && listing.image.url ? [{ url: listing.image.url, filename: listing.image.filename, isPrimary: true }] : [{ url: "/images/listing-placeholder.jpg", filename: "default", isPrimary: true }]);
+			const primaryImg = galleryImages.find(img => img.isPrimary) || galleryImages[0];
+			// Fill up to 5 photos for mosaic grid representation using existing photos or variations
+			const mosaicSlots = [...galleryImages];
+			while (mosaicSlots.length < 5) {
+				mosaicSlots.push(galleryImages[mosaicSlots.length % galleryImages.length]);
+			}
+		%>
+
+		<!-- Desktop 5-Photo Mosaic Grid -->
+		<div class="d-none d-md-block pdp-mosaic-wrapper position-relative mb-4 overflow-hidden rounded-4 shadow-sm" style="height: 440px;">
+			<div class="row g-2 h-100">
+				<!-- Hero Photo (Left 58%) -->
+				<div class="col-7 h-100">
+					<div class="mosaic-hero-tile h-100 position-relative overflow-hidden cursor-pointer" onclick="openLightbox(0)">
+						<img
+							id="mainHeroImg"
+							src="<%= primaryImg.url %>"
+							class="w-100 h-100 object-fit-cover mosaic-zoom-img"
+							alt="<%= listing.title %>"
+							onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';"
+						/>
+						<% if (listing.propertyType) { %>
+							<span class="position-absolute top-0 start-0 m-3 property-badge-glass shadow-sm">
+								<%= listing.propertyType %>
+							</span>
+						<% } %>
+					</div>
+				</div>
+
+				<!-- 4-Grid Secondary Photos (Right 42%) -->
+				<div class="col-5 h-100">
+					<div class="row g-2 h-100">
+						<div class="col-6 h-50">
+							<div class="mosaic-sub-tile h-100 position-relative overflow-hidden cursor-pointer" onclick="openLightbox(1)">
+								<img src="<%= mosaicSlots[1].url %>" class="w-100 h-100 object-fit-cover mosaic-zoom-img" alt="Property view 2" onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';">
+							</div>
+						</div>
+						<div class="col-6 h-50">
+							<div class="mosaic-sub-tile h-100 position-relative overflow-hidden cursor-pointer" onclick="openLightbox(2)">
+								<img src="<%= mosaicSlots[2].url %>" class="w-100 h-100 object-fit-cover mosaic-zoom-img" alt="Property view 3" onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';">
+							</div>
+						</div>
+						<div class="col-6 h-50">
+							<div class="mosaic-sub-tile h-100 position-relative overflow-hidden cursor-pointer" onclick="openLightbox(3)">
+								<img src="<%= mosaicSlots[3].url %>" class="w-100 h-100 object-fit-cover mosaic-zoom-img" alt="Property view 4" onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';">
+							</div>
+						</div>
+						<div class="col-6 h-50 position-relative">
+							<div class="mosaic-sub-tile h-100 position-relative overflow-hidden cursor-pointer" onclick="openLightbox(4)">
+								<img src="<%= mosaicSlots[4].url %>" class="w-100 h-100 object-fit-cover mosaic-zoom-img" alt="Property view 5" onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';">
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- "Show all photos" Floating Pill Action Button -->
+			<button
+				type="button"
+				class="btn btn-light position-absolute bottom-0 end-0 m-3 px-3 py-2 rounded-3 shadow fw-semibold small d-flex align-items-center gap-2 border"
+				data-bs-toggle="modal"
+				data-bs-target="#photoLightboxModal"
+				style="z-index: 10;"
+			>
+				<i class="fa-solid fa-grip"></i>
+				<span>Show all <%= galleryImages.length %> photos</span>
+			</button>
+		</div>
+
+		<!-- Mobile Photo Slider / Hero (Phones Only) -->
+		<div class="d-md-none card show-card listing-card mb-4 border-0 bg-transparent shadow-none">
+			<div class="position-relative overflow-hidden rounded-4">
+				<img
+					id="mobileHeroImg"
+					src="<%= primaryImg.url %>"
+					class="card-img-top show-hero-img shadow-sm"
+					alt="<%= listing.title %>"
+					onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';"
+				/>
+				<button
+					type="button"
+					class="btn btn-dark btn-sm position-absolute bottom-0 end-0 m-3 px-3 py-1 rounded-pill bg-dark bg-opacity-75 text-white border-0 small"
+					data-bs-toggle="modal"
+					data-bs-target="#photoLightboxModal"
+				>
+					<i class="fa-solid fa-images me-1"></i> 1 / <%= galleryImages.length %>
+				</button>
+			</div>
+
+			<!-- Mobile Thumbnails -->
+			<% if (galleryImages.length > 1) { %>
+				<div class="row g-2 mt-2">
+					<% galleryImages.forEach((img, idx) => { %>
+						<div class="col-3">
+							<img
+								src="<%= img.url %>"
+								class="img-fluid gallery-thumb w-100 shadow-sm <%= img.url === primaryImg.url ? 'active' : '' %>"
+								alt="Gallery thumbnail <%= idx + 1 %>"
+								onclick="switchHeroImage(this, '<%= img.url %>')"
+								onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';"
+							/>
+						</div>
+					<% }); %>
+				</div>
+			<% } %>
+		</div>
+
+		<!-- 2-Column Split: Property Details on Left, Booking Widget on Right -->
+		<div class="row g-4">
+			<!-- Left Column: Specs, Description, Amenities, Reviews, Map -->
+			<div class="col-12 col-lg-7">
+				<!-- Host Overview Card -->
+				<div class="d-flex flex-wrap justify-content-between align-items-center p-3 rounded-4 mb-4" style="background-color: var(--paper-100); border: 1px solid var(--border-color);">
+					<div class="d-flex align-items-center gap-3">
+						<div class="rounded-circle d-flex align-items-center justify-content-center bg-white border shadow-sm" style="width: 48px; height: 48px; color: var(--forest-800); font-size: 1.25rem;">
+							<i class="fa-solid fa-user-tie"></i>
+						</div>
+						<div>
+							<span class="text-muted small d-block">Hosted with Care by</span>
+							<h6 class="fw-bold text-dark mb-0"><%= listing.owner ? listing.owner.username : "Wander-Lust Host" %></h6>
+						</div>
+					</div>
+					<% if (currUser && listing.owner && !currUser._id.equals(listing.owner._id)) { %>
+						<button type="button" class="btn btn-forest-outline btn-sm rounded-pill px-3 py-1 mt-2 mt-sm-0" data-bs-toggle="modal" data-bs-target="#contactHostModal">
+							<i class="fa-regular fa-comment-dots me-1"></i> Contact Host
+						</button>
+					<% } %>
+				</div>
+
+				<!-- Property Specs Grid -->
+				<div class="row g-3 mb-4">
+					<div class="col-6 col-sm-3">
+						<div class="spec-chip text-center">
+							<span class="text-muted d-block small mb-1"><i class="fa-solid fa-house-chimney text-muted me-1"></i> Type</span>
+							<span class="fw-semibold text-dark"><%= listing.propertyType || "Entire Home" %></span>
+						</div>
+					</div>
+					<div class="col-6 col-sm-3">
+						<div class="spec-chip text-center">
+							<span class="text-muted d-block small mb-1"><i class="fa-solid fa-users text-muted me-1"></i> Guests</span>
+							<span class="fw-semibold text-dark"><%= listing.guests || 2 %> guests</span>
+						</div>
+					</div>
+					<div class="col-6 col-sm-3">
+						<div class="spec-chip text-center">
+							<span class="text-muted d-block small mb-1"><i class="fa-solid fa-bed text-muted me-1"></i> Bedrooms</span>
+							<span class="fw-semibold text-dark"><%= listing.bedrooms || 1 %> bed<%= (listing.bedrooms || 1) > 1 ? 's' : '' %></span>
+						</div>
+					</div>
+					<div class="col-6 col-sm-3">
+						<div class="spec-chip text-center">
+							<span class="text-muted d-block small mb-1"><i class="fa-solid fa-bath text-muted me-1"></i> Bathrooms</span>
+							<span class="fw-semibold text-dark"><%= listing.bathrooms || 1 %> bath<%= (listing.bathrooms || 1) > 1 ? 's' : '' %></span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Description Body -->
+				<div class="mb-4">
+					<h5 class="fw-bold mb-3">About this space</h5>
+					<p class="text-secondary" style="white-space: pre-line; line-height: 1.7; font-size: 0.98rem;"><%= listing.description %></p>
+				</div>
+
+				<!-- Amenities Section -->
+				<% if (listing.amenities && listing.amenities.length > 0) { %>
+					<div class="my-4 pt-3 border-top" style="border-color: var(--border-color) !important;">
+						<h5 class="fw-bold mb-3">What this place offers</h5>
+						<div class="row row-cols-1 row-cols-sm-2 g-3">
+							<% for (let am of listing.amenities) { %>
+								<div class="col d-flex align-items-center gap-2">
+									<div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 26px; height: 26px; background: var(--forest-100); color: var(--forest-800); font-size: 0.8rem;">
+										<i class="fa-solid fa-check"></i>
+									</div>
+									<span class="text-dark fw-medium" style="font-size: 0.92rem;"><%= am %></span>
+								</div>
+							<% } %>
+						</div>
+					</div>
+				<% } %>
+
+				<!-- Owner Action Controls -->
+				<% if (currUser && listing.owner && currUser._id.equals(listing.owner._id)) { %>
+					<div class="d-flex flex-wrap gap-2 my-4 pt-3 border-top" style="border-color: var(--border-color) !important;">
+						<a
+							href="/listings/<%= listing._id %>/edit"
+							class="btn btn-forest px-4 rounded-pill"
+						>
+							<i class="fa-solid fa-pen-to-square me-1"></i> Edit Listing
+						</a>
+						<form
+							action="/listings/<%= listing._id %>?_method=DELETE"
+							method="POST"
+							onsubmit="return confirm('Are you sure you want to delete this listing? This action cannot be undone.');"
+						>
+							<button class="btn btn-destructive px-4 rounded-pill">
+								<i class="fa-regular fa-trash-can me-1"></i> Delete Listing
+							</button>
+						</form>
+					</div>
+				<% } %>
+
+				<hr class="my-4" style="border-color: var(--border-color);" />
+
+				<!-- Reviews & Reputation System -->
+				<div class="reviews-section my-4" id="reviewsSection">
+					<!-- Rating Breakdown Overview Card -->
+					<div class="card shadow-sm border rounded-4 p-4 mb-4 bg-white" style="border-color: var(--border-color) !important;">
+						<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom" style="border-color: var(--border-color) !important;">
+							<div class="d-flex align-items-center gap-3">
+								<div class="rating-hero-score d-flex align-items-center gap-2">
+									<i class="fa-solid fa-star text-warning" style="font-size: 2.2rem;"></i>
+									<span><%= (listing.avgRating && listing.avgRating > 0) ? Number(listing.avgRating).toFixed(1) : "New" %></span>
+								</div>
+								<div>
+									<h5 class="fw-bold mb-0">Guest Favorite</h5>
+									<p class="text-muted small mb-0">
+										<% if (listing.reviews && listing.reviews.length) { %>
+											Based on <%= listing.reviews.length %> verified guest review<%= listing.reviews.length > 1 ? 's' : '' %>
+										<% } else { %>
+											No guest reviews yet
+										<% } %>
+									</p>
+								</div>
+							</div>
+						</div>
+
+						<!-- 6 Dimension Sub-Ratings -->
+						<% const breakdown = listing.ratingBreakdown || {}; %>
+						<div class="row row-cols-2 row-cols-md-3 g-2 mb-4">
+							<div class="col">
+								<div class="dimension-card">
+									<div class="d-flex justify-content-between align-items-center small">
+										<span class="text-muted"><i class="fa-solid fa-sparkles me-1 text-primary"></i> Cleanliness</span>
+										<strong class="text-dark tabular-nums"><%= (breakdown.cleanliness || listing.avgRating || 5).toFixed(1) %></strong>
+									</div>
+								</div>
+							</div>
+							<div class="col">
+								<div class="dimension-card">
+									<div class="d-flex justify-content-between align-items-center small">
+										<span class="text-muted"><i class="fa-solid fa-bullseye me-1 text-success"></i> Accuracy</span>
+										<strong class="text-dark tabular-nums"><%= (breakdown.accuracy || listing.avgRating || 5).toFixed(1) %></strong>
+									</div>
+								</div>
+							</div>
+							<div class="col">
+								<div class="dimension-card">
+									<div class="d-flex justify-content-between align-items-center small">
+										<span class="text-muted"><i class="fa-solid fa-comment-dots me-1 text-info"></i> Communication</span>
+										<strong class="text-dark tabular-nums"><%= (breakdown.communication || listing.avgRating || 5).toFixed(1) %></strong>
+									</div>
+								</div>
+							</div>
+							<div class="col">
+								<div class="dimension-card">
+									<div class="d-flex justify-content-between align-items-center small">
+										<span class="text-muted"><i class="fa-solid fa-location-dot me-1 text-danger"></i> Location</span>
+										<strong class="text-dark tabular-nums"><%= (breakdown.location || listing.avgRating || 5).toFixed(1) %></strong>
+									</div>
+								</div>
+							</div>
+							<div class="col">
+								<div class="dimension-card">
+									<div class="d-flex justify-content-between align-items-center small">
+										<span class="text-muted"><i class="fa-solid fa-key me-1 text-warning"></i> Check-in</span>
+										<strong class="text-dark tabular-nums"><%= (breakdown.checkIn || listing.avgRating || 5).toFixed(1) %></strong>
+									</div>
+								</div>
+							</div>
+							<div class="col">
+								<div class="dimension-card">
+									<div class="d-flex justify-content-between align-items-center small">
+										<span class="text-muted"><i class="fa-solid fa-tag me-1 text-secondary"></i> Value</span>
+										<strong class="text-dark tabular-nums"><%= (breakdown.value || listing.avgRating || 5).toFixed(1) %></strong>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<!-- Star Distribution Bars -->
+						<% const totalRev = (listing.reviews && listing.reviews.length) || 0; %>
+						<% const stars = (breakdown.stars) || { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }; %>
+						<div class="col-12 col-md-9 mx-auto">
+							<% for (let s = 5; s >= 1; s--) { %>
+								<% const count = stars[s] || 0; %>
+								<% const pct = totalRev > 0 ? Math.round((count / totalRev) * 100) : 0; %>
+								<div class="d-flex align-items-center gap-2 mb-1 small">
+									<span class="text-muted" style="width: 45px;"><%= s %> star</span>
+									<div class="progress flex-grow-1" style="height: 6px; background-color: var(--paper-200);">
+										<div class="progress-bar" role="progressbar" style="width: <%= pct %>%; background-color: var(--forest-800);" aria-valuenow="<%= pct %>" aria-valuemin="0" aria-valuemax="100"></div>
+									</div>
+									<span class="text-muted text-end tabular-nums" style="width: 35px;"><%= count %></span>
+								</div>
+							<% } %>
+						</div>
+					</div>
+
+					<!-- Leave a Review Form Card -->
+					<% if (currUser && (!listing.owner || !currUser._id.equals(listing.owner._id))) { %>
+						<div class="card shadow-sm border rounded-4 p-4 mb-4 bg-white" style="border-color: var(--border-color) !important;">
+							<h5 class="fw-bold mb-3">Leave a Review</h5>
+							<form
+								action="/listings/<%= listing._id %>/reviews"
+								method="POST"
+								novalidate
+								class="needs-validation mb-2"
+							>
+								<!-- Overall Rating Starability -->
+								<div class="mb-3">
+									<label class="form-label fw-semibold small text-muted">Overall Rating</label>
+									<fieldset class="starability-slot">
+										<input type="radio" id="no-rate" class="input-no-rate" name="review[rating]" value="1" checked aria-label="No rating." />
+										<input type="radio" id="first-rate1" name="review[rating]" value="1" />
+										<label for="first-rate1" title="Terrible">1 star</label>
+										<input type="radio" id="first-rate2" name="review[rating]" value="2" />
+										<label for="first-rate2" title="Not good">2 stars</label>
+										<input type="radio" id="first-rate3" name="review[rating]" value="3" />
+										<label for="first-rate3" title="Average">3 stars</label>
+										<input type="radio" id="first-rate4" name="review[rating]" value="4" />
+										<label for="first-rate4" title="Very good">4 stars</label>
+										<input type="radio" id="first-rate5" name="review[rating]" value="5" />
+										<label for="first-rate5" title="Amazing">5 stars</label>
+									</fieldset>
+								</div>
+
+								<!-- Sub-dimension Ratings -->
+								<div class="row g-2 mb-3">
+									<div class="col-6 col-md-4">
+										<label class="form-label small text-muted mb-1">Cleanliness</label>
+										<select class="form-select form-select-sm" name="review[cleanliness]">
+											<option value="5" selected>5 - Spotless</option>
+											<option value="4">4 - Very Clean</option>
+											<option value="3">3 - Average</option>
+											<option value="2">2 - Needs Cleaning</option>
+											<option value="1">1 - Poor</option>
+										</select>
+									</div>
+									<div class="col-6 col-md-4">
+										<label class="form-label small text-muted mb-1">Accuracy</label>
+										<select class="form-select form-select-sm" name="review[accuracy]">
+											<option value="5" selected>5 - Exactly as Described</option>
+											<option value="4">4 - Mostly Accurate</option>
+											<option value="3">3 - Minor Discrepancies</option>
+											<option value="2">2 - Inaccurate</option>
+											<option value="1">1 - Misleading</option>
+										</select>
+									</div>
+									<div class="col-6 col-md-4">
+										<label class="form-label small text-muted mb-1">Communication</label>
+										<select class="form-select form-select-sm" name="review[communication]">
+											<option value="5" selected>5 - Instant &amp; Helpful</option>
+											<option value="4">4 - Good</option>
+											<option value="3">3 - Delayed</option>
+											<option value="2">2 - Poor</option>
+											<option value="1">1 - Unresponsive</option>
+										</select>
+									</div>
+								</div>
+
+								<!-- Comment Box -->
+								<div class="mb-3">
+									<label for="comment" class="form-label small fw-semibold text-muted">Comments</label>
+									<textarea
+										name="review[comment]"
+										id="comment"
+										rows="3"
+										class="form-control"
+										placeholder="Share your stay experience, host hospitality, and neighborhood tips..."
+										required
+									></textarea>
+									<div class="invalid-feedback">
+										*Please provide your review comments.
+									</div>
+								</div>
+
+								<button class="btn btn-forest rounded-pill px-4">Submit Review</button>
+							</form>
+						</div>
+					<% } else if (!currUser) { %>
+						<div class="p-3 rounded-4 mb-4 small text-muted" style="background-color: var(--paper-100); border: 1px solid var(--border-color);">
+							<span><a href="/login" class="fw-bold text-dark">Log in</a> or <a href="/signup" class="fw-bold text-dark">sign up</a> to leave a review.</span>
+						</div>
+					<% } %>
+
+					<!-- Reviews List -->
+					<h5 class="mb-3 fw-bold">Guest Reviews (<%= (listing.reviews && listing.reviews.length) || 0 %>)</h5>
+					<% if (!listing.reviews || listing.reviews.length === 0) { %>
+						<div class="p-4 rounded-4 text-center text-muted small" style="background-color: var(--paper-100); border: 1px solid var(--border-color);">
+							<i class="fa-regular fa-comment-dots fa-2x mb-2 text-muted" style="opacity: 0.5;"></i>
+							<p class="mb-0">No reviews yet. Be the first to share your experience!</p>
+						</div>
+					<% } else { %>
+						<div class="row row-cols-1 g-3">
+							<% for (let review of listing.reviews) { %>
+								<div class="col">
+									<div class="review-card">
+										<div class="d-flex justify-content-between align-items-start mb-2">
+											<div class="d-flex align-items-center gap-3">
+												<!-- Author Avatar -->
+												<% if (review.author && review.author.avatar && review.author.avatar.url) { %>
+													<img
+														src="<%= review.author.avatar.url %>"
+														alt="<%= review.author.username %>"
+														class="rounded-circle shadow-sm"
+														style="width: 44px; height: 44px; object-fit: cover;"
+													/>
+												<% } else { %>
+													<div
+														class="rounded-circle shadow-sm d-flex align-items-center justify-content-center fw-bold small"
+														style="width: 44px; height: 44px; background-color: var(--forest-100); color: var(--forest-800);"
+													>
+														<%= review.author ? (review.author.fullName || review.author.username || 'A').charAt(0).toUpperCase() : 'A' %>
+													</div>
+												<% } %>
+
+												<div>
+													<h6 class="card-title fw-bold text-dark mb-0">
+														<%= review.author ? (review.author.fullName || review.author.username) : "Anonymous Traveler" %>
+													</h6>
+													<div class="text-muted small">
+														<%= new Date(review.createdAt).toLocaleDateString("en-IN", { month: 'short', year: 'numeric' }) %>
+														<% if (review.isVerifiedStay) { %>
+															&bull; <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill" style="font-size: 0.7rem;">
+																<i class="fa-solid fa-circle-check"></i> Verified Stay
+															</span>
+														<% } %>
+													</div>
+												</div>
+											</div>
+
+											<!-- Author Delete Control -->
+											<div class="d-flex align-items-center gap-2">
+												<% if (currUser && review.author && currUser._id.equals(review.author._id)) { %>
+													<form
+														method="POST"
+														action="/listings/<%= listing._id %>/reviews/<%= review._id %>?_method=DELETE"
+														onsubmit="return confirm('Delete this review?');"
+													>
+														<button class="btn btn-sm btn-outline-danger rounded-pill px-2 py-0" style="font-size: 0.75rem;">
+															Delete
+														</button>
+													</form>
+												<% } %>
+											</div>
+										</div>
+
+										<p
+											class="starability-result card-text my-2"
+											data-rating="<%= review.rating %>"
+										></p>
+
+										<p class="card-text text-secondary mb-3" style="line-height: 1.6;"><%= review.comment %></p>
+
+										<!-- Review Footer: Helpful Vote & Flagging -->
+										<div class="d-flex align-items-center justify-content-between pt-2 border-top small" style="border-color: var(--paper-200) !important;">
+											<div class="d-flex align-items-center gap-2">
+												<% if (currUser) { %>
+													<form method="POST" action="/listings/<%= listing._id %>/reviews/<%= review._id %>/helpful">
+														<button
+															type="submit"
+															class="btn btn-sm btn-light border rounded-pill px-3 py-1"
+															style="font-size: 0.75rem;"
+														>
+															<i class="fa-regular fa-thumbs-up me-1"></i> Helpful (<%= review.helpfulCount || 0 %>)
+														</button>
+													</form>
+												<% } else { %>
+													<span class="text-muted" style="font-size: 0.75rem;">
+														<i class="fa-regular fa-thumbs-up me-1"></i> Helpful (<%= review.helpfulCount || 0 %>)
+													</span>
+												<% } %>
+											</div>
+
+											<div>
+												<% if (currUser && (!review.author || !currUser._id.equals(review.author._id))) { %>
+													<form method="POST" action="/listings/<%= listing._id %>/reviews/<%= review._id %>/flag" onsubmit="return confirm('Report this review for community moderation?');">
+														<input type="hidden" name="reason" value="Inappropriate or abusive content" />
+														<button class="btn btn-link text-muted p-0 text-decoration-none" style="font-size: 0.75rem;">
+															<i class="fa-regular fa-flag me-1"></i> Report
+														</button>
+													</form>
+												<% } %>
+											</div>
+										</div>
+
+										<!-- Host Reply Section -->
+										<% if (review.hostReply && review.hostReply.comment) { %>
+											<div class="host-reply-bubble mt-3">
+												<div class="d-flex align-items-center gap-2 mb-1">
+													<i class="fa-solid fa-reply" style="color: var(--forest-800);"></i>
+													<strong class="small text-dark">Response from Host</strong>
+													<span class="text-muted" style="font-size: 0.72rem;">&bull; <%= new Date(review.hostReply.repliedAt).toLocaleDateString("en-IN", { month: 'short', year: 'numeric' }) %></span>
+												</div>
+												<p class="small text-secondary mb-0"><%= review.hostReply.comment %></p>
+											</div>
+										<% } else if (currUser && listing.owner && currUser._id.equals(listing.owner._id)) { %>
+											<div class="mt-3">
+												<details class="small">
+													<summary class="fw-semibold cursor-pointer" style="color: var(--forest-800);">
+														<i class="fa-solid fa-reply me-1"></i> Reply as Host
+													</summary>
+													<form
+														action="/listings/<%= listing._id %>/reviews/<%= review._id %>/reply"
+														method="POST"
+														class="mt-2"
+													>
+														<textarea
+															name="comment"
+															rows="2"
+															class="form-control form-control-sm mb-2"
+															placeholder="Write a professional response to your guest..."
+															required
+														></textarea>
+														<button class="btn btn-sm btn-forest rounded-pill px-3">Post Response</button>
+													</form>
+												</details>
+											</div>
+										<% } %>
+									</div>
+								</div>
+							<% } %>
+						</div>
+					<% } %>
+				</div>
+
+				<hr class="my-4" style="border-color: var(--border-color);" />
+
+				<!-- Live Availability & Booked Dates Calendar Section -->
+				<div class="availability-section my-4" id="availabilitySection">
+					<div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+						<div>
+							<h5 class="fw-bold mb-1">
+								<i class="fa-regular fa-calendar-check me-2" style="color: var(--forest-800);"></i>Availability Calendar
+							</h5>
+							<p class="text-muted small mb-0" id="calendarInstructionText">
+								Select your check-in and check-out dates. Dates marked <span class="badge bg-danger-subtle text-danger border border-danger-subtle py-0 px-1">Booked</span> cannot be selected.
+							</p>
+						</div>
+						<div class="d-flex align-items-center gap-2 mt-2 mt-sm-0">
+							<button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1" id="prevMonthBtn" title="Previous month">
+								<i class="fa-solid fa-chevron-left"></i>
+							</button>
+							<button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1" id="nextMonthBtn" title="Next month">
+								<i class="fa-solid fa-chevron-right"></i>
+							</button>
+							<button type="button" class="btn btn-sm btn-link text-muted text-decoration-none py-1 px-2" id="clearDatesBtn">
+								Clear dates
+							</button>
+						</div>
+					</div>
+
+					<!-- Calendar Card -->
+					<div class="availability-calendar-card">
+						<div class="calendar-grid-wrapper" id="calendarGridContainer">
+							<!-- 2-month interactive grid rendered via JS -->
+						</div>
+
+						<!-- Legend -->
+						<div class="d-flex flex-wrap align-items-center justify-content-between border-top pt-3 mt-3 small text-muted">
+							<div class="d-flex flex-wrap align-items-center gap-3">
+								<span class="d-flex align-items-center gap-1">
+									<span class="calendar-legend-box legend-available"></span> Available
+								</span>
+								<span class="d-flex align-items-center gap-1">
+									<span class="calendar-legend-box legend-booked"></span> Booked / Unavailable
+								</span>
+								<span class="d-flex align-items-center gap-1">
+									<span class="calendar-legend-box legend-selected"></span> Selected Stay
+								</span>
+							</div>
+							<span class="fw-medium text-dark small mt-2 mt-sm-0" id="selectedStaySummary">
+								No dates selected
+							</span>
+						</div>
+					</div>
+				</div>
+
+				<hr class="my-4" style="border-color: var(--border-color);" />
+
+				<!-- Interactive Leaflet Map Section -->
+				<div class="map-section my-4">
+					<h5 class="fw-bold mb-2">
+						<i class="fa-solid fa-map-location-dot me-2" style="color: var(--forest-800);"></i>Where you'll be
+					</h5>
+					<p class="text-muted mb-3"><%= listing.location %>, <%= listing.country %></p>
+					<div id="map" style="height: 360px; width: 100%; border-radius: 1.15rem;" class="shadow-sm border"></div>
+				</div>
+			</div>
+
+			<!-- Right Column: Interactive Booking Widget -->
+			<div class="col-12 col-lg-5">
+				<div class="card booking-card-sticky p-4">
+					<!-- Widget Header -->
+					<div class="d-flex justify-content-between align-items-baseline mb-3">
+						<div>
+							<span class="fs-3 fw-bold tabular-nums" style="color: var(--forest-900);">&#x20B9;<%= (listing.price || 0).toLocaleString("en-IN") %></span>
+							<span class="text-muted small"> / night</span>
+						</div>
+						<div class="small fw-semibold">
+							<i class="fa-solid fa-star text-warning"></i>
+							<%= (listing.avgRating && listing.avgRating > 0) ? Number(listing.avgRating).toFixed(1) : "New" %>
+							<% if (listing.reviews && listing.reviews.length) { %>
+								&bull; <span class="text-muted"><%= listing.reviews.length %> reviews</span>
+							<% } %>
+						</div>
+					</div>
+
+					<!-- Free Cancellation & Scarcity Cue -->
+					<div class="booking-trust-badge d-flex align-items-center gap-2 p-2 rounded-3 mb-3" style="background: var(--forest-50); border: 1px solid var(--forest-200);">
+						<i class="fa-solid fa-shield-heart text-success fs-5"></i>
+						<div class="small">
+							<span class="fw-bold text-dark">Free Cancellation</span>
+							<span class="text-muted d-block" style="font-size: 0.74rem;">Cancel up to 48 hours before check-in for a full refund</span>
+						</div>
+					</div>
+
+					<!-- Booking Form -->
 					<form
-						class="mb-3"
+						action="/listings/<%= listing._id %>/bookings"
 						method="POST"
-						action="/listings/<%= listing._id%>/reviews/<%= review._id %>?_method=DELETE"
+						id="bookingReservationForm"
+						novalidate
+						class="needs-validation"
 					>
-						<button class="btn btn-sm btn-dark">Delete</button>
+						<div class="border rounded-3 p-2 mb-3" style="background-color: var(--paper-100); border-color: var(--border-color) !important;">
+							<div class="row g-2 mb-2">
+								<div class="col-6">
+									<label for="checkInInput" class="form-label small fw-bold text-muted mb-0" style="font-size: 0.72rem; letter-spacing: 0.04em;">CHECK-IN</label>
+									<input
+										type="date"
+										class="form-control form-control-sm border-0 bg-white shadow-none"
+										id="checkInInput"
+										name="booking[checkIn]"
+										required
+									/>
+								</div>
+								<div class="col-6 border-start" style="border-color: var(--border-color) !important;">
+									<label for="checkOutInput" class="form-label small fw-bold text-muted mb-0" style="font-size: 0.72rem; letter-spacing: 0.04em;">CHECK-OUT</label>
+									<input
+										type="date"
+										class="form-control form-control-sm border-0 bg-white shadow-none"
+										id="checkOutInput"
+										name="booking[checkOut]"
+										required
+									/>
+								</div>
+							</div>
+							<div class="d-flex justify-content-between align-items-center px-1 pb-2 pt-1 border-top" style="border-color: var(--border-color) !important;">
+								<a href="#availabilitySection" class="text-decoration-none small text-success fw-semibold" style="font-size: 0.78rem;">
+									<i class="fa-solid fa-calendar-days me-1"></i>View Calendar
+								</a>
+								<span id="bookingStatusPill" class="badge bg-secondary-subtle text-secondary small border" style="font-size: 0.72rem;">
+									Select on calendar
+								</span>
+							</div>
+							<div class="border-top pt-2" style="border-color: var(--border-color) !important;">
+								<label for="guestsInput" class="form-label small fw-bold text-muted mb-0" style="font-size: 0.72rem; letter-spacing: 0.04em;">GUESTS</label>
+								<select class="form-select form-select-sm border-0 bg-white shadow-none" id="guestsInput" name="booking[guests]">
+									<% const maxG = listing.guests || 2; %>
+									<% for (let g = 1; g <= maxG; g++) { %>
+										<option value="<%= g %>"><%= g %> guest<%= g > 1 ? 's' : '' %></option>
+									<% } %>
+								</select>
+							</div>
+						</div>
+
+						<!-- Conflict Alert Banner -->
+						<div id="bookingConflictAlert" class="alert alert-danger py-2 small d-none">
+							<i class="fa-solid fa-calendar-xmark me-1"></i> These dates are already booked! Please select another date range.
+						</div>
+
+						<!-- Action Button -->
+						<% if (!currUser) { %>
+							<a href="/login" class="btn btn-forest w-100 rounded-pill py-2 fw-semibold">
+								Log in to Reserve
+							</a>
+						<% } else if (listing.owner && currUser._id.equals(listing.owner._id)) { %>
+							<button type="button" class="btn btn-secondary w-100 rounded-pill py-2 fw-semibold" disabled>
+								You Host This Property
+							</button>
+						<% } else { %>
+							<button type="submit" class="btn btn-forest w-100 rounded-pill py-2 fw-semibold" id="reserveSubmitBtn">
+								Reserve Now
+							</button>
+						<% } %>
+						<p class="text-center text-muted small mt-2 mb-3">You won't be charged yet</p>
+
+						<!-- Dynamic Pricing Calculation Box -->
+						<div id="priceCalculationContainer" class="d-none border-top pt-3" style="border-color: var(--border-color) !important;">
+							<div class="d-flex justify-content-between mb-2 small">
+								<span id="nightlyCalculationLabel">&#x20B9;<%= listing.price %> &times; 1 night</span>
+								<span class="fw-semibold tabular-nums" id="baseCalculationAmount">&#x20B9;<%= listing.price %></span>
+							</div>
+							<div class="d-flex justify-content-between mb-2 small">
+								<span>Cleaning fee</span>
+								<span class="fw-semibold tabular-nums">&#x20B9;500</span>
+							</div>
+							<div class="d-flex justify-content-between mb-2 small">
+								<span>GST &amp; Taxes (18%)</span>
+								<span class="fw-semibold tabular-nums" id="taxCalculationAmount">&#x20B9;0</span>
+							</div>
+							<div class="d-flex justify-content-between border-top pt-2 mt-2 fw-bold text-dark fs-6" style="border-color: var(--border-color) !important;">
+								<span>Total</span>
+								<span id="totalCalculationAmount" class="fs-5 tabular-nums" style="color: var(--forest-900);">&#x20B9;0</span>
+							</div>
+						</div>
+
+						<!-- Security & Protection Callout -->
+						<div class="d-flex align-items-center gap-2 text-muted small mt-3 pt-2 border-top" style="border-color: var(--border-color) !important;">
+							<i class="fa-solid fa-shield-halved text-success"></i>
+							<span style="font-size: 0.76rem;">Wander-Lust Protection Guarantee &bull; 256-bit Secure</span>
+						</div>
 					</form>
 				</div>
 			</div>
-			<% } %>
 		</div>
 	</div>
 </div>
+
+<!-- Mobile Sticky Bottom Reserve Bar (Under 992px) -->
+<div class="mobile-pdp-sticky-bar d-lg-none fixed-bottom bg-white border-top shadow-lg px-3 py-2 z-3 d-flex justify-content-between align-items-center">
+	<div>
+		<div>
+			<span class="fw-bold fs-5 text-dark">&#x20B9;<%= (listing.price || 0).toLocaleString("en-IN") %></span>
+			<span class="text-muted small"> / night</span>
+		</div>
+		<div class="small text-muted">
+			<i class="fa-solid fa-star text-warning" style="font-size: 0.75rem;"></i>
+			<%= (listing.avgRating && listing.avgRating > 0) ? Number(listing.avgRating).toFixed(1) : "New" %>
+		</div>
+	</div>
+	<button type="button" class="btn btn-forest rounded-pill px-4 py-2 fw-semibold" onclick="document.querySelector('.booking-card-sticky').scrollIntoView({ behavior: 'smooth' })">
+		Reserve
+	</button>
+</div>
+
+<!-- Full Photo Lightbox Gallery Modal -->
+<div class="modal fade" id="photoLightboxModal" tabindex="-1" aria-labelledby="photoLightboxModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-fullscreen">
+		<div class="modal-content bg-dark text-white border-0">
+			<div class="modal-header border-bottom border-secondary py-2 px-3 d-flex justify-content-between align-items-center">
+				<div class="d-flex align-items-center gap-2">
+					<i class="fa-solid fa-camera-retro"></i>
+					<span class="fw-semibold small"><%= listing.title %> &bull; Photo Gallery (<%= galleryImages.length %> photos)</span>
+				</div>
+				<button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body p-0 d-flex flex-column align-items-center justify-content-center position-relative overflow-hidden" style="min-height: 80vh;">
+				<div class="text-center p-3 w-100" style="max-height: 75vh;">
+					<img id="lightboxActiveImg" src="<%= primaryImg.url %>" alt="Expanded photo" class="img-fluid rounded-3 shadow-lg" style="max-height: 70vh; object-fit: contain;">
+				</div>
+				<!-- Lightbox Thumbnails Bar -->
+				<div class="w-100 p-2 overflow-x-auto bg-black bg-opacity-50 d-flex justify-content-center gap-2" style="scrollbar-width: thin;">
+					<% galleryImages.forEach((img, idx) => { %>
+						<img
+							src="<%= img.url %>"
+							class="rounded-2 cursor-pointer border border-2 <%= idx === 0 ? 'border-light' : 'border-transparent' %> lightbox-strip-thumb"
+							style="width: 60px; height: 45px; object-fit: cover; opacity: 0.8;"
+							onclick="setLightboxImg('<%= img.url %>', this)"
+							alt="Thumb <%= idx + 1 %>"
+						/>
+					<% }); %>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Contact Host Modal -->
+<% if (currUser && listing.owner && !currUser._id.equals(listing.owner._id)) { %>
+<div class="modal fade" id="contactHostModal" tabindex="-1" aria-labelledby="contactHostModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content border-0 shadow rounded-4 p-3">
+			<div class="modal-header border-0 pb-0">
+				<h5 class="modal-title fw-bold" id="contactHostModalLabel">
+					Message <%= listing.owner.username %>
+				</h5>
+				<button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<form action="/messages/inquiry/<%= listing._id %>" method="POST">
+				<div class="modal-body py-3">
+					<p class="text-muted small mb-3">Ask about availability, check-in logistics, or property amenities.</p>
+					<div class="mb-3">
+						<label class="form-label small fw-semibold text-muted">Your Message</label>
+						<textarea name="message" class="form-control" rows="4" placeholder="Hi <%= listing.owner.username %>, I am planning a stay at <%= listing.title %> and had a quick question..." required></textarea>
+					</div>
+				</div>
+				<div class="modal-footer border-0 pt-0">
+					<button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+					<button type="submit" class="btn btn-forest rounded-pill px-4">Send Message</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+<% } %>
+
+<!-- Floating Booking Toast Notification -->
+<div id="bookingToastPopup" class="booking-toast-popup" role="alert" aria-live="assertive">
+	<div class="booking-toast-content toast-danger shadow-lg">
+		<i class="fa-solid fa-calendar-xmark fs-5 text-warning"></i>
+		<div id="bookingToastMsg">Hotel is already booked for that date!</div>
+		<button type="button" class="btn-close btn-close-white ms-2" onclick="hideBookingToast()" aria-label="Close"></button>
+	</div>
+</div>
+
+<script>
+	// 1. Thumbnail click handler for multi-image gallery
+	function switchHeroImage(thumbEl, newUrl) {
+		const heroImg = document.getElementById("mainHeroImg");
+		if (heroImg) {
+			heroImg.style.opacity = "0.4";
+			heroImg.src = newUrl;
+			heroImg.onload = () => {
+				heroImg.style.opacity = "1";
+			};
+		}
+		document.querySelectorAll(".gallery-thumb").forEach(t => t.classList.remove("active"));
+		thumbEl.classList.add("active");
+	}
+
+	// 2. Interactive Leaflet Map Initialization with Dynamic Address Geocoding
+	document.addEventListener("DOMContentLoaded", async () => {
+		const mapEl = document.getElementById("map");
+		if (!mapEl || typeof L === "undefined") return;
+
+		try {
+			const addressLocation = <%- JSON.stringify(listing.location || "") %>;
+			const addressCountry = <%- JSON.stringify(listing.country || "") %>;
+			const fullAddress = [addressLocation, addressCountry].filter(Boolean).join(", ");
+			const isDelhiAddress = addressLocation.toLowerCase().includes("delhi") || addressCountry.toLowerCase().includes("delhi");
+
+			const rawCoords = <%- JSON.stringify((listing.geometry && listing.geometry.coordinates && listing.geometry.coordinates.length >= 2) ? listing.geometry.coordinates : null) %>;
+			
+			// Detect if coordinates are the default New Delhi placeholder [77.209, 28.6139] for a non-Delhi location
+			const isDefaultPlaceholder = rawCoords && 
+				Math.abs(Number(rawCoords[0]) - 77.209) < 0.005 && 
+				Math.abs(Number(rawCoords[1]) - 28.6139) < 0.005 && 
+				!isDelhiAddress;
+
+			let lng = (rawCoords && !isDefaultPlaceholder) ? Number(rawCoords[0]) : 0.0;
+			let lat = (rawCoords && !isDefaultPlaceholder) ? Number(rawCoords[1]) : 20.0;
+			const initialZoom = (lat === 20.0 && lng === 0.0) ? 2 : 13;
+
+			const map = L.map("map", { scrollWheelZoom: false }).setView([lat, lng], initialZoom);
+
+			// Esri World Street Map (High-resolution, 100% Free, No API Key, No Watermark)
+			L.tileLayer(
+				"https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+				{
+					attribution:
+						'Tiles &copy; <a href="https://www.esri.com/" target="_blank">Esri</a> &mdash; Source: Esri, USGS, TomTom',
+					maxZoom: 19,
+				}
+			).addTo(map);
+
+			// Custom luxury destination marker
+			const customPin = L.divIcon({
+				html: `
+					<div style="
+						background: #214B3E;
+						color: #ffffff;
+						width: 36px;
+						height: 36px;
+						border-radius: 50% 50% 50% 0;
+						transform: rotate(-45deg);
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						box-shadow: 0 4px 12px rgba(33, 75, 62, 0.4);
+						border: 2px solid #ffffff;
+					">
+						<i class="fa-solid fa-hotel" style="transform: rotate(45deg); font-size: 14px;"></i>
+					</div>
+				`,
+				className: "custom-map-pin",
+				iconSize: [36, 36],
+				iconAnchor: [18, 36],
+				popupAnchor: [0, -36],
+			});
+
+			const popupContent = `
+				<div style="min-width: 170px;">
+					<div class="fw-bold mb-1" style="color: #102A43; font-size: 0.95rem;"><%- listing.title.replace(/"/g, '&quot;') %></div>
+					<div class="text-muted small mb-1"><i class="fa-solid fa-location-dot text-danger me-1"></i><%- listing.location %>, <%- listing.country %></div>
+					<div class="mt-1 pt-1 border-top d-flex justify-content-between align-items-center">
+						<span class="fw-bold" style="color: #214B3E;">&#x20B9;<%- (listing.price || 0).toLocaleString("en-IN") %> <span class="fw-normal text-muted small">/ night</span></span>
+					</div>
+				</div>
+			`;
+
+			const marker = L.marker([lat, lng], { icon: customPin }).addTo(map).bindPopup(popupContent);
+
+			// Helper: Dynamic Geocoding function using OpenStreetMap Nominatim & Photon
+			async function geocodeAddressDynamic(query) {
+				if (!query || query.trim().length === 0) return null;
+				// 1. Try OpenStreetMap Nominatim
+				try {
+					const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
+					const nomRes = await fetch(nomUrl, { headers: { "Accept-Language": "en" } });
+					if (nomRes.ok) {
+						const nomData = await nomRes.json();
+						if (nomData && nomData.length > 0) {
+							return { lat: parseFloat(nomData[0].lat), lng: parseFloat(nomData[0].lon) };
+						}
+					}
+				} catch (e) {
+					console.warn("Nominatim dynamic geocode error:", e.message);
+				}
+
+				// 2. Try Photon (Komoot OSM Geocoder)
+				try {
+					const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=1`;
+					const photonRes = await fetch(photonUrl);
+					if (photonRes.ok) {
+						const photonData = await photonRes.json();
+						if (photonData && photonData.features && photonData.features.length > 0) {
+							const pt = photonData.features[0].geometry.coordinates;
+							return { lat: pt[1], lng: pt[0] };
+						}
+					}
+				} catch (e) {
+					console.warn("Photon dynamic geocode error:", e.message);
+				}
+				return null;
+			}
+
+			// If coordinates were default/placeholder or missing, dynamically mark on the basis of address entered
+			if (isDefaultPlaceholder || !rawCoords) {
+				let resolved = await geocodeAddressDynamic(fullAddress);
+				if (!resolved && addressLocation) {
+					resolved = await geocodeAddressDynamic(addressLocation);
+				}
+				if (!resolved && addressCountry) {
+					resolved = await geocodeAddressDynamic(addressCountry);
+				}
+
+				if (resolved) {
+					map.setView([resolved.lat, resolved.lng], 13);
+					marker.setLatLng([resolved.lat, resolved.lng]);
+					marker.openPopup();
+				} else {
+					marker.openPopup();
+				}
+			} else {
+				marker.openPopup();
+			}
+		} catch (err) {
+			console.warn("Map initialization fallback active:", err.message);
+		}
+	});
+
+	// 3. Live Interactive Availability Calendar & Booking Calculator
+	document.addEventListener("DOMContentLoaded", async () => {
+		const checkInInput = document.getElementById("checkInInput");
+		const checkOutInput = document.getElementById("checkOutInput");
+		const priceContainer = document.getElementById("priceCalculationContainer");
+		const conflictAlert = document.getElementById("bookingConflictAlert");
+		const reserveBtn = document.getElementById("reserveSubmitBtn");
+		const gridContainer = document.getElementById("calendarGridContainer");
+		const statusPill = document.getElementById("bookingStatusPill");
+		const instructionText = document.getElementById("calendarInstructionText");
+		const staySummary = document.getElementById("selectedStaySummary");
+		const toastPopup = document.getElementById("bookingToastPopup");
+		const toastMsg = document.getElementById("bookingToastMsg");
+
+		if (!checkInInput || !checkOutInput) return;
+
+		// Date format helpers
+		function formatYMD(d) {
+			const y = d.getFullYear();
+			const m = String(d.getMonth() + 1).padStart(2, "0");
+			const day = String(d.getDate()).padStart(2, "0");
+			return `${y}-${m}-${day}`;
+		}
+
+		function formatDisplayDate(d) {
+			return d.toLocaleDateString("en-IN", {
+				month: "short",
+				day: "numeric",
+				year: "numeric"
+			});
+		}
+
+		// Minimum date is today
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		checkInInput.min = formatYMD(today);
+
+		// Fetch existing booked dates
+		let bookedIntervals = [];
+		try {
+			const res = await fetch("/listings/<%= listing._id %>/booked-dates");
+			const json = await res.json();
+			bookedIntervals = (json && json.data) || [];
+		} catch (e) {
+			console.warn("Could not load booked dates:", e.message);
+		}
+
+		let calendarStartMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+		let selectedCheckInDate = null;
+		let selectedCheckOutDate = null;
+		let toastTimer = null;
+
+		function showBookingToast(message) {
+			if (!toastPopup || !toastMsg) return;
+			toastMsg.textContent = message;
+			toastPopup.classList.add("show");
+			if (toastTimer) clearTimeout(toastTimer);
+			toastTimer = setTimeout(() => {
+				toastPopup.classList.remove("show");
+			}, 4500);
+		}
+
+		window.hideBookingToast = function () {
+			if (toastPopup) toastPopup.classList.remove("show");
+		};
+
+		function isDateInPast(d) {
+			const check = new Date(d);
+			check.setHours(0, 0, 0, 0);
+			return check < today;
+		}
+
+		function isDateBooked(d) {
+			const checkMidday = new Date(d);
+			checkMidday.setHours(12, 0, 0, 0);
+			return bookedIntervals.some((b) => {
+				const bStart = new Date(b.checkIn);
+				const bEnd = new Date(b.checkOut);
+				return checkMidday >= bStart && checkMidday < bEnd;
+			});
+		}
+
+		function doesRangeContainBooked(startD, endD) {
+			const cur = new Date(startD);
+			cur.setHours(12, 0, 0, 0);
+			const endCheck = new Date(endD);
+			endCheck.setHours(12, 0, 0, 0);
+
+			while (cur < endCheck) {
+				if (isDateBooked(cur)) return true;
+				cur.setDate(cur.getDate() + 1);
+			}
+			return false;
+		}
+
+		function renderCalendar() {
+			if (!gridContainer) return;
+			gridContainer.innerHTML = "";
+
+			for (let mOffset = 0; mOffset < 2; mOffset++) {
+				const monthDate = new Date(calendarStartMonth.getFullYear(), calendarStartMonth.getMonth() + mOffset, 1);
+				const monthName = monthDate.toLocaleDateString("en-US", { month: "long" });
+				const year = monthDate.getFullYear();
+
+				const monthBlock = document.createElement("div");
+				monthBlock.className = "calendar-month-block";
+
+				const header = document.createElement("div");
+				header.className = "d-flex justify-content-between align-items-center mb-2 px-1";
+				header.innerHTML = `<span class="fw-bold fs-6 text-dark">${monthName} ${year}</span>`;
+				monthBlock.appendChild(header);
+
+				const table = document.createElement("table");
+				table.className = "calendar-month-table";
+				table.innerHTML = `
+					<thead>
+						<tr>
+							<th>Su</th><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th>
+						</tr>
+					</thead>
+				`;
+
+				const tbody = document.createElement("tbody");
+				const firstDayOfWeek = monthDate.getDay();
+				const daysInMonth = new Date(year, monthDate.getMonth() + 1, 0).getDate();
+
+				let dayCounter = 1;
+				for (let row = 0; row < 6; row++) {
+					if (dayCounter > daysInMonth) break;
+					const tr = document.createElement("tr");
+
+					for (let col = 0; col < 7; col++) {
+						const td = document.createElement("td");
+						td.className = "calendar-day-cell";
+
+						if (row === 0 && col < firstDayOfWeek) {
+							td.className += " calendar-day-empty";
+						} else if (dayCounter > daysInMonth) {
+							td.className += " calendar-day-empty";
+						} else {
+							const currentDayNum = dayCounter;
+							const cellDate = new Date(year, monthDate.getMonth(), currentDayNum);
+							const ymd = formatYMD(cellDate);
+
+							const isPast = isDateInPast(cellDate);
+							const isBooked = isDateBooked(cellDate);
+
+							const isStart = selectedCheckInDate && ymd === formatYMD(selectedCheckInDate);
+							const isEnd = selectedCheckOutDate && ymd === formatYMD(selectedCheckOutDate);
+							const isInRange = selectedCheckInDate && selectedCheckOutDate && cellDate > selectedCheckInDate && cellDate < selectedCheckOutDate;
+
+							if (isPast) {
+								td.className += " calendar-day-past";
+								td.innerHTML = `<span class="calendar-day-num">${currentDayNum}</span>`;
+							} else if (isBooked) {
+								td.className += " calendar-day-booked";
+								td.innerHTML = `<span class="calendar-day-num">${currentDayNum}</span><span class="booked-tag">Booked</span>`;
+								td.setAttribute("title", `Hotel is booked on ${formatDisplayDate(cellDate)}`);
+								td.onclick = (e) => {
+									e.preventDefault();
+									e.stopPropagation();
+									td.classList.add("shake-booked");
+									setTimeout(() => td.classList.remove("shake-booked"), 500);
+									showBookingToast(`This hotel is already booked for ${formatDisplayDate(cellDate)}! Please select an available date.`);
+								};
+							} else {
+								td.className += " calendar-day-available";
+								if (isStart) td.className += " calendar-day-selected-start";
+								if (isEnd) td.className += " calendar-day-selected-end";
+								if (isInRange) td.className += " calendar-day-in-range";
+
+								td.innerHTML = `<span class="calendar-day-num">${currentDayNum}</span>`;
+								td.onclick = () => handleAvailableDateClick(cellDate, ymd);
+							}
+
+							dayCounter++;
+						}
+						tr.appendChild(td);
+					}
+					tbody.appendChild(tr);
+				}
+
+				table.appendChild(tbody);
+				monthBlock.appendChild(table);
+				gridContainer.appendChild(monthBlock);
+			}
+		}
+
+		function handleAvailableDateClick(clickedDate, ymd) {
+			if (!selectedCheckInDate || (selectedCheckInDate && selectedCheckOutDate)) {
+				selectedCheckInDate = clickedDate;
+				selectedCheckOutDate = null;
+				checkInInput.value = ymd;
+				checkOutInput.value = "";
+				if (instructionText) {
+					instructionText.innerHTML = `Check-in set to <strong>${formatDisplayDate(clickedDate)}</strong>. Now choose your check-out date.`;
+				}
+				renderCalendar();
+				recalculate();
+				return;
+			}
+
+			if (selectedCheckInDate && !selectedCheckOutDate) {
+				if (clickedDate <= selectedCheckInDate) {
+					selectedCheckInDate = clickedDate;
+					checkInInput.value = ymd;
+					if (instructionText) {
+						instructionText.innerHTML = `Check-in updated to <strong>${formatDisplayDate(clickedDate)}</strong>. Choose your check-out date.`;
+					}
+					renderCalendar();
+					recalculate();
+					return;
+				}
+
+				if (doesRangeContainBooked(selectedCheckInDate, clickedDate)) {
+					showBookingToast("Hotel is booked during those dates! Please select an unbroken available range.");
+					return;
+				}
+
+				selectedCheckOutDate = clickedDate;
+				checkOutInput.value = ymd;
+				if (instructionText) {
+					instructionText.innerHTML = `Selected Stay: <strong>${formatDisplayDate(selectedCheckInDate)}</strong> &ndash; <strong>${formatDisplayDate(clickedDate)}</strong>.`;
+				}
+				renderCalendar();
+				recalculate();
+			}
+		}
+
+		function recalculate() {
+			if (conflictAlert) conflictAlert.classList.add("d-none");
+			if (reserveBtn) reserveBtn.disabled = false;
+
+			const inDate = checkInInput.value ? new Date(checkInInput.value + "T00:00:00") : null;
+			const outDate = checkOutInput.value ? new Date(checkOutInput.value + "T00:00:00") : null;
+
+			if (inDate) {
+				const nextDay = new Date(inDate);
+				nextDay.setDate(nextDay.getDate() + 1);
+				checkOutInput.min = formatYMD(nextDay);
+			}
+
+			if (inDate && outDate) {
+				const nights = Math.max(1, Math.round((outDate - inDate) / (1000 * 60 * 60 * 24)));
+				if (statusPill) {
+					statusPill.className = "badge bg-success-subtle text-success small border border-success-subtle";
+					statusPill.textContent = `${nights} night${nights > 1 ? 's' : ''} selected`;
+				}
+				if (staySummary) {
+					staySummary.innerHTML = `<span class="text-success fw-bold"><i class="fa-solid fa-check me-1"></i>${nights} night${nights > 1 ? 's' : ''} (${formatYMD(inDate)} &rarr; ${formatYMD(outDate)})</span>`;
+				}
+			} else if (inDate) {
+				if (statusPill) {
+					statusPill.className = "badge bg-warning-subtle text-warning-emphasis small border border-warning-subtle";
+					statusPill.textContent = "Select check-out";
+				}
+				if (staySummary) {
+					staySummary.innerHTML = `<span class="text-secondary fw-semibold">Check-in: ${formatYMD(inDate)} (Select checkout)</span>`;
+				}
+			} else {
+				if (statusPill) {
+					statusPill.className = "badge bg-secondary-subtle text-secondary small border";
+					statusPill.textContent = "Select on calendar";
+				}
+				if (staySummary) {
+					staySummary.textContent = "No dates selected";
+				}
+			}
+
+			if (!inDate || !outDate || outDate <= inDate) {
+				if (priceContainer) priceContainer.classList.add("d-none");
+				return;
+			}
+
+			const hasConflict = doesRangeContainBooked(inDate, outDate);
+			if (hasConflict) {
+				if (conflictAlert) conflictAlert.classList.remove("d-none");
+				if (reserveBtn) reserveBtn.disabled = true;
+				if (priceContainer) priceContainer.classList.add("d-none");
+				showBookingToast("Hotel is booked during these dates! Please select another date range.");
+				return;
+			}
+
+			const diffTime = outDate.getTime() - inDate.getTime();
+			const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+			const nightlyRate = <%= listing.price || 0 %>;
+			const basePrice = nights * nightlyRate;
+			const cleaningFee = 500;
+			const taxes = Math.round((basePrice + cleaningFee) * 0.18);
+			const total = basePrice + cleaningFee + taxes;
+
+			const nightlyLabel = document.getElementById("nightlyCalculationLabel");
+			const baseAmt = document.getElementById("baseCalculationAmount");
+			const taxAmt = document.getElementById("taxCalculationAmount");
+			const totalAmt = document.getElementById("totalCalculationAmount");
+
+			if (nightlyLabel) nightlyLabel.innerText = `₹${nightlyRate.toLocaleString("en-IN")} × ${nights} night${nights > 1 ? 's' : ''}`;
+			if (baseAmt) baseAmt.innerText = `₹${basePrice.toLocaleString("en-IN")}`;
+			if (taxAmt) taxAmt.innerText = `₹${taxes.toLocaleString("en-IN")}`;
+			if (totalAmt) totalAmt.innerText = `₹${total.toLocaleString("en-IN")}`;
+
+			if (priceContainer) priceContainer.classList.remove("d-none");
+		}
+
+		checkInInput.addEventListener("change", () => {
+			if (!checkInInput.value) {
+				selectedCheckInDate = null;
+				renderCalendar();
+				recalculate();
+				return;
+			}
+			const inD = new Date(checkInInput.value + "T00:00:00");
+			if (isDateBooked(inD)) {
+				showBookingToast(`This hotel is already booked for ${formatDisplayDate(inD)}! Please select an available date.`);
+				checkInInput.value = "";
+				selectedCheckInDate = null;
+				renderCalendar();
+				recalculate();
+				return;
+			}
+			selectedCheckInDate = inD;
+			renderCalendar();
+			recalculate();
+		});
+
+		checkOutInput.addEventListener("change", () => {
+			if (!checkOutInput.value) {
+				selectedCheckOutDate = null;
+				renderCalendar();
+				recalculate();
+				return;
+			}
+			const outD = new Date(checkOutInput.value + "T00:00:00");
+			if (isDateBooked(outD)) {
+				showBookingToast(`This hotel is already booked for ${formatDisplayDate(outD)}! Please select an available date.`);
+				checkOutInput.value = "";
+				selectedCheckOutDate = null;
+				renderCalendar();
+				recalculate();
+				return;
+			}
+			if (selectedCheckInDate && doesRangeContainBooked(selectedCheckInDate, outD)) {
+				showBookingToast("Selected range includes booked dates! Please select an available date range.");
+				checkOutInput.value = "";
+				selectedCheckOutDate = null;
+				renderCalendar();
+				recalculate();
+				return;
+			}
+			selectedCheckOutDate = outD;
+			renderCalendar();
+			recalculate();
+		});
+
+		const prevBtn = document.getElementById("prevMonthBtn");
+		const nextBtn = document.getElementById("nextMonthBtn");
+		const clearBtn = document.getElementById("clearDatesBtn");
+
+		if (prevBtn) {
+			prevBtn.addEventListener("click", () => {
+				const prevMonth = new Date(calendarStartMonth.getFullYear(), calendarStartMonth.getMonth() - 1, 1);
+				const currentMonthAnchor = new Date(today.getFullYear(), today.getMonth(), 1);
+				if (prevMonth < currentMonthAnchor) return;
+				calendarStartMonth = prevMonth;
+				renderCalendar();
+			});
+		}
+
+		if (nextBtn) {
+			nextBtn.addEventListener("click", () => {
+				calendarStartMonth = new Date(calendarStartMonth.getFullYear(), calendarStartMonth.getMonth() + 1, 1);
+				renderCalendar();
+			});
+		}
+
+		if (clearBtn) {
+			clearBtn.addEventListener("click", () => {
+				selectedCheckInDate = null;
+				selectedCheckOutDate = null;
+				checkInInput.value = "";
+				checkOutInput.value = "";
+				if (instructionText) {
+					instructionText.innerHTML = "Select your check-in and check-out dates. Dates marked <span class='badge bg-danger-subtle text-danger border border-danger-subtle py-0 px-1'>Booked</span> cannot be selected.";
+				}
+				renderCalendar();
+				recalculate();
+			});
+		}
+
+		renderCalendar();
+	});
+
+	// 4. Full Photo Lightbox Modal Handlers
+	function openLightbox(index) {
+		const gallery = <%- JSON.stringify(galleryImages) %>;
+		if (gallery && gallery[index]) {
+			const activeImg = document.getElementById("lightboxActiveImg");
+			if (activeImg) activeImg.src = gallery[index].url;
+			const thumbs = document.querySelectorAll(".lightbox-strip-thumb");
+			thumbs.forEach((t, i) => {
+				if (i === index) {
+					t.classList.add("border-light");
+					t.classList.remove("border-transparent");
+					t.style.opacity = "1";
+				} else {
+					t.classList.remove("border-light");
+					t.classList.add("border-transparent");
+					t.style.opacity = "0.7";
+				}
+			});
+		}
+		const modalEl = document.getElementById("photoLightboxModal");
+		if (modalEl) {
+			const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+			modal.show();
+		}
+	}
+
+	function setLightboxImg(url, thumbEl) {
+		const activeImg = document.getElementById("lightboxActiveImg");
+		if (activeImg) activeImg.src = url;
+		document.querySelectorAll(".lightbox-strip-thumb").forEach(t => {
+			t.classList.remove("border-light");
+			t.classList.add("border-transparent");
+			t.style.opacity = "0.7";
+		});
+		if (thumbEl) {
+			thumbEl.classList.add("border-light");
+			thumbEl.classList.remove("border-transparent");
+			thumbEl.style.opacity = "1";
+		}
+	}
+</script>

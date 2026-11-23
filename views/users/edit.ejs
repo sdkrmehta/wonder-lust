@@ -1,0 +1,339 @@
+<% layout("layouts/boilerplate") %>
+
+<div class="container-standard my-4 my-md-5">
+	<div class="row">
+		<div class="col-12 col-md-10 offset-md-1 col-lg-8 offset-lg-2">
+			<!-- Breadcrumb Navigation -->
+			<nav aria-label="breadcrumb" class="mb-4">
+				<ol class="breadcrumb small">
+					<li class="breadcrumb-item"><a href="/listings" class="text-decoration-none text-forest">Home</a></li>
+					<li class="breadcrumb-item"><a href="/profile" class="text-decoration-none text-forest">Profile</a></li>
+					<li class="breadcrumb-item active fw-semibold text-dark" aria-current="page">Edit Profile</li>
+				</ol>
+			</nav>
+
+			<!-- Personal Profile Card -->
+			<div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white mb-4">
+				<div class="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom">
+					<div>
+						<span class="badge rounded-pill bg-light text-forest border px-3 py-1 mb-2 small fw-semibold">
+							<i class="fa-solid fa-user-gear me-1"></i> Account Preferences
+						</span>
+						<h1 class="editorial-title h3 fw-bold text-dark mb-1">Edit Profile Details</h1>
+						<p class="text-muted small mb-0">Update your public identity, bio, and hospitality information.</p>
+					</div>
+				</div>
+
+				<!-- Profile Edit Form -->
+				<form
+					action="/profile?_method=PUT"
+					method="POST"
+					enctype="multipart/form-data"
+					novalidate
+					class="needs-validation"
+				>
+					<!-- Avatar Upload Section -->
+					<div class="p-3 rounded-4 mb-4" style="background-color: var(--paper-100); border: 1px dashed var(--forest-700);">
+						<div class="d-flex flex-column flex-sm-row align-items-center gap-4">
+							<div class="position-relative flex-shrink-0">
+								<% if (user.avatar && user.avatar.url) { %>
+									<img
+										src="<%= user.avatar.url %>"
+										alt="<%= user.username %>"
+										id="avatarPreviewImg"
+										class="rounded-circle shadow-sm border border-2 border-white"
+										style="width: 90px; height: 90px; object-fit: cover;"
+									/>
+								<% } else { %>
+									<div
+										id="avatarPlaceholder"
+										class="rounded-circle shadow-sm border border-2 border-white d-flex align-items-center justify-content-center text-white fw-bold fs-2"
+										style="width: 90px; height: 90px; background-color: var(--forest-900);"
+									>
+										<%= (user.fullName || user.username || "U").charAt(0).toUpperCase() %>
+									</div>
+								<% } %>
+							</div>
+
+							<div class="flex-grow-1 text-center text-sm-start">
+								<label for="avatarInput" class="form-label small fw-semibold text-dark mb-1">
+									Profile Photo
+								</label>
+								<input
+									type="file"
+									class="form-control form-control-sm bg-white"
+									id="avatarInput"
+									name="avatar"
+									accept="image/jpeg,image/png,image/webp,image/gif"
+									onchange="previewAvatar(this)"
+								/>
+								<div class="form-text small text-muted mt-1">
+									Recommended: Square JPG, PNG, or WEBP. Maximum file size 5MB.
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Personal Details Form Grid -->
+					<div class="row g-3 mb-4">
+						<!-- Full Name -->
+						<div class="col-12 col-md-6">
+							<label for="fullName" class="form-label small fw-semibold text-dark">Full Name</label>
+							<div class="input-group">
+								<span class="input-group-text bg-light text-muted border-end-0"><i class="fa-regular fa-id-badge"></i></span>
+								<input
+									type="text"
+									class="form-control border-start-0 ps-0"
+									id="fullName"
+									name="user[fullName]"
+									value="<%= user.fullName || '' %>"
+									placeholder="e.g. Jane Doe"
+								/>
+							</div>
+						</div>
+
+						<!-- Username (Immutable) -->
+						<div class="col-12 col-md-6">
+							<label for="username" class="form-label small fw-semibold text-muted">
+								Username <span class="badge bg-light text-muted border ms-1">Immutable</span>
+							</label>
+							<div class="input-group">
+								<span class="input-group-text bg-light text-muted border-end-0"><i class="fa-regular fa-user"></i></span>
+								<input
+									type="text"
+									class="form-control bg-light border-start-0 ps-0 text-muted"
+									id="username"
+									value="<%= user.username %>"
+									disabled
+								/>
+							</div>
+							<div class="form-text small">Usernames cannot be modified.</div>
+						</div>
+
+						<!-- Email (Immutable) -->
+						<div class="col-12 col-md-6">
+							<label for="email" class="form-label small fw-semibold text-muted">
+								Email Address <span class="badge bg-light text-muted border ms-1">Immutable</span>
+							</label>
+							<div class="input-group">
+								<span class="input-group-text bg-light text-muted border-end-0"><i class="fa-regular fa-envelope"></i></span>
+								<input
+									type="email"
+									class="form-control bg-light border-start-0 ps-0 text-muted"
+									id="email"
+									value="<%= user.email %>"
+									disabled
+								/>
+							</div>
+						</div>
+
+						<!-- Phone Number -->
+						<div class="col-12 col-md-6">
+							<label for="phone" class="form-label small fw-semibold text-dark">Phone Number</label>
+							<div class="input-group">
+								<span class="input-group-text bg-light text-muted border-end-0"><i class="fa-solid fa-phone"></i></span>
+								<input
+									type="tel"
+									class="form-control border-start-0 ps-0"
+									id="phone"
+									name="user[phone]"
+									value="<%= user.phone || '' %>"
+									placeholder="+91 9876543210"
+								/>
+							</div>
+						</div>
+
+						<!-- Bio / About -->
+						<div class="col-12">
+							<label for="bio" class="form-label small fw-semibold text-dark">About You (Bio)</label>
+							<textarea
+								class="form-control"
+								id="bio"
+								name="user[bio]"
+								rows="3"
+								placeholder="Share a little bit about yourself, your favorite destinations, or your hosting philosophy..."
+							><%= user.bio || '' %></textarea>
+							<div class="form-text small text-muted">Displayed publicly on your profile and beside your reviews.</div>
+						</div>
+
+						<!-- Address -->
+						<div class="col-12">
+							<label for="address" class="form-label small fw-semibold text-dark">Street Address</label>
+							<div class="input-group">
+								<span class="input-group-text bg-light text-muted border-end-0"><i class="fa-solid fa-map-pin"></i></span>
+								<input
+									type="text"
+									class="form-control border-start-0 ps-0"
+									id="address"
+									name="user[address]"
+									value="<%= user.address || '' %>"
+									placeholder="Street address, building, or locality"
+								/>
+							</div>
+						</div>
+
+						<!-- City -->
+						<div class="col-6">
+							<label for="city" class="form-label small fw-semibold text-dark">City</label>
+							<div class="input-group">
+								<span class="input-group-text bg-light text-muted border-end-0"><i class="fa-solid fa-city"></i></span>
+								<input
+									type="text"
+									class="form-control border-start-0 ps-0"
+									id="city"
+									name="user[city]"
+									value="<%= user.city || '' %>"
+									placeholder="e.g. Mumbai"
+								/>
+							</div>
+						</div>
+
+						<!-- Country -->
+						<div class="col-6">
+							<label for="country" class="form-label small fw-semibold text-dark">Country</label>
+							<div class="input-group">
+								<span class="input-group-text bg-light text-muted border-end-0"><i class="fa-solid fa-earth-americas"></i></span>
+								<input
+									type="text"
+									class="form-control border-start-0 ps-0"
+									id="country"
+									name="user[country]"
+									value="<%= user.country || 'India' %>"
+									placeholder="e.g. India"
+								/>
+							</div>
+						</div>
+					</div>
+
+					<!-- Form Action Buttons -->
+					<div class="d-flex justify-content-between align-items-center pt-3 border-top">
+						<a href="/profile" class="btn btn-forest-ghost rounded-pill px-4">
+							Cancel
+						</a>
+						<button type="submit" class="btn btn-forest add-btn rounded-pill px-4 fw-semibold shadow-sm">
+							<i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
+						</button>
+					</div>
+				</form>
+			</div>
+
+			<!-- Security: Change Password Card -->
+			<div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+				<div class="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom">
+					<div>
+						<span class="badge rounded-pill bg-light text-forest border px-3 py-1 mb-2 small fw-semibold">
+							<i class="fa-solid fa-shield-halved me-1"></i> Authentication Security
+						</span>
+						<h2 class="editorial-title h4 fw-bold text-dark mb-1">Change Password</h2>
+						<p class="text-muted small mb-0">Ensure your account is using a secure, long passphrase.</p>
+					</div>
+				</div>
+
+				<form
+					action="/profile/change-password"
+					method="POST"
+					novalidate
+					class="needs-validation"
+				>
+					<!-- Current Password -->
+					<div class="mb-3">
+						<label for="currentPassword" class="form-label small fw-semibold text-dark">
+							Current Password <span class="text-danger">*</span>
+						</label>
+						<div class="input-group">
+							<span class="input-group-text bg-light text-muted border-end-0"><i class="fa-solid fa-lock"></i></span>
+							<input
+								type="password"
+								class="form-control border-start-0 ps-0"
+								id="currentPassword"
+								name="currentPassword"
+								placeholder="Enter existing password"
+								required
+							/>
+							<div class="invalid-feedback">
+								Please provide your current password.
+							</div>
+						</div>
+					</div>
+
+					<!-- New and Confirm Password -->
+					<div class="row g-3 mb-4">
+						<div class="col-12 col-md-6">
+							<label for="newPassword" class="form-label small fw-semibold text-dark">
+								New Password <span class="text-danger">*</span>
+							</label>
+							<div class="input-group">
+								<span class="input-group-text bg-light text-muted border-end-0"><i class="fa-solid fa-key"></i></span>
+								<input
+									type="password"
+									class="form-control border-start-0 ps-0"
+									id="newPassword"
+									name="newPassword"
+									placeholder="Minimum 6 characters"
+									minlength="6"
+									required
+								/>
+								<div class="invalid-feedback">
+									Password must be at least 6 characters long.
+								</div>
+							</div>
+							<div class="form-text small text-muted">Must be at least 6 characters.</div>
+						</div>
+
+						<div class="col-12 col-md-6">
+							<label for="confirmPassword" class="form-label small fw-semibold text-dark">
+								Confirm New Password <span class="text-danger">*</span>
+							</label>
+							<div class="input-group">
+								<span class="input-group-text bg-light text-muted border-end-0"><i class="fa-solid fa-check-double"></i></span>
+								<input
+									type="password"
+									class="form-control border-start-0 ps-0"
+									id="confirmPassword"
+									name="confirmPassword"
+									placeholder="Re-enter new password"
+									minlength="6"
+									required
+								/>
+								<div class="invalid-feedback">
+									Please confirm your new password.
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="text-end">
+						<button type="submit" class="btn btn-forest-outline rounded-pill px-4 fw-semibold">
+							<i class="fa-solid fa-lock me-1"></i> Update Password
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	function previewAvatar(input) {
+		if (input.files && input.files[0]) {
+			const reader = new FileReader();
+			reader.onload = function(e) {
+				let preview = document.getElementById("avatarPreviewImg");
+				const placeholder = document.getElementById("avatarPlaceholder");
+				if (!preview && placeholder) {
+					preview = document.createElement("img");
+					preview.id = "avatarPreviewImg";
+					preview.className = "rounded-circle shadow-sm border border-2 border-white";
+					preview.style.width = "90px";
+					preview.style.height = "90px";
+					preview.style.objectFit = "cover";
+					placeholder.parentNode.replaceChild(preview, placeholder);
+				}
+				if (preview) {
+					preview.src = e.target.result;
+				}
+			};
+			reader.readAsDataURL(input.files[0]);
+		}
+	}
+</script>

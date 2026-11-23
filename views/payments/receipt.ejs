@@ -1,0 +1,287 @@
+<% layout("layouts/boilerplate") %>
+
+<style>
+	.invoice-paper-card {
+		background: #ffffff;
+		border: 1px solid var(--border-color);
+		border-radius: 1.25rem;
+		padding: 2.5rem;
+		box-shadow: var(--shadow-card);
+	}
+
+	.invoice-meta-item {
+		background: var(--paper-50);
+		border: 1px solid var(--border-color);
+		border-radius: 0.75rem;
+		padding: 0.85rem 1rem;
+	}
+
+	@media print {
+		nav, footer, .no-print, .flash-message, #bottomNav, .navbar, .mobile-bottom-nav {
+			display: none !important;
+		}
+		.invoice-paper-card {
+			border: none !important;
+			box-shadow: none !important;
+			padding: 0 !important;
+		}
+		body {
+			background: white !important;
+		}
+		.container {
+			max-width: 100% !important;
+			padding: 0 !important;
+			margin: 0 !important;
+		}
+	}
+</style>
+
+<div class="container my-4 my-md-5">
+	<div class="row">
+		<div class="col-12 col-lg-10 offset-lg-1 col-xl-8 offset-xl-2">
+			<!-- Invoice Container with Print Styling -->
+			<div class="invoice-paper-card print-area" id="invoiceCard">
+				<!-- Top Bar: Logo & Status Badge -->
+				<div class="d-flex flex-wrap justify-content-between align-items-center pb-4 border-bottom mb-4" style="border-color: var(--border-color) !important;">
+					<div class="d-flex align-items-center gap-3">
+						<div class="brand-icon-wrapper" style="width: 44px; height: 44px; font-size: 1.35rem;">
+							<i class="fa-regular fa-compass"></i>
+						</div>
+						<div>
+							<h3 class="editorial-title mb-0" style="color: var(--forest-900);">Wander-Lust</h3>
+							<span class="text-muted small fw-medium">Tax Invoice &amp; Payment Receipt</span>
+						</div>
+					</div>
+
+					<div class="text-md-end mt-3 mt-md-0">
+						<% if (payment.status === 'succeeded') { %>
+							<span class="stamp stamp-confirmed fs-6 py-2 px-3 shadow-sm">
+								<i class="fa-solid fa-circle-check me-1"></i> PAYMENT CONFIRMED
+							</span>
+						<% } else if (payment.status === 'refunded') { %>
+							<span class="stamp stamp-cancelled fs-6 py-2 px-3 shadow-sm">
+								<i class="fa-solid fa-rotate-left me-1"></i> REFUNDED
+							</span>
+						<% } else { %>
+							<span class="stamp stamp-pending fs-6 py-2 px-3 shadow-sm">
+								<%= payment.status.toUpperCase() %>
+							</span>
+						<% } %>
+					</div>
+				</div>
+
+				<!-- Invoice Metadata Grid -->
+				<div class="row g-3 py-2 border-bottom mb-4 small" style="border-color: var(--border-color) !important;">
+					<div class="col-6 col-md-3">
+						<div class="invoice-meta-item">
+							<span class="text-muted d-block small mb-1">Invoice Number</span>
+							<span class="font-monospace fw-bold fs-6 text-dark"><%= payment.receiptNumber %></span>
+						</div>
+					</div>
+					<div class="col-6 col-md-3">
+						<div class="invoice-meta-item">
+							<span class="text-muted d-block small mb-1">Issue Date</span>
+							<span class="fw-semibold text-dark"><%= new Date(payment.createdAt).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' }) %></span>
+						</div>
+					</div>
+					<div class="col-6 col-md-3">
+						<div class="invoice-meta-item">
+							<span class="text-muted d-block small mb-1">Transaction ID</span>
+							<span class="font-monospace fw-semibold text-truncate d-block text-dark" title="<%= payment.transactionId %>"><%= payment.transactionId %></span>
+						</div>
+					</div>
+					<div class="col-6 col-md-3">
+						<div class="invoice-meta-item">
+							<span class="text-muted d-block small mb-1">SAC / HSN Code</span>
+							<span class="font-monospace fw-semibold text-dark">996311 (Accommodation)</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Refund Notice Banner if Refunded -->
+				<% if (payment.status === 'refunded') { %>
+					<div class="alert alert-danger py-3 px-4 rounded-3 mb-4" style="border-left: 4px solid var(--color-danger);">
+						<div class="d-flex align-items-center gap-2 mb-1">
+							<i class="fa-solid fa-rotate-left fa-lg text-danger"></i>
+							<strong class="fs-6">Full Refund Processed</strong>
+						</div>
+						<div class="small">
+							Refund Reference: <span class="font-monospace fw-bold"><%= payment.refundId %></span> &bull;
+							Amount: <span class="fw-bold tabular-nums">&#x20B9;<%= (payment.refundAmount || payment.amount).toLocaleString("en-IN") %></span> &bull;
+							Refunded on: <%= new Date(payment.refundedAt || payment.updatedAt).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' }) %>
+						</div>
+					</div>
+				<% } %>
+
+				<!-- Customer & Booking Info 2-Column Split -->
+				<div class="row g-4 mb-4">
+					<div class="col-12 col-md-6">
+						<div class="p-3 rounded-3 h-100" style="background-color: var(--paper-50); border: 1px solid var(--border-color);">
+							<h6 class="fw-bold text-muted small text-uppercase mb-2" style="letter-spacing: 0.05em;">Billed To (Guest)</h6>
+							<div class="fw-bold fs-6 text-dark mb-1"><%= payment.billingDetails ? payment.billingDetails.fullName : (currUser ? currUser.username : 'Traveler') %></div>
+							<div class="text-muted small"><%= payment.billingDetails ? payment.billingDetails.email : '' %></div>
+							<div class="text-muted small"><%= payment.billingDetails ? payment.billingDetails.phone : '' %></div>
+							<div class="text-muted small mt-1">
+								<%= payment.billingDetails ? payment.billingDetails.address : '' %>,
+								<%= payment.billingDetails ? payment.billingDetails.city : '' %>,
+								<%= payment.billingDetails ? payment.billingDetails.state : '' %>
+								<%= payment.billingDetails ? payment.billingDetails.postalCode : '' %>
+							</div>
+						</div>
+					</div>
+					<div class="col-12 col-md-6">
+						<div class="p-3 rounded-3 h-100" style="background-color: var(--paper-50); border: 1px solid var(--border-color);">
+							<h6 class="fw-bold text-muted small text-uppercase mb-2" style="letter-spacing: 0.05em;">Reservation Details</h6>
+							<% if (booking) { %>
+								<div class="fw-bold fs-6 text-dark mb-1"><%= listing ? listing.title : 'Vacation Rental' %></div>
+								<div class="text-muted small mb-1">
+									<i class="fa-solid fa-location-dot me-1 text-danger"></i>
+									<%= listing ? listing.location : '' %>, <%= listing ? listing.country : '' %>
+								</div>
+								<div class="text-muted small">
+									<strong>Stay Dates:</strong>
+									<%= booking.checkIn ? new Date(booking.checkIn).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A' %> &ndash;
+									<%= booking.checkOut ? new Date(booking.checkOut).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A' %>
+									(<%= booking.totalNights || 1 %> night<%= (booking.totalNights || 1) > 1 ? 's' : '' %>)
+								</div>
+								<div class="text-muted small mt-1">
+									<strong>Booking Ref:</strong> <span class="font-monospace text-dark fw-medium"><%= booking._id %></span>
+								</div>
+							<% } else { %>
+								<div class="fw-bold fs-6 text-dark mb-1"><%= listing ? listing.title : 'Vacation Rental Stay' %></div>
+								<div class="text-muted small mb-2">
+									<span class="badge bg-secondary-subtle text-secondary border">Archived Reservation</span>
+								</div>
+								<div class="text-muted small">
+									Booking details are archived or no longer active.
+								</div>
+								<div class="text-muted small mt-1">
+									<strong>Payment Ref:</strong> <span class="font-monospace text-dark fw-medium"><%= payment.transactionId || payment._id %></span>
+								</div>
+							<% } %>
+						</div>
+					</div>
+				</div>
+
+				<!-- Payment Method Breakdown -->
+				<div class="p-3 rounded-3 mb-4 small d-flex flex-wrap justify-content-between align-items-center" style="background-color: var(--paper-100); border: 1px solid var(--border-color);">
+					<div>
+						<span class="text-muted">Payment Method:</span>
+						<strong class="text-dark ms-1">
+							<% if (payment.paymentMethod === 'card') { %>
+								<i class="fa-regular fa-credit-card me-1 text-danger"></i>
+								<%= payment.cardDetails ? payment.cardDetails.brand : 'Card' %> ending in <%= payment.cardDetails ? payment.cardDetails.last4 : '4242' %>
+							<% } else if (payment.paymentMethod === 'upi') { %>
+								<i class="fa-solid fa-mobile-screen-button me-1 text-success"></i>
+								UPI (<%= payment.upiDetails ? payment.upiDetails.vpa : 'VPA' %>)
+							<% } else if (payment.paymentMethod === 'netbanking') { %>
+								<i class="fa-solid fa-building-columns me-1 text-primary"></i>
+								NetBanking (<%= payment.netbankingDetails ? payment.netbankingDetails.bankName : 'Bank' %>)
+							<% } else { %>
+								<%= payment.paymentMethod.toUpperCase() %>
+							<% } %>
+						</strong>
+					</div>
+					<div class="text-muted mt-1 mt-sm-0">
+						Gateway: <strong class="text-dark">Wander-Lust Pay &bull; 256-Bit SSL</strong>
+					</div>
+				</div>
+
+				<!-- Financial Itemization Table -->
+				<h6 class="fw-bold mb-3" style="color: var(--ink-900);">Itemized Tax Invoice Breakdown</h6>
+				<div class="table-responsive mb-4">
+					<table class="table table-bordered table-sm align-middle mb-0" style="border-color: var(--border-color) !important;">
+						<thead style="background-color: var(--paper-100);">
+							<tr>
+								<th class="py-2 px-3 fw-semibold small text-muted">Description</th>
+								<th class="text-center py-2 px-3 fw-semibold small text-muted" style="width: 110px;">Rate</th>
+								<th class="text-center py-2 px-3 fw-semibold small text-muted" style="width: 80px;">Qty</th>
+								<th class="text-end py-2 px-3 fw-semibold small text-muted" style="width: 140px;">Amount (INR)</th>
+							</tr>
+						</thead>
+						<tbody>
+							<% if (booking) { %>
+								<tr>
+									<td class="py-2 px-3">
+										<div class="fw-semibold text-dark">Accommodation Services</div>
+										<div class="text-muted small">Standard stay at <%= listing ? listing.title : 'property' %></div>
+									</td>
+									<td class="text-center tabular-nums py-2 px-3">&#x20B9;<%= (booking.nightlyPrice || 0).toLocaleString("en-IN") %></td>
+									<td class="text-center py-2 px-3"><%= booking.totalNights || 1 %> night<%= (booking.totalNights || 1) > 1 ? 's' : '' %></td>
+									<td class="text-end fw-medium tabular-nums py-2 px-3">&#x20B9;<%= ((booking.nightlyPrice || 0) * (booking.totalNights || 1)).toLocaleString("en-IN") %></td>
+								</tr>
+								<tr>
+									<td class="py-2 px-3">
+										<div class="fw-semibold text-dark">Cleaning and Hygiene Fee</div>
+										<div class="text-muted small">Standard room sanitization charge</div>
+									</td>
+									<td class="text-center tabular-nums py-2 px-3">&#x20B9;<%= (booking.cleaningFee || 500).toLocaleString("en-IN") %></td>
+									<td class="text-center py-2 px-3">1</td>
+									<td class="text-end fw-medium tabular-nums py-2 px-3">&#x20B9;<%= (booking.cleaningFee || 500).toLocaleString("en-IN") %></td>
+								</tr>
+								<tr>
+									<td colspan="3" class="text-end text-muted small py-2 px-3">CGST (9.0%)</td>
+									<td class="text-end fw-medium tabular-nums py-2 px-3">&#x20B9;<%= Math.round((booking.taxAmount || 0) / 2).toLocaleString("en-IN") %></td>
+								</tr>
+								<tr>
+									<td colspan="3" class="text-end text-muted small py-2 px-3">SGST / UTGST (9.0%)</td>
+									<td class="text-end fw-medium tabular-nums py-2 px-3">&#x20B9;<%= Math.round((booking.taxAmount || 0) / 2).toLocaleString("en-IN") %></td>
+								</tr>
+							<% } else { %>
+								<% 
+									const totalAmount = payment.amount || 0;
+									const baseVal = Math.round(totalAmount / 1.18);
+									const taxVal = totalAmount - baseVal;
+								%>
+								<tr>
+									<td class="py-2 px-3">
+										<div class="fw-semibold text-dark">Accommodation &amp; Travel Services</div>
+										<div class="text-muted small">Recorded transaction under invoice <%= payment.receiptNumber %></div>
+									</td>
+									<td class="text-center tabular-nums py-2 px-3">&#x20B9;<%= baseVal.toLocaleString("en-IN") %></td>
+									<td class="text-center py-2 px-3">1</td>
+									<td class="text-end fw-medium tabular-nums py-2 px-3">&#x20B9;<%= baseVal.toLocaleString("en-IN") %></td>
+								</tr>
+								<tr>
+									<td colspan="3" class="text-end text-muted small py-2 px-3">Integrated GST (18.0%)</td>
+									<td class="text-end fw-medium tabular-nums py-2 px-3">&#x20B9;<%= taxVal.toLocaleString("en-IN") %></td>
+								</tr>
+							<% } %>
+							<tr style="background-color: var(--paper-100);">
+								<td colspan="3" class="text-end fw-bold fs-6 py-2 px-3">Total Amount Paid</td>
+								<td class="text-end fw-bold fs-5 tabular-nums py-2 px-3" style="color: var(--forest-900);">&#x20B9;<%= (payment.amount || 0).toLocaleString("en-IN") %></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+				<!-- GST & Legal Footer -->
+				<div class="border-top pt-3 text-muted small" style="border-color: var(--border-color) !important;">
+					<p class="mb-1">
+						<strong>GSTIN:</strong> 27AABCT3518Q1ZY &bull; <strong>CIN:</strong> U72900MH2026PTC384729
+					</p>
+					<p class="mb-0">
+						This is a computer-generated tax invoice. No signature is required. All disputes subject to Mumbai jurisdiction.
+					</p>
+				</div>
+			</div>
+
+			<!-- Screen-Only Actions -->
+			<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-4 no-print">
+				<a href="/bookings" class="btn btn-outline-dark rounded-pill px-4">
+					<i class="fa-solid fa-arrow-left me-1"></i> Back to My Trips
+				</a>
+				<div class="d-flex gap-2">
+					<% if (booking && booking._id) { %>
+						<a href="/bookings/<%= booking._id %>" class="btn btn-outline-secondary rounded-pill px-3">
+							<i class="fa-solid fa-eye me-1"></i> View Booking Details
+						</a>
+					<% } %>
+					<button onclick="window.print()" class="btn btn-forest rounded-pill px-4">
+						<i class="fa-solid fa-print me-1"></i> Print Invoice
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

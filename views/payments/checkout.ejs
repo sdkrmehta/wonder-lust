@@ -1,0 +1,514 @@
+<% layout("layouts/boilerplate") %>
+
+<style>
+	.checkout-section-card {
+		background: #ffffff;
+		border: 1px solid var(--border-color);
+		border-radius: 1.25rem;
+		padding: 2rem;
+		margin-bottom: 1.75rem;
+		box-shadow: var(--shadow-subtle);
+		transition: border-color 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	.checkout-section-card:focus-within {
+		border-color: var(--forest-200);
+		box-shadow: var(--shadow-card);
+	}
+
+	.method-pill-group {
+		background: var(--paper-100);
+		padding: 0.35rem;
+		border-radius: 2rem;
+		border: 1px solid var(--border-color);
+	}
+
+	.method-tab-btn {
+		border: none;
+		background: transparent;
+		color: var(--ink-500);
+		font-weight: 600;
+		font-size: 0.88rem;
+		padding: 0.55rem 1rem;
+		border-radius: 2rem;
+		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.45rem;
+		width: 100%;
+	}
+
+	.method-tab-btn.active-method-btn {
+		background: #ffffff !important;
+		color: var(--forest-900) !important;
+		box-shadow: 0 2px 8px rgba(24, 59, 50, 0.08) !important;
+	}
+
+	.bank-select-card {
+		border: 1px solid var(--border-color);
+		border-radius: 0.75rem;
+		padding: 0.85rem 1rem;
+		background: var(--paper-50);
+		transition: all 0.15s ease;
+		cursor: pointer;
+		width: 100%;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.bank-select-card:hover {
+		background: #ffffff;
+		border-color: var(--forest-200);
+	}
+
+	.bank-select-card input:checked ~ span {
+		color: var(--forest-900);
+		font-weight: 600;
+	}
+
+	.summary-sticky-card {
+		position: sticky;
+		top: 6.2rem;
+		background: #ffffff;
+		border: 1px solid var(--border-color) !important;
+		border-radius: 1.25rem !important;
+		padding: 1.75rem;
+		box-shadow: var(--shadow-card) !important;
+	}
+</style>
+
+<div class="container my-4 my-md-5">
+	<!-- Page Heading & Breadcrumb -->
+	<div class="mb-4">
+		<nav aria-label="breadcrumb">
+			<ol class="breadcrumb small">
+				<li class="breadcrumb-item"><a href="/listings" class="text-decoration-none text-muted">Explore</a></li>
+				<li class="breadcrumb-item"><a href="/listings/<%= listing._id %>" class="text-decoration-none text-muted"><%= listing.title %></a></li>
+				<li class="breadcrumb-item active fw-semibold text-dark" aria-current="page">Confirm &amp; Pay</li>
+			</ol>
+		</nav>
+		<h1 class="editorial-title text-dark mb-1" style="font-size: 2.2rem;">
+			<i class="fa-solid fa-shield-halved me-2" style="color: var(--forest-800);"></i>Confirm and Pay
+		</h1>
+		<p class="text-muted small">Complete your payment securely with 256-bit SSL encrypted checkout.</p>
+	</div>
+
+	<div class="row g-4 g-lg-5">
+		<!-- Left Column: Payment Form -->
+		<div class="col-12 col-lg-7">
+			<form
+				action="/payments/process/<%= booking._id %>"
+				method="POST"
+				id="checkoutPaymentForm"
+				novalidate
+				class="needs-validation"
+			>
+				<!-- Hidden field to verify price integrity -->
+				<input type="hidden" name="amount" value="<%= booking.totalPrice %>" />
+
+				<!-- Payment Method Selection Card -->
+				<div class="checkout-section-card">
+					<div class="d-flex align-items-center justify-content-between mb-3">
+						<h5 class="fw-bold mb-0" style="color: var(--ink-900);">1. Select Payment Method</h5>
+						<span class="stamp stamp-info" style="font-size: 0.7rem;">Simulated Gateway</span>
+					</div>
+
+					<div class="method-pill-group d-flex gap-1 mb-4" role="tablist">
+						<button
+							type="button"
+							class="method-tab-btn active-method-btn"
+							id="methodCardBtn"
+							onclick="selectPaymentMethod('card')"
+						>
+							<i class="fa-regular fa-credit-card text-danger"></i> Card
+						</button>
+						<button
+							type="button"
+							class="method-tab-btn"
+							id="methodUpiBtn"
+							onclick="selectPaymentMethod('upi')"
+						>
+							<i class="fa-solid fa-mobile-screen-button text-success"></i> UPI
+						</button>
+						<button
+							type="button"
+							class="method-tab-btn"
+							id="methodNetbankingBtn"
+							onclick="selectPaymentMethod('netbanking')"
+						>
+							<i class="fa-solid fa-building-columns text-primary"></i> NetBanking
+						</button>
+					</div>
+
+					<input type="hidden" name="paymentMethod" id="selectedPaymentMethod" value="card" />
+
+					<!-- Card Payment Tab Content -->
+					<div id="cardPaymentSection">
+						<div class="mb-3">
+							<label for="cardNumber" class="form-label small fw-semibold text-muted">Card Number</label>
+							<div class="input-group">
+								<span class="input-group-text bg-white border-end-0 text-muted">
+									<i class="fa-regular fa-credit-card" id="cardBrandIcon"></i>
+								</span>
+								<input
+									type="text"
+									class="form-control border-start-0 tabular-nums"
+									id="cardNumber"
+									name="cardNumber"
+									placeholder="4532 &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; 4242"
+									maxlength="19"
+									value="4111 2222 3333 4242"
+									required
+								/>
+							</div>
+							<div class="form-text small">Test Visa, Mastercard, or RuPay card numbers accepted.</div>
+						</div>
+
+						<div class="row g-2 mb-3">
+							<div class="col-6">
+								<label for="cardExpiry" class="form-label small fw-semibold text-muted">Expiration Date</label>
+								<input
+									type="text"
+									class="form-control tabular-nums"
+									id="cardExpiry"
+									name="cardExpiry"
+									placeholder="MM / YY"
+									maxlength="7"
+									value="12/28"
+									required
+								/>
+							</div>
+							<div class="col-6">
+								<label for="cardCvc" class="form-label small fw-semibold text-muted">CVV / CVC</label>
+								<div class="input-group">
+									<input
+										type="password"
+										class="form-control tabular-nums"
+										id="cardCvc"
+										name="cardCvc"
+										placeholder="123"
+										maxlength="4"
+										value="888"
+										required
+									/>
+									<span class="input-group-text bg-white text-muted">
+										<i class="fa-solid fa-lock text-success small"></i>
+									</span>
+								</div>
+							</div>
+						</div>
+
+						<div class="mb-2">
+							<label for="cardHolderName" class="form-label small fw-semibold text-muted">Name on Card</label>
+							<input
+								type="text"
+								class="form-control"
+								id="cardHolderName"
+								name="cardHolderName"
+								value="<%= currUser ? currUser.username : 'Traveler' %>"
+								placeholder="Full name as printed on card"
+								required
+							/>
+						</div>
+					</div>
+
+					<!-- UPI Payment Tab Content -->
+					<div id="upiPaymentSection" class="d-none">
+						<div class="mb-3">
+							<label for="upiId" class="form-label small fw-semibold text-muted">Virtual Payment Address (VPA / UPI ID)</label>
+							<div class="input-group">
+								<span class="input-group-text bg-white text-muted">@</span>
+								<input
+									type="text"
+									class="form-control"
+									id="upiId"
+									name="upiId"
+									placeholder="username@okhdfcbank"
+									value="<%= currUser ? currUser.username : 'traveler' %>@okhdfcbank"
+								/>
+							</div>
+							<div class="d-flex flex-wrap gap-2 mt-2">
+								<button type="button" class="btn btn-outline-secondary btn-sm rounded-pill py-0 px-2" style="font-size: 0.75rem;" onclick="setUpiHandle('okhdfcbank')">@okhdfcbank</button>
+								<button type="button" class="btn btn-outline-secondary btn-sm rounded-pill py-0 px-2" style="font-size: 0.75rem;" onclick="setUpiHandle('okicici')">@okicici</button>
+								<button type="button" class="btn btn-outline-secondary btn-sm rounded-pill py-0 px-2" style="font-size: 0.75rem;" onclick="setUpiHandle('oksbi')">@oksbi</button>
+								<button type="button" class="btn btn-outline-secondary btn-sm rounded-pill py-0 px-2" style="font-size: 0.75rem;" onclick="setUpiHandle('paytm')">@paytm</button>
+							</div>
+						</div>
+						<div class="p-3 rounded-3 small text-muted" style="background-color: var(--paper-100); border: 1px solid var(--border-color);">
+							<i class="fa-solid fa-qrcode me-1 text-primary"></i> A payment request notification will be delivered to your UPI app. Approve within 5 minutes to confirm.
+						</div>
+					</div>
+
+					<!-- NetBanking Payment Tab Content -->
+					<div id="netbankingPaymentSection" class="d-none">
+						<label class="form-label small fw-semibold text-muted mb-2">Select Your Bank</label>
+						<div class="row row-cols-1 row-cols-sm-2 g-2 mb-3">
+							<div class="col">
+								<label class="bank-select-card">
+									<input type="radio" name="bankName" value="HDFC Bank" checked />
+									<span class="small fw-semibold">HDFC Bank</span>
+								</label>
+							</div>
+							<div class="col">
+								<label class="bank-select-card">
+									<input type="radio" name="bankName" value="State Bank of India" />
+									<span class="small fw-semibold">State Bank of India</span>
+								</label>
+							</div>
+							<div class="col">
+								<label class="bank-select-card">
+									<input type="radio" name="bankName" value="ICICI Bank" />
+									<span class="small fw-semibold">ICICI Bank</span>
+								</label>
+							</div>
+							<div class="col">
+								<label class="bank-select-card">
+									<input type="radio" name="bankName" value="Axis Bank" />
+									<span class="small fw-semibold">Axis Bank</span>
+								</label>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Billing Details Card -->
+				<div class="checkout-section-card">
+					<h5 class="fw-bold mb-3" style="color: var(--ink-900);">2. Billing Details</h5>
+					<div class="row g-3">
+						<div class="col-12 col-md-6">
+							<label class="form-label small fw-semibold text-muted">Full Name</label>
+							<input
+								type="text"
+								class="form-control"
+								name="billingDetails[fullName]"
+								value="<%= currUser ? currUser.username : '' %>"
+								required
+							/>
+						</div>
+						<div class="col-12 col-md-6">
+							<label class="form-label small fw-semibold text-muted">Email Address (for tax invoice)</label>
+							<input
+								type="email"
+								class="form-control"
+								name="billingDetails[email]"
+								value="<%= currUser ? currUser.email : '' %>"
+								required
+							/>
+						</div>
+						<div class="col-12">
+							<label class="form-label small fw-semibold text-muted">Street Address</label>
+							<input
+								type="text"
+								class="form-control"
+								name="billingDetails[address]"
+								placeholder="Flat, suite, street name"
+								value="104 Sea View Promenade"
+							/>
+						</div>
+						<div class="col-6 col-md-4">
+							<label class="form-label small fw-semibold text-muted">City</label>
+							<input
+								type="text"
+								class="form-control"
+								name="billingDetails[city]"
+								value="Mumbai"
+							/>
+						</div>
+						<div class="col-6 col-md-4">
+							<label class="form-label small fw-semibold text-muted">State</label>
+							<input
+								type="text"
+								class="form-control"
+								name="billingDetails[state]"
+								value="Maharashtra"
+							/>
+						</div>
+						<div class="col-12 col-md-4">
+							<label class="form-label small fw-semibold text-muted">PIN Code</label>
+							<input
+								type="text"
+								class="form-control tabular-nums"
+								name="billingDetails[postalCode]"
+								value="400001"
+							/>
+						</div>
+					</div>
+				</div>
+
+				<!-- Trust & Security Badges -->
+				<div class="d-flex align-items-center gap-3 p-3 rounded-4 mb-4" style="background-color: var(--forest-50); border: 1px solid var(--forest-100);">
+					<i class="fa-solid fa-lock fa-2x" style="color: var(--forest-800);"></i>
+					<div>
+						<div class="fw-semibold text-dark" style="font-size: 0.92rem;">PCI-DSS 3.2 Level 1 Certified &bull; 256-Bit SSL Encryption</div>
+						<div class="text-muted small">Your payment credentials are tokenized and encrypted end-to-end.</div>
+					</div>
+				</div>
+
+				<!-- CTA Pay Button -->
+				<button
+					type="submit"
+					class="btn btn-forest w-100 rounded-pill py-3 fw-bold fs-5 shadow-sm"
+					id="submitPaymentBtn"
+				>
+					<i class="fa-solid fa-lock me-2"></i>Pay &#x20B9;<%= booking.totalPrice.toLocaleString("en-IN") %>
+				</button>
+				<p class="text-center text-muted small mt-2">
+					By clicking Pay, you agree to the Wander-Lust Guest Refund Policy and Terms of Service.
+				</p>
+			</form>
+		</div>
+
+		<!-- Right Column: Reservation Summary Card -->
+		<div class="col-12 col-lg-5">
+			<div class="summary-sticky-card">
+				<h5 class="fw-bold mb-3" style="color: var(--ink-900);">Reservation Summary</h5>
+
+				<!-- Property Mini-Card -->
+				<div class="d-flex gap-3 pb-3 border-bottom mb-3" style="border-color: var(--border-color) !important;">
+					<img
+						src="<%= listing.image && listing.image.url ? listing.image.url : '/images/listing-placeholder.jpg' %>"
+						alt="<%= listing.title %>"
+						class="rounded-3 shadow-sm"
+						style="width: 90px; height: 90px; object-fit: cover;"
+						onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';"
+					/>
+					<div>
+						<h6 class="fw-bold mb-1" style="color: var(--ink-900);"><%= listing.title %></h6>
+						<p class="text-muted small mb-1">
+							<i class="fa-solid fa-location-dot me-1 text-danger"></i>
+							<%= listing.location %>, <%= listing.country %>
+						</p>
+						<span class="badge bg-light text-dark border">
+							<i class="fa-solid fa-star text-warning me-1"></i>
+							<%= (listing.avgRating && listing.avgRating > 0) ? Number(listing.avgRating).toFixed(1) : "New" %>
+						</span>
+					</div>
+				</div>
+
+				<!-- Dates & Guests Row -->
+				<div class="row g-2 pb-3 border-bottom mb-3 small" style="border-color: var(--border-color) !important;">
+					<div class="col-6">
+						<span class="text-muted d-block">Stay Dates</span>
+						<span class="fw-semibold text-dark">
+							<%= new Date(booking.checkIn).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' }) %> &ndash;
+							<%= new Date(booking.checkOut).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' }) %>
+						</span>
+					</div>
+					<div class="col-6">
+						<span class="text-muted d-block">Accommodations</span>
+						<span class="fw-semibold text-dark"><%= booking.guests %> guest<%= booking.guests > 1 ? 's' : '' %> &bull; <%= booking.totalNights %> night<%= booking.totalNights > 1 ? 's' : '' %></span>
+					</div>
+				</div>
+
+				<!-- Itemized Financial Breakdown -->
+				<h6 class="fw-bold mb-2" style="color: var(--ink-900);">Price Breakdown</h6>
+				<table class="table table-borderless table-sm mb-3">
+					<tbody>
+						<tr>
+							<td class="text-muted">&#x20B9;<%= booking.nightlyPrice.toLocaleString("en-IN") %> &times; <%= booking.totalNights %> nights</td>
+							<td class="text-end fw-medium tabular-nums">&#x20B9;<%= (booking.nightlyPrice * booking.totalNights).toLocaleString("en-IN") %></td>
+						</tr>
+						<tr>
+							<td class="text-muted">Standard Cleaning Fee</td>
+							<td class="text-end fw-medium tabular-nums">&#x20B9;<%= (booking.cleaningFee || 500).toLocaleString("en-IN") %></td>
+						</tr>
+						<tr>
+							<td class="text-muted">GST &amp; State Taxes (18%)</td>
+							<td class="text-end fw-medium tabular-nums">&#x20B9;<%= (booking.taxAmount || 0).toLocaleString("en-IN") %></td>
+						</tr>
+						<tr class="border-top" style="border-color: var(--border-color) !important;">
+							<td class="fw-bold fs-6 pt-2">Total Due (INR)</td>
+							<td class="text-end fw-bold fs-5 pt-2 tabular-nums" style="color: var(--forest-900);">&#x20B9;<%= booking.totalPrice.toLocaleString("en-IN") %></td>
+						</tr>
+					</tbody>
+				</table>
+
+				<!-- Cancellation Guarantee -->
+				<div class="p-3 rounded-3 small text-muted" style="background-color: var(--paper-100); border: 1px solid var(--border-color);">
+					<i class="fa-solid fa-circle-check text-success me-1"></i>
+					<strong class="text-dark">Free cancellation:</strong> Cancel anytime before check-in for a 100% instant refund.
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	function selectPaymentMethod(method) {
+		document.getElementById("selectedPaymentMethod").value = method;
+
+		const cardBtn = document.getElementById("methodCardBtn");
+		const upiBtn = document.getElementById("methodUpiBtn");
+		const netBtn = document.getElementById("methodNetbankingBtn");
+
+		const cardSec = document.getElementById("cardPaymentSection");
+		const upiSec = document.getElementById("upiPaymentSection");
+		const netSec = document.getElementById("netbankingPaymentSection");
+
+		// Reset buttons
+		[cardBtn, upiBtn, netBtn].forEach(btn => {
+			btn.classList.remove("active-method-btn");
+		});
+
+		// Hide sections
+		cardSec.classList.add("d-none");
+		upiSec.classList.add("d-none");
+		netSec.classList.add("d-none");
+
+		if (method === "card") {
+			cardBtn.classList.add("active-method-btn");
+			cardSec.classList.remove("d-none");
+		} else if (method === "upi") {
+			upiBtn.classList.add("active-method-btn");
+			upiSec.classList.remove("d-none");
+		} else if (method === "netbanking") {
+			netBtn.classList.add("active-method-btn");
+			netSec.classList.remove("d-none");
+		}
+	}
+
+	function setUpiHandle(handle) {
+		const upiInput = document.getElementById("upiId");
+		if (upiInput) {
+			const currentVal = upiInput.value.split("@")[0] || "traveler";
+			upiInput.value = currentVal + "@" + handle;
+		}
+	}
+
+	// Live Card Format & Brand Detection
+	const cardInput = document.getElementById("cardNumber");
+	if (cardInput) {
+		cardInput.addEventListener("input", function(e) {
+			let val = e.target.value.replace(/\D/g, "").substring(0, 16);
+			let formatted = val.match(/.{1,4}/g)?.join(" ") || val;
+			e.target.value = formatted;
+
+			const icon = document.getElementById("cardBrandIcon");
+			if (icon) {
+				if (val.startsWith("4")) {
+					icon.className = "fa-brands fa-cc-visa text-primary";
+				} else if (/^(5[1-5]|2[2-7])/.test(val)) {
+					icon.className = "fa-brands fa-cc-mastercard text-danger";
+				} else if (/^3[47]/.test(val)) {
+					icon.className = "fa-brands fa-cc-amex text-info";
+				} else {
+					icon.className = "fa-regular fa-credit-card";
+				}
+			}
+		});
+	}
+
+	// Loading state on checkout submit
+	const form = document.getElementById("checkoutPaymentForm");
+	if (form) {
+		form.addEventListener("submit", function() {
+			const btn = document.getElementById("submitPaymentBtn");
+			if (btn) {
+				btn.disabled = true;
+				btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Processing Payment...';
+			}
+		});
+	}
+</script>

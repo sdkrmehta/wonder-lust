@@ -1,36 +1,123 @@
 <% layout("/layouts/boilerplate") %>
 
-<div class="row mt-3">
-	<h3 class="col-6 offset-3">Login</h3>
-	<div class="col-6 offset-3">
+<div class="container-narrow py-5 my-md-4">
+	<!-- Editorial Header -->
+	<div class="text-center mb-4">
+		<span class="badge rounded-pill px-3 py-2 mb-2 border text-uppercase tracking-wider fw-semibold" style="background-color: var(--forest-100); color: var(--forest-900); font-size: 0.75rem; letter-spacing: 0.05em;">
+			<i class="fa-solid fa-key me-1"></i> Welcome Back
+		</span>
+		<h1 class="editorial-title display-6 fw-bold mb-2">Sign in to Wander-Lust</h1>
+		<p class="text-muted small mx-auto" style="max-width: 460px;">
+			Access your curated itineraries, saved wishlist, and personal hosting command center.
+		</p>
+	</div>
+
+	<!-- Login Card -->
+	<div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white mb-4">
 		<form action="/login" method="POST" class="needs-validation" novalidate>
+			<!-- Username Field -->
 			<div class="mb-3">
-				<label for="username" class="form-label">Username</label>
-				<input
-					name="username"
-					id="username"
-					type="text"
-					class="form-control"
-					required
-				/>
-				<div class="invalid-feedback">
-					Please enter a valid username.
+				<label for="username" class="form-label small fw-semibold text-dark mb-1">
+					Username <span class="text-danger">*</span>
+				</label>
+				<div class="input-group">
+					<span class="input-group-text bg-light text-muted border-end-0">
+						<i class="fa-regular fa-user"></i>
+					</span>
+					<input
+						name="username"
+						id="username"
+						type="text"
+						class="form-control border-start-0 ps-0"
+						placeholder="Enter your username"
+						autocomplete="username"
+						required
+					/>
+					<div class="invalid-feedback">
+						Please enter your username.
+					</div>
 				</div>
 			</div>
-			<div class="mb-3">
-				<label for="password" class="form-label">Password</label>
-				<input
-					name="password"
-					id="password"
-					type="password"
-					class="form-control"
-					required
-				/>
-				<div class="invalid-feedback">
-					Please enter a valid password.
+
+			<!-- Password Field -->
+			<div class="mb-4">
+				<div class="d-flex justify-content-between align-items-center mb-1">
+					<label for="password" class="form-label small fw-semibold text-dark mb-0">
+						Password <span class="text-danger">*</span>
+					</label>
+				</div>
+				<div class="input-group">
+					<span class="input-group-text bg-light text-muted border-end-0">
+						<i class="fa-solid fa-lock"></i>
+					</span>
+					<input
+						name="password"
+						id="password"
+						type="password"
+						class="form-control border-start-0 ps-0"
+						placeholder="Enter your password"
+						autocomplete="current-password"
+						required
+					/>
+					<button
+						class="btn btn-outline-secondary border-start-0 px-3"
+						type="button"
+						id="togglePasswordBtn"
+						onclick="togglePasswordVisibility('password', this)"
+						title="Toggle password visibility"
+						aria-label="Toggle password visibility"
+					>
+						<i class="fa-regular fa-eye"></i>
+					</button>
+					<div class="invalid-feedback">
+						Please enter your password.
+					</div>
 				</div>
 			</div>
-			<button class="btn btn-dark add-btn">Login</button>
+
+			<!-- Remember Me & Assistance Info -->
+			<div class="d-flex justify-content-between align-items-center mb-4 small">
+				<div class="form-check text-muted">
+					<input class="form-check-input" type="checkbox" id="rememberMe" checked>
+					<label class="form-check-label" for="rememberMe">
+						Remember this device
+					</label>
+				</div>
+				<span class="text-muted"><i class="fa-solid fa-shield-check text-success me-1"></i>Protected by Session Auth</span>
+			</div>
+
+			<!-- Submit Button -->
+			<button type="submit" class="btn btn-forest add-btn w-100 py-2 fw-semibold fs-6 shadow-sm">
+				<i class="fa-solid fa-arrow-right-to-bracket me-2"></i>Log In
+			</button>
 		</form>
 	</div>
+
+	<!-- Signup Alternative -->
+	<div class="text-center">
+		<p class="text-muted small mb-3">
+			Don't have an account? <a href="/signup" class="text-forest text-decoration-none fw-bold">Sign up</a>
+		</p>
+
+		<!-- Trust Badges Strip -->
+		<div class="d-flex flex-wrap justify-content-center gap-4 pt-3 border-top text-muted small" style="font-size: 0.8rem;">
+			<span><i class="fa-solid fa-shield-halved text-success me-1"></i> Verified Hospitality</span>
+			<span><i class="fa-solid fa-lock text-forest me-1"></i> SSL 256-Bit Protection</span>
+			<span><i class="fa-solid fa-circle-question text-terracotta me-1"></i> Concierge Help Desk</span>
+		</div>
+	</div>
 </div>
+
+<script>
+	function togglePasswordVisibility(fieldId, btn) {
+		const inp = document.getElementById(fieldId);
+		if (!inp) return;
+		if (inp.type === 'password') {
+			inp.type = 'text';
+			btn.innerHTML = '<i class="fa-regular fa-eye-slash"></i>';
+		} else {
+			inp.type = 'password';
+			btn.innerHTML = '<i class="fa-regular fa-eye"></i>';
+		}
+	}
+</script>

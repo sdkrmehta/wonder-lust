@@ -1,41 +1,66 @@
 const express = require("express");
 const router = express.Router();
-const wrapAsync = require("../utils/wrapAsync.js");
-const Listing = require("../models/listing.js");
-const { isLoggedIn, isOwner, validateListing } = require("../middleware.js");
-const listingController = require("../controllers/listings.js");
-const multer = require("multer");
-const { storage } = require("../cloudConfig.js");
-const upload = multer({ storage });
+const wrapAsync = require("../utils/wrapAsync");
+const { isLoggedIn, isOwner, validateListing, validateBooking } = require("../middleware");
+const listingController = require("../controllers/listings");
+const bookingController = require("../controllers/bookings");
+const { handleListingUpload } = require("../config/storage");
+
+// Search Autocomplete Suggestions API
+router.get("/suggestions", wrapAsync(listingController.getSuggestions));
+
+// Listing Booked Dates API
+router.get("/:id/booked-dates", wrapAsync(bookingController.getBookedDates));
+
+// Create Reservation on Listing
+router.post(
+	"/:id/bookings",
+	isLoggedIn,
+	validateBooking,
+	wrapAsync(bookingController.createBooking),
+);
 
 router
 	.route("/")
-	.get(wrapAsync(listingController.index)) // Index Route
+	.get(wrapAsync(listingController.index))
 	.post(
-		// Create Route
 		isLoggedIn,
-		upload.single("listing[image]"),
+		handleListingUpload,
 		validateListing,
 		wrapAsync(listingController.createListing),
 	);
 
-// New Route
+// New Listing Form
 router.get("/new", isLoggedIn, listingController.renderNewForm);
 
 router
 	.route("/:id")
-	.get(wrapAsync(listingController.showListing)) // Show Route
+	.get(wrapAsync(listingController.showListing))
 	.put(
-		// Update Route
 		isLoggedIn,
 		isOwner,
-		upload.single("listing[image]"),
+		handleListingUpload,
 		validateListing,
 		wrapAsync(listingController.updateListing),
 	)
-	.delete(isLoggedIn, isOwner, wrapAsync(listingController.destroyListing)); // Delete Route
+	.delete(isLoggedIn, isOwner, wrapAsync(listingController.destroyListing));
 
-// Edit Route
+// Gallery Image Management
+router.delete(
+	"/:id/images/:imageId",
+	isLoggedIn,
+	isOwner,
+	wrapAsync(listingController.deleteImage),
+);
+
+router.post(
+	"/:id/images/:imageId/primary",
+	isLoggedIn,
+	isOwner,
+	wrapAsync(listingController.setPrimaryImage),
+);
+
+// Edit Listing Form
 router.get(
 	"/:id/edit",
 	isLoggedIn,

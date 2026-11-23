@@ -1,98 +1,455 @@
 <% layout("layouts/boilerplate") %>
 
-<div class="row">
-	<div class="col-8 offset-2">
-		<br />
-		<h3>Edit listings</h3>
+<style>
+	.form-section-card {
+		background: #ffffff;
+		border: 1px solid var(--border-color);
+		border-radius: 1.25rem;
+		padding: 2rem;
+		margin-bottom: 1.75rem;
+		box-shadow: var(--shadow-subtle);
+		transition: border-color 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	.form-section-card:focus-within {
+		border-color: var(--forest-200);
+		box-shadow: var(--shadow-card);
+	}
+
+	.section-indicator {
+		width: 32px;
+		height: 32px;
+		border-radius: 50%;
+		background-color: var(--forest-100);
+		color: var(--forest-800);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		font-weight: 700;
+		font-size: 0.85rem;
+		margin-right: 0.75rem;
+		flex-shrink: 0;
+	}
+
+	.amenity-checkbox-card {
+		border: 1px solid var(--border-color);
+		border-radius: 0.75rem;
+		padding: 0.75rem 1rem;
+		background: var(--paper-50);
+		transition: all 0.15s ease;
+		cursor: pointer;
+	}
+
+	.amenity-checkbox-card:hover {
+		background: #ffffff;
+		border-color: var(--forest-200);
+	}
+
+	.amenity-checkbox-card .form-check-input:checked ~ .form-check-label {
+		color: var(--forest-900);
+		font-weight: 600;
+	}
+
+	.gallery-manage-card {
+		border: 1px solid var(--border-color);
+		border-radius: 0.85rem;
+		overflow: hidden;
+		background: #ffffff;
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	.gallery-manage-card:hover {
+		transform: translateY(-2px);
+		box-shadow: var(--shadow-subtle);
+	}
+</style>
+
+<div class="row mt-3 mb-5">
+	<div class="col-12 col-lg-10 offset-lg-1 col-xl-8 offset-xl-2">
+		<!-- Header Banner -->
+		<div class="mb-4">
+			<a href="/listings/<%= listing._id %>" class="text-muted small text-decoration-none d-inline-flex align-items-center gap-1 mb-2">
+				<i class="fa-solid fa-arrow-left"></i> Back to listing preview
+			</a>
+			<h1 class="editorial-title mb-2">Edit Listing</h1>
+			<p class="text-muted">Update listing copy, photo gallery, guest capacity, pricing, and amenities.</p>
+		</div>
+
+		<!-- Existing Gallery Images Management Section -->
+		<% 
+			const existingGallery = (listing.images && listing.images.length > 0)
+				? listing.images
+				: (listing.image && listing.image.url ? [{ _id: "primary", url: listing.image.url, filename: listing.image.filename, isPrimary: true }] : []);
+		%>
+		<% if (existingGallery.length > 0) { %>
+			<div class="form-section-card">
+				<div class="d-flex align-items-center justify-content-between mb-3">
+					<div class="d-flex align-items-center">
+						<span class="section-indicator"><i class="fa-regular fa-images"></i></span>
+						<div>
+							<h5 class="fw-bold mb-0">Current Gallery (<%= existingGallery.length %> Photos)</h5>
+							<p class="text-muted small mb-0">Set your primary cover image or remove outdated photos.</p>
+						</div>
+					</div>
+				</div>
+
+				<div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 g-3">
+					<% existingGallery.forEach((img, idx) => { %>
+						<div class="col">
+							<div class="gallery-manage-card h-100 position-relative">
+								<img
+									src="<%= img.url %>"
+									alt="Gallery item <%= idx + 1 %>"
+									class="card-img-top"
+									style="height: 110px; object-fit: cover;"
+									onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';"
+								/>
+								<div class="p-2 text-center bg-white border-top">
+									<% if (img.isPrimary) { %>
+										<span class="stamp stamp-confirmed py-1 px-2" style="font-size: 0.68rem;">
+											<i class="fa-solid fa-star me-1"></i>Cover
+										</span>
+									<% } else if (img._id && img._id !== "primary") { %>
+										<form action="/listings/<%= listing._id %>/images/<%= img._id %>/primary" method="POST" class="d-inline">
+											<button class="btn btn-forest-outline btn-sm rounded-pill py-0 px-2" style="font-size: 0.72rem;">
+												Set Cover
+											</button>
+										</form>
+									<% } %>
+
+									<% if (existingGallery.length > 1 && img._id && img._id !== "primary") { %>
+										<form action="/listings/<%= listing._id %>/images/<%= img._id %>?_method=DELETE" method="POST" class="d-inline ms-1" onsubmit="return confirm('Remove this image from the gallery?');">
+											<button class="btn btn-sm btn-outline-danger rounded-pill py-0 px-2" style="font-size: 0.72rem;">
+												<i class="fa-regular fa-trash-can"></i>
+											</button>
+										</form>
+									<% } %>
+								</div>
+							</div>
+						</div>
+					<% }); %>
+				</div>
+			</div>
+		<% } %>
+
+		<!-- Main Edit Form -->
 		<form
 			method="POST"
 			action="/listings/<%= listing._id %>?_method=PUT"
 			novalidate
 			class="needs-validation"
 			enctype="multipart/form-data"
+			id="editListingForm"
 		>
-			<div class="mb-3">
-				<label for="title" class="form-label">Titile</label>
-				<input
-					name="listing[title]"
-					value="<%=listing.title%>"
-					type="text"
-					class="form-control"
-					required
-				/>
-				<div class="invalid-feedback">
-					*Please add a title for the listing
+			<!-- 1. Basic Information -->
+			<div class="form-section-card">
+				<div class="d-flex align-items-center mb-3">
+					<span class="section-indicator">1</span>
+					<div>
+						<h5 class="fw-bold mb-0">Overview &amp; Concept</h5>
+						<p class="text-muted small mb-0">Update listing title and descriptive highlights.</p>
+					</div>
 				</div>
-			</div>
 
-			<div class="mb-3">
-				<label for="description" class="form-label">Description</label>
-				<textarea
-					name="listing[description]"
-					class="form-control"
-					required
-				>
-<%= listing.description %></textarea
-				>
-				<div class="invalid-feedback">
-					*Please provide a description.
-				</div>
-			</div>
-
-			<div class="mb-3">
-				Original Listing Image <br />
-				<img src="<%= originalImageUrl %>" />
-			</div>
-
-			<div class="mb-3">
-				<label for="image" class="form-label">Upload New Image</label>
-				<input name="listing[image]" type="file" class="form-control" />
-			</div>
-
-			<div class="row">
-				<div class="mb-3 col-md-4">
-					<label for="price" class="form-label">Price</label>
+				<div class="mb-3">
+					<label for="title" class="form-label fw-semibold">Property Title</label>
 					<input
-						name="listing[price]"
-						value="<%=listing.price%>"
+						name="listing[title]"
+						id="title"
+						value="<%= listing.title %>"
 						type="text"
 						class="form-control"
 						required
 					/>
 					<div class="invalid-feedback">
-						*Enter a price for your listing.
+						*Please add a title for the listing.
 					</div>
 				</div>
 
-				<div class="mb-3 col-md-8">
-					<label for="country" class="form-label">Country</label>
-					<input
-						name="listing[country]"
-						value="<%=listing.country%>"
-						type="text"
+				<div class="mb-3">
+					<label for="description" class="form-label fw-semibold">Description</label>
+					<textarea
+						name="listing[description]"
+						id="description"
 						class="form-control"
+						rows="4"
 						required
-					/>
+					><%= listing.description %></textarea>
 					<div class="invalid-feedback">
-						*Please add the country name.
+						*Please provide a description.
+					</div>
+				</div>
+
+				<div class="row g-3">
+					<div class="col-md-6">
+						<label for="category" class="form-label fw-semibold">Discovery Category</label>
+						<select name="listing[category]" id="category" class="form-select">
+							<% const categories = ["General", "Trending", "Rooms", "Iconic Cities", "Mountains", "Castles", "Amazing Pools", "Camping", "Farms", "Arctic", "Domes", "Boats"]; %>
+							<% for (let cat of categories) { %>
+								<option value="<%= cat %>" <%= (listing.category === cat) ? "selected" : "" %>><%= cat %></option>
+							<% } %>
+						</select>
+					</div>
+
+					<div class="col-md-6">
+						<label for="propertyType" class="form-label fw-semibold">Property Type</label>
+						<select name="listing[propertyType]" id="propertyType" class="form-select">
+							<% const pTypes = ["Villa", "Apartment", "House", "Cabin", "Cottage", "Beachfront", "Farmhouse"]; %>
+							<% for (let pt of pTypes) { %>
+								<option value="<%= pt %>" <%= (listing.propertyType === pt) ? "selected" : "" %>><%= pt %></option>
+							<% } %>
+						</select>
 					</div>
 				</div>
 			</div>
 
-			<div class="mb-3">
-				<label for="location" class="form-label">Location</label>
-				<input
-					name="listing[location]"
-					value="<%=listing.location%>"
-					type="text"
-					class="form-control"
-					required
-				/>
-				<div class="invalid-feedback">*Please add the location.</div>
+			<!-- 2. Location & Geography -->
+			<div class="form-section-card">
+				<div class="d-flex align-items-center mb-3">
+					<span class="section-indicator">2</span>
+					<div>
+						<h5 class="fw-bold mb-0">Location &amp; Geography</h5>
+						<p class="text-muted small mb-0">Property city and destination country.</p>
+					</div>
+				</div>
+
+				<div class="row g-3">
+					<div class="col-md-6">
+						<label for="location" class="form-label fw-semibold">City / Location</label>
+						<div class="input-group">
+							<span class="input-group-text bg-white text-muted"><i class="fa-solid fa-location-dot text-danger"></i></span>
+							<input
+								name="listing[location]"
+								id="location"
+								value="<%= listing.location %>"
+								type="text"
+								class="form-control"
+								required
+							/>
+						</div>
+						<div class="invalid-feedback">*Please add the location.</div>
+					</div>
+
+					<div class="col-md-6">
+						<label for="country" class="form-label fw-semibold">Country</label>
+						<div class="input-group">
+							<span class="input-group-text bg-white text-muted"><i class="fa-solid fa-earth-americas text-primary"></i></span>
+							<input
+								name="listing[country]"
+								id="country"
+								value="<%= listing.country %>"
+								type="text"
+								class="form-control"
+								required
+							/>
+						</div>
+						<div class="invalid-feedback">
+							*Please add the country name.
+						</div>
+					</div>
+				</div>
 			</div>
 
-			<button class="btn btn-dark add-btn mt-3">Save Changes</button>
+			<!-- 3. Capacity & Layout -->
+			<div class="form-section-card">
+				<div class="d-flex align-items-center mb-3">
+					<span class="section-indicator">3</span>
+					<div>
+						<h5 class="fw-bold mb-0">Capacity &amp; Layout</h5>
+						<p class="text-muted small mb-0">Guest accommodations and room counts.</p>
+					</div>
+				</div>
+
+				<div class="row g-3">
+					<div class="col-6 col-md-4">
+						<label for="guests" class="form-label fw-semibold">Max Guests</label>
+						<div class="input-group">
+							<span class="input-group-text bg-white text-muted"><i class="fa-solid fa-users"></i></span>
+							<input name="listing[guests]" id="guests" type="number" min="1" value="<%= listing.guests || 2 %>" class="form-control" />
+						</div>
+					</div>
+					<div class="col-6 col-md-4">
+						<label for="bedrooms" class="form-label fw-semibold">Bedrooms</label>
+						<div class="input-group">
+							<span class="input-group-text bg-white text-muted"><i class="fa-solid fa-bed"></i></span>
+							<input name="listing[bedrooms]" id="bedrooms" type="number" min="1" value="<%= listing.bedrooms || 1 %>" class="form-control" />
+						</div>
+					</div>
+					<div class="col-12 col-md-4">
+						<label for="bathrooms" class="form-label fw-semibold">Bathrooms</label>
+						<div class="input-group">
+							<span class="input-group-text bg-white text-muted"><i class="fa-solid fa-bath"></i></span>
+							<input name="listing[bathrooms]" id="bathrooms" type="number" min="1" value="<%= listing.bathrooms || 1 %>" class="form-control" />
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- 4. Upload Additional Photos -->
+			<div class="form-section-card">
+				<div class="d-flex align-items-center mb-3">
+					<span class="section-indicator">4</span>
+					<div>
+						<h5 class="fw-bold mb-0">Add More Photos</h5>
+						<p class="text-muted small mb-0">Enrich your property showcase with more photographs.</p>
+					</div>
+				</div>
+
+				<div class="mb-3">
+					<label for="imageEditInput" class="form-label fw-semibold">Upload Additional Photos</label>
+					<input
+						name="listing[image]"
+						id="imageEditInput"
+						type="file"
+						class="form-control"
+						accept="image/jpeg,image/png,image/webp,image/gif"
+						multiple
+					/>
+					<div class="form-text">
+						Upload additional photos to add to the gallery (JPEG, PNG, WebP &bull; Max 5MB per file).
+					</div>
+					<div id="editImagePreviewContainer" class="row g-2 mt-3 d-none"></div>
+					<div id="editFileSizeWarning" class="alert alert-danger py-2 mt-2 d-none small">
+						<i class="fa-solid fa-triangle-exclamation me-1"></i> One or more selected images exceed the 5MB file limit.
+					</div>
+				</div>
+			</div>
+
+			<!-- 5. Pricing & Publishing Status -->
+			<div class="form-section-card">
+				<div class="d-flex align-items-center mb-3">
+					<span class="section-indicator">5</span>
+					<div>
+						<h5 class="fw-bold mb-0">Pricing &amp; Status</h5>
+						<p class="text-muted small mb-0">Adjust nightly rate and listing visibility.</p>
+					</div>
+				</div>
+
+				<div class="row g-3">
+					<div class="col-md-6">
+						<label for="price" class="form-label fw-semibold">Price (&#x20B9;)</label>
+						<div class="input-group">
+							<span class="input-group-text">&#x20B9;</span>
+							<input
+								name="listing[price]"
+								id="price"
+								value="<%= listing.price %>"
+								type="number"
+								min="0"
+								class="form-control tabular-nums"
+								required
+							/>
+							<span class="input-group-text text-muted small">/ night</span>
+							<div class="invalid-feedback">
+								*Enter a valid price for your listing.
+							</div>
+						</div>
+					</div>
+
+					<div class="col-md-6">
+						<label for="status" class="form-label fw-semibold">Publishing Status</label>
+						<select name="listing[status]" id="status" class="form-select">
+							<option value="published" <%= (!listing.status || listing.status === 'published') ? 'selected' : '' %>>Published (Visible to Travelers)</option>
+							<option value="draft" <%= (listing.status === 'draft') ? 'selected' : '' %>>Draft (Private / Hidden)</option>
+							<option value="archived" <%= (listing.status === 'archived') ? 'selected' : '' %>>Archived</option>
+						</select>
+					</div>
+				</div>
+			</div>
+
+			<!-- 6. Amenities Checklist -->
+			<div class="form-section-card">
+				<div class="d-flex align-items-center mb-3">
+					<span class="section-indicator">6</span>
+					<div>
+						<h5 class="fw-bold mb-0">Amenities</h5>
+						<p class="text-muted small mb-0">Select all amenities available at this property.</p>
+					</div>
+				</div>
+
+				<div class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-2">
+					<% const allAmenities = ["Wifi", "Pool", "Air Conditioning", "Free Parking", "Kitchen", "TV", "Hot Tub", "Dedicated Workspace"]; %>
+					<% const currentAmenities = listing.amenities || []; %>
+					<% for (let am of allAmenities) { %>
+						<div class="col">
+							<div class="amenity-checkbox-card d-flex align-items-center gap-2">
+								<input class="form-check-input mt-0" type="checkbox" name="listing[amenities]" value="<%= am %>" id="edit_am_<%= am.replace(/\s+/g, '_') %>" <%= currentAmenities.includes(am) ? "checked" : "" %>>
+								<label class="form-check-label small w-100 cursor-pointer" for="edit_am_<%= am.replace(/\s+/g, '_') %>"><%= am %></label>
+							</div>
+						</div>
+					<% } %>
+				</div>
+			</div>
+
+			<!-- Actions Bar -->
+			<div class="d-flex flex-wrap align-items-center gap-3 pt-2">
+				<button class="btn btn-forest px-4 py-2 rounded-pill fw-semibold" id="editSubmitBtn">
+					<i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
+				</button>
+				<a href="/listings/<%= listing._id %>" class="btn btn-outline-secondary px-4 py-2 rounded-pill">
+					Cancel
+				</a>
+			</div>
 		</form>
 	</div>
 </div>
-<script src="/js/script.js/"></script>
+
+<script>
+	const imageEditInput = document.getElementById("imageEditInput");
+	const editPreviewContainer = document.getElementById("editImagePreviewContainer");
+	const editWarningEl = document.getElementById("editFileSizeWarning");
+	const editSubmitBtn = document.getElementById("editSubmitBtn");
+
+	if (imageEditInput) {
+		imageEditInput.addEventListener("change", (e) => {
+			editPreviewContainer.innerHTML = "";
+			editWarningEl.classList.add("d-none");
+			editSubmitBtn.disabled = false;
+
+			const files = Array.from(e.target.files);
+			if (files.length === 0) {
+				editPreviewContainer.classList.add("d-none");
+				return;
+			}
+
+			editPreviewContainer.classList.remove("d-none");
+			let hasOversized = false;
+
+			files.forEach((file) => {
+				const sizeKB = Math.round(file.size / 1024);
+				const isOversized = file.size > 5 * 1024 * 1024;
+				if (isOversized) hasOversized = true;
+
+				const col = document.createElement("div");
+				col.className = "col-6 col-sm-4 col-md-3";
+
+				const card = document.createElement("div");
+				card.className = `card h-100 p-1 position-relative ${isOversized ? 'border-danger' : 'border'}`;
+				card.style.borderRadius = "0.75rem";
+
+				const img = document.createElement("img");
+				img.src = URL.createObjectURL(file);
+				img.className = "card-img-top rounded";
+				img.style.height = "90px";
+				img.style.objectFit = "cover";
+
+				const info = document.createElement("div");
+				info.className = "card-body p-2 text-center";
+				info.innerHTML = `
+					<p class="card-text text-truncate mb-1 small fw-medium" title="${file.name}">${file.name}</p>
+					<span class="badge ${isOversized ? 'bg-danger' : 'bg-light text-dark'} small" style="font-size: 0.7rem;">${sizeKB} KB</span>
+				`;
+
+				card.appendChild(img);
+				card.appendChild(info);
+				col.appendChild(card);
+				editPreviewContainer.appendChild(col);
+			});
+
+			if (hasOversized) {
+				editWarningEl.classList.remove("d-none");
+				editSubmitBtn.disabled = true;
+			}
+		});
+	}
+</script>

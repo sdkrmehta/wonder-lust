@@ -1,0 +1,99 @@
+<% layout("/layouts/boilerplate") %>
+
+<div class="container-standard py-4 my-2">
+	<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-3 border-bottom">
+		<div>
+			<nav aria-label="breadcrumb">
+				<ol class="breadcrumb small mb-1">
+					<li class="breadcrumb-item"><a href="/admin" class="text-decoration-none text-forest">Admin Console</a></li>
+					<li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Content Moderation Queue</li>
+				</ol>
+			</nav>
+			<h1 class="editorial-title h2 fw-bold mb-1 d-flex align-items-center gap-2 text-dark">
+				<i class="fa-solid fa-flag text-danger"></i>
+				<span>Review Moderation Queue</span>
+			</h1>
+			<p class="text-muted small mb-0">Evaluate flagged guest reviews for spam, harassment, false statements, or policy violations.</p>
+		</div>
+		<a href="/admin" class="btn btn-forest-outline btn-sm rounded-pill px-3">
+			<i class="fa-solid fa-arrow-left me-1"></i> Back to Dashboard
+		</a>
+	</div>
+
+	<% if (!flaggedReviews || flaggedReviews.length === 0) { %>
+		<div class="card border-0 shadow-sm rounded-4 text-center py-5 px-3 my-4 bg-white">
+			<div class="card-body">
+				<div class="mb-3 text-success" style="font-size: 3rem;">
+					<i class="fa-solid fa-circle-check"></i>
+				</div>
+				<h5 class="editorial-title fw-bold text-dark mb-1">Moderation Queue is Clean!</h5>
+				<p class="text-muted small mx-auto mb-3" style="max-width: 440px;">
+					There are no reported or flagged reviews pending administrative review at this time.
+				</p>
+				<a href="/admin" class="btn btn-forest btn-sm rounded-pill px-4">
+					Return to Admin Dashboard
+				</a>
+			</div>
+		</div>
+	<% } else { %>
+		<div class="d-flex flex-column gap-3">
+			<% for (const r of flaggedReviews) { %>
+				<div class="card border-0 shadow-sm rounded-4 p-4 bg-white border-start border-danger border-4">
+					<div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
+						<div>
+							<span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill mb-2 px-3 py-1">
+								<i class="fa-solid fa-triangle-exclamation me-1"></i> Flagged for Review
+							</span>
+							<h6 class="fw-bold mb-1 text-dark">
+								Property: 
+								<% if (r.listing) { %>
+									<a href="/listings/<%= r.listing._id %>" class="text-forest text-decoration-none">
+										<%= r.listing.title %> (<%= r.listing.location %>)
+									</a>
+								<% } else { %>
+									<span class="text-muted">Unlinked Property</span>
+								<% } %>
+							</h6>
+							<div class="text-muted small font-tabular">
+								Author: <b class="text-dark"><%= r.author ? r.author.username : 'Anonymous' %></b> &bull; <%= new Date(r.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) %>
+							</div>
+						</div>
+						<div class="text-warning font-tabular">
+							<% for (let i = 1; i <= 5; i++) { %>
+								<i class="<%= i <= r.rating ? 'fa-solid' : 'fa-regular' %> fa-star" style="color: var(--gold);"></i>
+							<% } %>
+							<span class="text-dark fw-bold ms-1">(<%= r.rating %>/5)</span>
+						</div>
+					</div>
+
+					<!-- Flag Reason Box -->
+					<% if (r.flagReason) { %>
+						<div class="p-3 mb-3 rounded-3 text-secondary small" style="background-color: var(--paper-100); border-left: 3px solid var(--terracotta);">
+							<i class="fa-solid fa-circle-exclamation text-terracotta me-1"></i>
+							<b>Report Reason:</b> "<%= r.flagReason %>"
+						</div>
+					<% } %>
+
+					<!-- Review Text -->
+					<div class="p-3 rounded-3 mb-3 text-dark small" style="background-color: var(--paper-50); border: 1px solid var(--paper-200); font-style: italic;">
+						"<%= r.comment %>"
+					</div>
+
+					<!-- Moderator Actions -->
+					<div class="d-flex flex-wrap align-items-center justify-content-end gap-2 pt-2 border-top">
+						<form action="/admin/moderation/reviews/<%= r._id %>/dismiss" method="POST" class="d-inline">
+							<button type="submit" class="btn btn-forest-outline btn-sm rounded-pill px-3">
+								<i class="fa-solid fa-check me-1"></i> Dismiss Flag (Approve)
+							</button>
+						</form>
+						<form action="/admin/moderation/reviews/<%= r._id %>/delete" method="POST" class="d-inline">
+							<button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3" onclick="return confirm('Permanently remove this review from the platform?');">
+								<i class="fa-solid fa-trash me-1"></i> Delete Review
+							</button>
+						</form>
+					</div>
+				</div>
+			<% } %>
+		</div>
+	<% } %>
+</div>

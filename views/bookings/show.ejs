@@ -1,0 +1,196 @@
+<% layout("layouts/boilerplate") %>
+
+<style>
+	.itinerary-card {
+		background: #ffffff;
+		border: 1px solid var(--border-color);
+		border-radius: 1.5rem;
+		box-shadow: var(--shadow-card);
+		overflow: hidden;
+	}
+
+	.itinerary-header-banner {
+		padding: 2.5rem 2rem;
+		text-align: center;
+		background: var(--paper-50);
+		border-bottom: 1px solid var(--border-color);
+	}
+
+	.status-icon-circle {
+		width: 72px;
+		height: 72px;
+		border-radius: 50%;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		margin-bottom: 1rem;
+	}
+
+	.property-itinerary-preview {
+		background: var(--paper-100);
+		border: 1px solid var(--border-color);
+		border-radius: 1rem;
+		padding: 1.25rem;
+	}
+
+	.stay-date-box {
+		background: var(--paper-50);
+		border: 1px solid var(--border-color);
+		border-radius: 0.85rem;
+		padding: 1rem;
+	}
+</style>
+
+<div class="row my-4">
+	<div class="col-12 col-md-10 offset-md-1 col-lg-8 offset-lg-2">
+		<div class="itinerary-card">
+			<!-- Header Banner -->
+			<div class="itinerary-header-banner">
+				<% if (booking.status === 'confirmed') { %>
+					<div class="status-icon-circle" style="background-color: var(--color-success-bg); color: var(--color-success);">
+						<i class="fa-solid fa-circle-check fa-3x"></i>
+					</div>
+					<h2 class="editorial-title text-success mb-1">Reservation Confirmed!</h2>
+					<p class="text-muted small mb-3">Your booking reference ID: <span class="font-monospace fw-bold text-dark"><%= booking._id %></span></p>
+					
+					<div class="d-flex justify-content-center gap-2 flex-wrap">
+						<% if (booking.payment) { %>
+							<a href="/payments/receipt/<%= booking.payment._id || booking.payment %>" class="btn btn-sm btn-forest rounded-pill px-3 py-1">
+								<i class="fa-solid fa-file-invoice me-1"></i> Paid &bull; View Tax Invoice &rarr;
+							</a>
+						<% } else if (booking.paymentStatus === 'unpaid') { %>
+							<a href="/payments/checkout/<%= booking._id %>" class="btn btn-sm btn-warning rounded-pill px-3 py-1 text-dark fw-semibold">
+								<i class="fa-solid fa-clock me-1"></i> Payment Pending &bull; Pay Now &rarr;
+							</a>
+						<% } %>
+					</div>
+				<% } else if (booking.status === 'cancelled') { %>
+					<div class="status-icon-circle" style="background-color: var(--color-danger-bg); color: var(--color-danger);">
+						<i class="fa-solid fa-ban fa-3x"></i>
+					</div>
+					<h2 class="editorial-title text-danger mb-1">Reservation Cancelled</h2>
+					<p class="text-muted small mb-3">Reference ID: <span class="font-monospace fw-bold text-dark"><%= booking._id %></span></p>
+					<% if (booking.paymentStatus === 'refunded') { %>
+						<span class="stamp stamp-cancelled">
+							<i class="fa-solid fa-rotate-left me-1"></i> Payment Refunded
+						</span>
+					<% } %>
+				<% } %>
+			</div>
+
+			<div class="p-4 p-md-5">
+				<!-- Listing Details Card -->
+				<% const listing = booking.listing || {}; %>
+				<div class="property-itinerary-preview d-flex align-items-center gap-3 mb-4">
+					<img
+						src="<%= listing.image && listing.image.url ? listing.image.url : '/images/listing-placeholder.jpg' %>"
+						alt="<%= listing.title %>"
+						class="rounded-3 shadow-sm"
+						style="width: 84px; height: 84px; object-fit: cover;"
+						onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';"
+					/>
+					<div>
+						<h5 class="fw-bold mb-1" style="color: var(--ink-900);"><%= listing.title %></h5>
+						<p class="text-muted small mb-2">
+							<i class="fa-solid fa-location-dot me-1 text-danger"></i>
+							<%= listing.location %>, <%= listing.country %>
+						</p>
+						<a href="/listings/<%= listing._id %>" class="small fw-semibold text-decoration-none" style="color: var(--forest-800);">
+							View Property Listing &rarr;
+						</a>
+					</div>
+				</div>
+
+				<!-- Reservation Stay Details Grid -->
+				<div class="row g-3 mb-4">
+					<div class="col-6">
+						<div class="stay-date-box">
+							<span class="text-muted d-block small mb-1" style="letter-spacing: 0.04em;">CHECK-IN</span>
+							<span class="fw-bold fs-6 d-block text-dark"><%= new Date(booking.checkIn).toLocaleDateString("en-IN", { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) %></span>
+							<span class="text-muted small">From 3:00 PM</span>
+						</div>
+					</div>
+					<div class="col-6">
+						<div class="stay-date-box">
+							<span class="text-muted d-block small mb-1" style="letter-spacing: 0.04em;">CHECK-OUT</span>
+							<span class="fw-bold fs-6 d-block text-dark"><%= new Date(booking.checkOut).toLocaleDateString("en-IN", { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) %></span>
+							<span class="text-muted small">Until 11:00 AM</span>
+						</div>
+					</div>
+					<div class="col-6">
+						<div class="p-2 border rounded-3 bg-white">
+							<span class="text-muted d-block small">Reserved Guests</span>
+							<span class="fw-semibold text-dark"><%= booking.guests %> guest<%= booking.guests > 1 ? 's' : '' %></span>
+						</div>
+					</div>
+					<div class="col-6">
+						<div class="p-2 border rounded-3 bg-white">
+							<span class="text-muted d-block small">Stay Duration</span>
+							<span class="fw-semibold text-dark"><%= booking.totalNights %> night<%= booking.totalNights > 1 ? 's' : '' %></span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Price Breakdown Table -->
+				<div class="p-3 rounded-4 mb-4" style="background-color: var(--paper-50); border: 1px solid var(--border-color);">
+					<h6 class="fw-bold mb-3" style="color: var(--ink-900);">Price Breakdown</h6>
+					<div class="table-responsive">
+						<table class="table table-borderless table-sm mb-0">
+							<tbody>
+								<tr>
+									<td class="text-muted">&#x20B9;<%= booking.nightlyPrice.toLocaleString("en-IN") %> &times; <%= booking.totalNights %> nights</td>
+									<td class="text-end fw-medium tabular-nums">&#x20B9;<%= (booking.nightlyPrice * booking.totalNights).toLocaleString("en-IN") %></td>
+								</tr>
+								<tr>
+									<td class="text-muted">Standard Cleaning Fee</td>
+									<td class="text-end fw-medium tabular-nums">&#x20B9;<%= (booking.cleaningFee || 500).toLocaleString("en-IN") %></td>
+								</tr>
+								<tr>
+									<td class="text-muted">Taxes &amp; GST (18%)</td>
+									<td class="text-end fw-medium tabular-nums">&#x20B9;<%= (booking.taxAmount || 0).toLocaleString("en-IN") %></td>
+								</tr>
+								<tr class="border-top" style="border-color: var(--border-color) !important;">
+									<td class="fw-bold fs-6 pt-3">Total Amount</td>
+									<td class="text-end fw-bold fs-5 pt-3 tabular-nums" style="color: var(--forest-900);">&#x20B9;<%= booking.totalPrice.toLocaleString("en-IN") %></td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+
+				<!-- Actions Bar -->
+				<div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3 pt-3 border-top" style="border-color: var(--border-color) !important;">
+					<a href="/bookings" class="btn btn-outline-dark rounded-pill px-4">
+						<i class="fa-solid fa-arrow-left me-1"></i> Back to My Trips
+					</a>
+					<div class="d-flex flex-wrap gap-2 justify-content-end">
+						<% if (booking.payment) { %>
+							<a href="/payments/receipt/<%= booking.payment._id || booking.payment %>" class="btn btn-forest-outline rounded-pill px-3">
+								<i class="fa-solid fa-file-invoice me-1"></i> Invoice
+							</a>
+						<% } else if (booking.status === 'confirmed' && booking.paymentStatus === 'unpaid') { %>
+							<a href="/payments/checkout/<%= booking._id %>" class="btn btn-forest rounded-pill px-3">
+								<i class="fa-solid fa-credit-card me-1"></i> Pay Now
+							</a>
+						<% } %>
+						<button onclick="window.print()" class="btn btn-outline-secondary rounded-pill px-3">
+							<i class="fa-solid fa-print me-1"></i> Print
+						</button>
+						<% if (booking.status === 'confirmed') { %>
+							<form
+								action="/bookings/<%= booking._id %>/cancel"
+								method="POST"
+								onsubmit="return confirm('Are you sure you want to cancel this reservation?');"
+								class="d-inline"
+							>
+								<button class="btn btn-destructive rounded-pill px-3">
+									Cancel
+								</button>
+							</form>
+						<% } %>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

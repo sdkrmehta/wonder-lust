@@ -1,0 +1,173 @@
+<% layout("/layouts/boilerplate") %>
+
+<div class="container-wide py-4 my-2">
+	<!-- Header & Quick Nav -->
+	<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-3 border-bottom">
+		<div>
+			<span class="badge rounded-pill bg-light text-forest border px-3 py-1 mb-2 small fw-semibold">
+				<i class="fa-solid fa-shield-halved me-1"></i> Marketplace Administration
+			</span>
+			<h1 class="editorial-title h2 fw-bold mb-1 d-flex align-items-center gap-2 text-dark">
+				<span>Platform Governance &amp; Administration</span>
+			</h1>
+			<p class="text-muted small mb-0">High-level marketplace KPIs, user permissions, listing quality, and content moderation.</p>
+		</div>
+		<div class="d-flex flex-wrap align-items-center gap-2">
+			<a href="/admin/users" class="btn btn-forest-outline btn-sm rounded-pill px-3">
+				<i class="fa-solid fa-users me-1"></i> Users Directory
+			</a>
+			<a href="/admin/listings" class="btn btn-forest-outline btn-sm rounded-pill px-3">
+				<i class="fa-solid fa-house-chimney me-1"></i> Listings
+			</a>
+			<a href="/admin/moderation" class="btn btn-outline-danger btn-sm rounded-pill px-3 position-relative">
+				<i class="fa-solid fa-flag me-1"></i> Moderation Queue
+				<% if (metrics.moderation.flaggedReviewsCount > 0) { %>
+					<span class="badge bg-danger rounded-pill ms-1 font-tabular"><%= metrics.moderation.flaggedReviewsCount %></span>
+				<% } %>
+			</a>
+		</div>
+	</div>
+
+	<!-- 4 Key KPI Metrics Cards -->
+	<div class="row g-3 mb-4">
+		<!-- GMV & Revenue -->
+		<div class="col-12 col-sm-6 col-lg-3">
+			<div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 transition-hover">
+				<div class="d-flex align-items-center justify-content-between mb-3">
+					<span class="text-muted small fw-semibold text-uppercase tracking-wider" style="font-size: 0.72rem; letter-spacing: 0.05em;">Gross Volume (GMV)</span>
+					<div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px; background-color: var(--forest-100); color: var(--forest-900);">
+						<i class="fa-solid fa-indian-rupee-sign"></i>
+					</div>
+				</div>
+				<h2 class="editorial-title h3 fw-bold text-dark mb-1 font-tabular">₹<%= metrics.financials.grossBookingValue.toLocaleString('en-IN') %></h2>
+				<span class="text-muted small font-tabular">Est. Platform Take: <b class="text-forest">₹<%= metrics.financials.estimatedPlatformFees.toLocaleString('en-IN') %></b></span>
+			</div>
+		</div>
+
+		<!-- Total Bookings -->
+		<div class="col-12 col-sm-6 col-lg-3">
+			<div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 transition-hover">
+				<div class="d-flex align-items-center justify-content-between mb-3">
+					<span class="text-muted small fw-semibold text-uppercase tracking-wider" style="font-size: 0.72rem; letter-spacing: 0.05em;">Reservations</span>
+					<div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px; background-color: #E8F1F5; color: #1E555C;">
+						<i class="fa-solid fa-suitcase-rolling"></i>
+					</div>
+				</div>
+				<h2 class="editorial-title h3 fw-bold text-dark mb-1 font-tabular"><%= metrics.bookings.total %></h2>
+				<span class="text-muted small font-tabular">Confirmed: <b class="text-success"><%= metrics.bookings.confirmed %></b> | Cancelled: <b><%= metrics.bookings.cancelled %></b></span>
+			</div>
+		</div>
+
+		<!-- Properties -->
+		<div class="col-12 col-sm-6 col-lg-3">
+			<div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 transition-hover">
+				<div class="d-flex align-items-center justify-content-between mb-3">
+					<span class="text-muted small fw-semibold text-uppercase tracking-wider" style="font-size: 0.72rem; letter-spacing: 0.05em;">Properties</span>
+					<div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px; background-color: #FAF4E6; color: var(--gold);">
+						<i class="fa-solid fa-building"></i>
+					</div>
+				</div>
+				<h2 class="editorial-title h3 fw-bold text-dark mb-1 font-tabular"><%= metrics.listings.total %></h2>
+				<span class="text-muted small font-tabular">Active: <b class="text-forest"><%= metrics.listings.published %></b> | Drafts: <b><%= metrics.listings.draft %></b></span>
+			</div>
+		</div>
+
+		<!-- Community Users -->
+		<div class="col-12 col-sm-6 col-lg-3">
+			<div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 transition-hover">
+				<div class="d-flex align-items-center justify-content-between mb-3">
+					<span class="text-muted small fw-semibold text-uppercase tracking-wider" style="font-size: 0.72rem; letter-spacing: 0.05em;">Platform Users</span>
+					<div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px; background-color: #F8ECE8; color: var(--terracotta);">
+						<i class="fa-solid fa-user-group"></i>
+					</div>
+				</div>
+				<h2 class="editorial-title h3 fw-bold text-dark mb-1 font-tabular"><%= metrics.users.total %></h2>
+				<span class="text-muted small font-tabular">Hosts: <b class="text-forest"><%= metrics.users.hosts %></b> | Travelers: <b><%= metrics.users.travelers %></b></span>
+			</div>
+		</div>
+	</div>
+
+	<!-- Two-column Activity & System Status -->
+	<div class="row g-4 mb-4">
+		<!-- Recent Platform Bookings -->
+		<div class="col-12 col-lg-7">
+			<div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+				<div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+					<h5 class="editorial-title fw-bold mb-0 d-flex align-items-center gap-2">
+						<i class="fa-solid fa-clock-rotate-left text-forest"></i>
+						<span>Recent Reservations</span>
+					</h5>
+					<span class="badge rounded-pill bg-light text-muted border small font-tabular">Latest 5</span>
+				</div>
+				<% if (!metrics.bookings.recent || metrics.bookings.recent.length === 0) { %>
+					<p class="text-muted small text-center py-4 mb-0">No reservations recorded yet.</p>
+				<% } else { %>
+					<div class="table-responsive">
+						<table class="table table-hover align-middle mb-0 small">
+							<thead class="table-light">
+								<tr>
+									<th class="ps-2">Property</th>
+									<th>Guest</th>
+									<th>Status</th>
+									<th class="text-end pe-2">Dates</th>
+								</tr>
+							</thead>
+							<tbody>
+								<% for (const b of metrics.bookings.recent) { %>
+									<tr>
+										<td class="fw-semibold text-truncate ps-2" style="max-width: 200px;">
+											<%= b.listing ? b.listing.title : 'Deleted Property' %>
+										</td>
+										<td>
+											<span class="text-dark fw-semibold"><%= b.user ? b.user.username : 'Unknown' %></span>
+										</td>
+										<td>
+											<span class="badge rounded-pill <%= b.status === 'confirmed' ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary' %>">
+												<%= b.status %>
+											</span>
+										</td>
+										<td class="text-end pe-2 text-muted font-tabular">
+											<%= new Date(b.checkIn).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) %>
+										</td>
+									</tr>
+								<% } %>
+							</tbody>
+						</table>
+					</div>
+				<% } %>
+			</div>
+		</div>
+
+		<!-- Recent User Registrations -->
+		<div class="col-12 col-lg-5">
+			<div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+				<div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+					<h5 class="editorial-title fw-bold mb-0 d-flex align-items-center gap-2">
+						<i class="fa-solid fa-user-plus text-terracotta"></i>
+						<span>Recent Registrations</span>
+					</h5>
+					<a href="/admin/users" class="small text-forest text-decoration-none fw-semibold">
+						View All <i class="fa-solid fa-arrow-right ms-1"></i>
+					</a>
+				</div>
+				<% if (!metrics.users.recent || metrics.users.recent.length === 0) { %>
+					<p class="text-muted small text-center py-4 mb-0">No users found.</p>
+				<% } else { %>
+					<div class="d-flex flex-column gap-2">
+						<% for (const u of metrics.users.recent) { %>
+							<div class="d-flex align-items-center justify-content-between p-2 rounded-3" style="background-color: var(--paper-100);">
+								<div>
+									<div class="fw-bold text-dark small"><%= u.username %></div>
+									<div class="text-muted" style="font-size: 0.75rem;"><%= u.email %></div>
+								</div>
+								<span class="badge rounded-pill <%= u.role === 'admin' ? 'bg-danger text-white' : (u.role === 'host' ? 'btn-forest text-white' : 'bg-light text-dark border') %>">
+									<%= u.role %>
+								</span>
+							</div>
+						<% } %>
+					</div>
+				<% } %>
+			</div>
+		</div>
+	</div>
+</div>

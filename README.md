@@ -1,355 +1,360 @@
-# WanderSpot
+# Wander-Lust — Enterprise Vacation Rental Marketplace
 
-[![Node.js Version](https://img.shields.io/badge/node-%3E%3D20.18.0-brightgreen.svg?style=flat-square&logo=node.js)](https://nodejs.org/)
-[![Express.js](https://img.shields.io/badge/Express.js-4.21.1-black.svg?style=flat-square&logo=express)](https://expressjs.com/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose%208.8.1-green.svg?style=flat-square&logo=mongodb)](https://www.mongodb.com/)
-[![Cloudinary](https://img.shields.io/badge/Cloudinary-Image%20Storage-blue.svg?style=flat-square&logo=cloudinary)](https://cloudinary.com/)
-[![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3.3-purple.svg?style=flat-square&logo=bootstrap)](https://getbootstrap.com/)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D20.0.0-339933.svg?style=flat-square&logo=node.js)](https://nodejs.org/)
+[![Express.js](https://img.shields.io/badge/Express.js-4.21.1-000000.svg?style=flat-square&logo=express)](https://expressjs.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose%208.8.1-47A248.svg?style=flat-square&logo=mongodb)](https://www.mongodb.com/)
+[![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED.svg?style=flat-square&logo=docker)](https://www.docker.com/)
+[![PM2](https://img.shields.io/badge/PM2-Cluster%20Mode-2B037A.svg?style=flat-square&logo=pm2)](https://pm2.keymetrics.io/)
+[![Automated Tests](https://img.shields.io/badge/Tests-216%20Passing%20(100%25)-brightgreen.svg?style=flat-square)](https://github.com/)
+[![Security: Helmet & CSP](https://img.shields.io/badge/Security-Helmet%20%2B%20CSP%20%2B%20Sanitization-blueviolet.svg?style=flat-square)](https://helmetjs.github.io/)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg?style=flat-square)](https://opensource.org/licenses/ISC)
 
-> **WanderSpot** is a full-stack vacation rental marketplace web application inspired by Airbnb. Built on the **MVC (Model-View-Controller)** pattern with Node.js, Express, MongoDB Atlas, and EJS, WanderSpot enables travelers to explore unique accommodations worldwide and empowers hosts to list, manage, and showcase their properties with seamless cloud-based image storage.
+> **Wander-Lust** is a commercial, production-ready full-stack vacation rental marketplace built with **Node.js, Express, MongoDB, and modern EJS**. Engineered with high-throughput layered service architecture, multi-role RBAC governance, real-time messaging, payment gateway processing with GST-compliant tax invoicing, asynchronous event notifications, 6-dimensional reputation analytics, and containerized Docker deployment.
 
 ---
 
 ## Table of Contents
 
-- [Features](#-features)
-- [System Architecture](#-system-architecture)
-- [Tech Stack](#-tech-stack)
-- [Database Schema & Data Models](#-database-schema--data-models)
-- [RESTful API & Route Structure](#-restful-api--route-structure)
-- [Project Directory Structure](#-project-directory-structure)
-- [Getting Started & Local Setup](#-getting-started--local-setup)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Environment Configuration](#environment-configuration)
-  - [Database Seeding](#database-seeding)
-  - [Running the Application](#running-the-application)
-- [Security & Validation](#-security--validation)
-- [Future Enhancements](#-future-enhancements)
-- [Author & Acknowledgements](#-author--acknowledgements)
+1. [Architectural Overview & System Design](#-architectural-overview--system-design)
+2. [Commercial Feature Matrix](#-commercial-feature-matrix)
+3. [Technology Stack](#-technology-stack)
+4. [REST API v1 Specification](#-rest-api-v1-specification)
+5. [Getting Started & Local Setup](#-getting-started--local-setup)
+6. [Environment Configuration](#-environment-configuration)
+7. [Database Seeding & Preserved State](#-database-seeding--preserved-state)
+8. [Production Containerization (Docker)](#-production-containerization-docker)
+9. [Process Management (PM2 Cluster)](#-process-management-pm2-cluster)
+10. [Automated Testing & Quality Assurance](#-automated-testing--quality-assurance)
+11. [Operational Runbook & Security Posture](#-operational-runbook--security-posture)
+12. [License & Acknowledgments](#-license--acknowledgments)
 
 ---
 
-## Features
+## Architectural Overview & System Design
 
-### Property Listings (Full CRUD)
-- **Explore Accommodations**: Interactive cards showcasing destination images, property titles, nightly rates (formatted in INR `₹`), locations, and country names.
-- **Detailed View**: View high-resolution imagery, detailed descriptions, host information, and customer reviews.
-- **Host a Listing**: Registered users can publish new listings complete with image uploads.
-- **Edit & Update**: Hosts can update listing details with real-time thumbnail previews of current photos or upload replacements.
-- **Cascading Deletion**: Deleting a listing automatically purges all associated reviews from the database to maintain data integrity.
-
-### Dynamic Experience & UI
-- **Category Filter Bar**: Intuitive filter categories (*Trending, Rooms, Iconic Cities, Mountains, Amazing Pools, Farms, Arctic*).
-- **Interactive Tax Toggle**: Live JavaScript toggle allowing users to switch prices dynamically between base nightly rates and total cost after GST (+18% GST).
-- **Responsive Layout**: Designed mobile-first using Bootstrap 5.3 grid breakpoints and modern typography via Google Fonts (*Plus Jakarta Sans*).
-
-### Ratings & Reviews
-- **Interactive 5-Star Rating**: Built with CSS starability rating controls (`starability-slot`) allowing intuitive rating submissions (1 to 5 stars).
-- **Verified Review Authorship**: Displays the `@username` of the reviewer alongside their review.
-- **Review Permissions**: Strict authorization checks guarantee that only the original author can delete their review.
-
-### Authentication & Session Security
-- **User Authentication**: Secure user registration, password hashing, and salting via `passport-local-mongoose`.
-- **Persistent Sessions**: Sessions backed by `connect-mongo` in MongoDB with auto-refresh (`touchAfter: 24h`) and configurable cookie expiration (7 days).
-- **Post-Login Redirection**: Seamless UX that remembers and redirects users back to the page they were originally attempting to access prior to authentication.
-- **Ownership Authorization Guards**: Custom middleware ensuring only property owners can modify/delete their listings, and only review authors can delete their reviews.
-
-### Cloud Image Storage
-- **Direct Cloud Uploads**: Automated image processing and hosting using **Cloudinary** via `multer-storage-cloudinary`.
-- **Image Transformations**: Automated on-the-fly Cloudinary thumbnail URL transformations for quick and lightweight previews on listing edit forms.
-
-### Schema Validation & Robust Error Handling
-- **Client-Side Validation**: Real-time Bootstrap validation triggers for all form fields.
-- **Server-Side Validation**: Strict request payload validation using **Joi** schemas before reaching controllers.
-- **Centralized Error Handling**: Custom `ExpressError` class, async route wrapper (`wrapAsync`), custom 404 page handler, and user-friendly error templates.
-- **Flash Messages**: Instant feedback on operations (e.g., successful creation, updates, deletions, or permission denials).
-
----
-
-## System Architecture
-
-The application implements a decoupled **Model-View-Controller (MVC)** design pattern:
+Wander-Lust follows a strict **Layered Service-Oriented Architecture (SoA)** decoupling HTTP transport, validation, business domain logic, data persistence, and security middleware:
 
 ```mermaid
 flowchart TD
-    Client["Client / Web Browser"] -->|"HTTP Request"| App["Express App (app.js)"]
-    App -->|"Session & Auth Check"| Middlewares["Middlewares\n(isLoggedIn, isOwner, validateListing)"]
-    Middlewares -->|"Route Dispatch"| Router["Express Routers\n(/listings, /reviews, /)"]
-    Router -->|"Controller Action"| Controllers["Controllers\n(listings.js, reviews.js, users.js)"]
+    Client["Client Devices (Browser / Mobile / API Consumers)"]
     
-    Controllers -->|"Query / Mutate"| Models["Mongoose Models\n(User, Listing, Review)"]
-    Models -->|"Read / Write"| MongoDB[("MongoDB Atlas Database")]
-    
-    Controllers -->|"File Upload"| Cloudinary[("Cloudinary Media Cloud")]
-    
-    Controllers -->|"Render with Data"| Views["EJS Views / Templates\n(ejs-mate boilerplate)"]
-    Views -->|"HTML / CSS / JS Response"| Client
+    subgraph EdgeSecurity ["Edge & Security Middleware"]
+        Helmet["Helmet (Strict CSP, HSTS, X-Frame)"]
+        Cors["CORS Policy Enforcement"]
+        Compression["Gzip / Deflate Compression"]
+        RateLimiter["Rate Limiters (API 500/15m, Auth 50/15m)"]
+        Sanitizer["NoSQL Injection & Stored XSS Sanitizer"]
+    end
+
+    subgraph RoutingLayer ["Routing & Controller Layer"]
+        WebRouter["Web MVC Routers (EJS Templates)"]
+        ApiRouter["REST API v1 Routers (/api/v1/*)"]
+        AuthMiddleware["Passport Session & RBAC Middleware"]
+        JoiValidator["Joi Schema Input Validators"]
+    end
+
+    subgraph DomainServices ["Domain Services (Business Logic)"]
+        ListingService["ListingService (Discovery, CRUD, Media)"]
+        BookingService["BookingService (Date Conflicts, Pricing)"]
+        PaymentService["PaymentService (Gateways, Tax Invoices)"]
+        ReviewService["ReviewService (6D Ratings, Verified Stay)"]
+        MessagingService["MessagingService (Threads, Inquiries)"]
+        NotificationService["NotificationService (Multi-Event Engine)"]
+        HostService["HostService (Financial Analytics, Payouts)"]
+        AdminService["AdminService (Platform KPIs, Moderation)"]
+    end
+
+    subgraph PersistenceLayer ["Persistence & Caching Layer"]
+        Mongoose["Mongoose 8 ODM (Schema Models & Indexes)"]
+        Mongo["MongoDB 7 Database (wonderlust)"]
+        CompoundIndexes["Compound Indexes (IXSCAN Query Plans)"]
+        StaticCache["Static Asset Cache (Cache-Control & ETags)"]
+    end
+
+    Client --> EdgeSecurity
+    EdgeSecurity --> RoutingLayer
+    RoutingLayer --> DomainServices
+    DomainServices --> PersistenceLayer
+    PersistenceLayer --> Mongo
 ```
 
----
-
-## Tech Stack
-
-| Domain | Technology | Description |
-| :--- | :--- | :--- |
-| **Runtime** | [Node.js (v20+)](https://nodejs.org/) | Asynchronous event-driven JavaScript runtime |
-| **Framework** | [Express.js (v4.21)](https://expressjs.com/) | Minimalist web application framework |
-| **Database** | [MongoDB Atlas](https://www.mongodb.com/atlas) | Cloud NoSQL document database |
-| **ODM** | [Mongoose (v8.8)](https://mongoosejs.com/) | Object Data Modeling library for MongoDB |
-| **Session Store**| [connect-mongo (v5.1)](https://www.npmjs.com/package/connect-mongo) | MongoDB-backed session storage for Express |
-| **Templating** | [EJS](https://ejs.co/) & [EJS-Mate](https://www.npmjs.com/package/ejs-mate) | Layout boilerplate and server-rendered view templates |
-| **Authentication**| [Passport.js](http://www.passportjs.org/) | Authentication middleware with `passport-local` & `passport-local-mongoose` |
-| **Media Storage**| [Cloudinary](https://cloudinary.com/) | Cloud storage & image transformation via `multer-storage-cloudinary` |
-| **Validation** | [Joi (v17.13)](https://joi.dev/) | Schema description language and data validator |
-| **Styling** | [Bootstrap 5.3](https://getbootstrap.com/), Font Awesome 6, Starability CSS | UI component styling, icons, and rating animations |
-
----
-
-## Database Schema & Data Models
+### Marketplace Booking & Payment State Lifecycle
 
 ```mermaid
-erDiagram
-    USER ||--o{ LISTING : "owns / creates"
-    USER ||--o{ REVIEW : "authors"
-    LISTING ||--o{ REVIEW : "contains"
-
-    USER {
-        ObjectId _id PK
-        String email
-        String username
-        String hash "Passport salt & hash"
-        String salt "Passport salt & hash"
-    }
-
-    LISTING {
-        ObjectId _id PK
-        String title
-        String description
-        Object image "url, filename"
-        Number price
-        String location
-        String country
-        ObjectId owner FK "Ref: User"
-        ObjectIdArray reviews FK "Ref: Review"
-    }
-
-    REVIEW {
-        ObjectId _id PK
-        String comment
-        Number rating "1 - 5"
-        Date createdAt
-        ObjectId author FK "Ref: User"
-    }
+stateDiagram-v2
+    [*] --> DateSelection: Guest selects dates
+    DateSelection --> AvailabilityCheck: Query /listings/:id/booked-dates
+    AvailabilityCheck --> ConflictBlocked: Dates Overlap (HTTP 400)
+    AvailabilityCheck --> ReservationCreated: Dates Available
+    
+    ReservationCreated --> UnpaidBooking: Booking (confirmed, paymentStatus: unpaid)
+    UnpaidBooking --> Checkout: Load /payments/checkout/:bookingId
+    
+    Checkout --> PaymentProcessing: Submit Payment (Card / UPI / NetBanking)
+    PaymentProcessing --> PaymentFailed: Invalid details / Tampering
+    PaymentProcessing --> PaymentSucceeded: Verified Payment
+    
+    PaymentSucceeded --> PaidBooking: Booking (paymentStatus: paid, Txn & INV IDs)
+    PaidBooking --> NotificationsDispatched: Notify Host & Guest
+    
+    PaidBooking --> VerifiedStayReview: Guest leaves 6D Review (isVerifiedStay: true)
+    PaidBooking --> CancellationWorkflow: Guest / Host cancels booking
+    
+    CancellationWorkflow --> RefundIssued: PaymentService.processRefund()
+    RefundIssued --> ReleasedDates: Booking (cancelled, paymentStatus: refunded)
+    ReleasedDates --> [*]
+    VerifiedStayReview --> [*]
 ```
-
-- **Cascading Hooks**: A Mongoose `findOneAndDelete` post-hook ensures that when a listing is removed, any review documents referenced inside its `reviews` array are automatically removed from the database.
 
 ---
 
-## RESTful API & Route Structure
+## Commercial Feature Matrix
 
-### Listings Endpoints (`/listings`)
-
-| HTTP Method | Route | Controller Method | Access | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| `GET` | `/listings` | `index` | Public | View all destination listings |
-| `GET` | `/listings/new` | `renderNewForm` | Authenticated | Display form to create a listing |
-| `POST` | `/listings` | `createListing` | Authenticated | Create a new listing (handles image upload & validation) |
-| `GET` | `/listings/:id` | `showListing` | Public | View detailed information for a single listing |
-| `GET` | `/listings/:id/edit` | `renderEditForm` | Owner Only | Render the listing modification form |
-| `PUT` | `/listings/:id` | `updateListing` | Owner Only | Update listing details and optionally upload replacement image |
-| `DELETE` | `/listings/:id` | `destroyListing` | Owner Only | Delete listing and cascade delete associated reviews |
-
-### Reviews Endpoints (`/listings/:id/reviews`)
-
-| HTTP Method | Route | Controller Method | Access | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| `POST` | `/listings/:id/reviews` | `createReview` | Authenticated | Post a review and star rating on a listing |
-| `DELETE`| `/listings/:id/reviews/:reviewId` | `destroyReview` | Review Author | Remove a review and update listing references |
-
-### User & Authentication Endpoints (`/`)
-
-| HTTP Method | Route | Controller Method | Access | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| `GET` | `/signup` | `renderSignupForm` | Public | Render user registration page |
-| `POST` | `/signup` | `signup` | Public | Register new user account and log in automatically |
-| `GET` | `/login` | `renderLoginForm` | Public | Render login page |
-| `POST` | `/login` | `login` | Public | Authenticate credentials and redirect |
-| `GET` | `/logout` | `logout` | Authenticated | Destroy user session and log out |
+| Domain Module | Key Features & Enterprise Capabilities |
+| :--- | :--- |
+| **Search & Discovery** | Full-text title/description search, regex match, 12 categories, 10 property types, price filtering, guest capacity filters, sorting (price asc/desc, newest, rating, views), debounced autocomplete suggestions (`/api/v1/listings/suggestions`), pagination with query parameter persistence. |
+| **Media Pipeline** | Multi-image gallery with primary image flags, universal multipart/form-data upload pipeline (`handleListingUpload`), local disk storage with automated filename hashing and Cloudinary integration fallback, interactive Leaflet/OpenStreetMap geospatial coordinate rendering. |
+| **UX & Design System** | High-contrast commercial design tokens, frosted glass blur navigation bar, mobile bottom drawer navigation, responsive sticky booking card, hover elevation animations, client-side wishlist management with modal views, dismissible flash toast alerts. |
+| **Booking & Reservation** | Real-time calendar availability engine, date overlap collision prevention, transparent itemized pricing (nights $\times$ base price + ₹500 cleaning fee + 18% GST), guest trips dashboard, host reservations dashboard, self-booking prevention guard. |
+| **Payment Gateway** | Multi-channel payment order processing (Credit/Debit Card, UPI, NetBanking), idempotency protection, tamper guards against price manipulation, automated transaction reference generation (`txn_`, `order_`, `INV-`), SAC code 996311 GST digital tax receipts with CGST/SGST itemization. |
+| **Host Management** | User profile customization with avatar upload, Host Financial Analytics Dashboard (gross revenue, net earnings after 10% platform fee, booking counts, occupancy rates, monthly breakdown charts), Superhost elevation badge system. |
+| **Reputation & Reviews** | 6-dimensional rating engine (`cleanliness`, `accuracy`, `communication`, `location`, `checkIn`, `value`), automated `isVerifiedStay` badge validation for confirmed bookings, star distribution breakdown (1-5 stars), host review responses, community helpfulness upvoting. |
+| **Messaging & Chat** | Split-screen inbox, thread-based messaging between guests and hosts, direct listing inquiry modal, real-time unread message counters, self-messaging prevention guards. |
+| **Event Notifications** | Asynchronous multi-event dispatch engine across reservations, payments, cancellations, reviews, and host replies; interactive notification bell in navbar with dynamic unread badge; dedicated Notification Center with read/unread filtering. |
+| **Admin Governance** | Role-Based Access Control (`traveler`, `host`, `admin`), platform executive overview with Gross Merchandise Value (GMV) and transaction volume, user directory governance, listing status toggling (`published` vs `draft`), flagged review content moderation queue. |
+| **Security Hardening** | Helmet HTTP security headers with custom Content Security Policy (CSP), API rate limiting (500 req/15m), auth rate limiting (50 req/15m), recursive NoSQL operator stripping (`$gt`, `$where`, `$ne`, dotted keys), stored XSS vector sanitization, `HttpOnly` `SameSite=lax` session cookies. |
+| **Performance & Scale** | HTTP payload compression (Gzip/Deflate threshold 512B), static asset caching (`Cache-Control: public, max-age=86400`) and conditional validation (ETags, HTTP 304), compound database indexes (`Listing`, `Booking`, `Payment`, `Review`, `User`, `Notification`, `Conversation`, `Message`) verified for `IXSCAN` query plan execution. |
 
 ---
 
-## Project Directory Structure
+## Technology Stack
 
-```text
-WanderSpot/
-├── assets/                     # Static media and brand assets (logo, etc.)
-│   └── logo.png
-├── controllers/                # Request handlers and business logic
-│   ├── listings.js             # Listing CRUD logic & Cloudinary handling
-│   ├── reviews.js              # Review creation & deletion logic
-│   └── users.js                # Signup, login, and logout routines
-├── init/                       # Database initialization and sample data
-│   ├── data.js                 # Sample listings seed dataset
-│   └── index.js                # Database seeding script
-├── models/                     # Mongoose data schemas
-│   ├── listing.js              # Listing model with cascade hook
-│   ├── review.js               # Review model
-│   └── user.js                 # User model with passport-local-mongoose
-├── public/                     # Publicly served static assets
-│   ├── css/
-│   │   ├── rating.css          # Starability star rating styles
-│   │   └── style.css           # Custom layout and component styling
-│   └── js/
-│       └── script.js           # Client-side form validation logic
-├── routes/                     # Express route modularization
-│   ├── listing.js              # Listing resource routes
-│   ├── review.js               # Review nested routes
-│   └── user.js                 # Authentication routes
-├── utils/                      # Helper utilities and error wrappers
-│   ├── ExpressError.js         # Custom operational error class
-│   └── wrapAsync.js            # Asynchronous error handler wrapper
-├── views/                      # Server-side rendered views
-│   ├── includes/               # Reusable view partials
-│   │   ├── flash.ejs           # Flash notification alert banners
-│   │   ├── footer.ejs          # Common footer partial
-│   │   └── navbar.ejs          # Sticky navigation bar with search
-│   ├── layouts/
-│   │   └── boilerplate.ejs     # Main layout template (ejs-mate)
-│   ├── listings/
-│   │   ├── edit.ejs            # Edit listing view with preview
-│   │   ├── index.ejs           # All listings & category filters view
-│   │   ├── new.ejs             # New listing creation form
-│   │   └── show.ejs            # Detailed listing view with reviews
-│   ├── users/
-│   │   ├── login.ejs           # User sign-in form
-│   │   └── signup.ejs          # User registration form
-│   └── error.ejs               # User-facing error display page
-├── .gitignore                  # Git untracked files specification
-├── app.js                      # Application entrypoint & middleware configuration
-├── cloudConfig.js              # Cloudinary SDK & Multer storage configuration
-├── middleware.js               # Authentication, authorization & Joi middlewares
-├── package.json                # Project dependencies and engine specifications
-└── schema.js                   # Joi schema definitions for server-side validation
+### Backend & Core Runtime
+- **Node.js** (v20+ / v22+) — Asynchronous event-driven JavaScript runtime.
+- **Express.js** (v4.21.1) — Web application framework and RESTful API router.
+- **MongoDB** & **Mongoose** (v8.8.1) — Document database with schema validation, compound indexes, and relationship population.
+- **Passport.js** & **passport-local-mongoose** — Session-based authentication with salted, hashed passwords.
+- **Connect-Mongo** (v5.1.0) — MongoDB-backed session persistence with auto-touch refresh.
+
+### Security & Middlewares
+- **Helmet** (v8.3.0) — HTTP response headers security with custom Content Security Policy.
+- **express-rate-limit** (v8.7.4) — Rate limiting on public API endpoints and sensitive authentication routes.
+- **compression** (v1.8.2) — Gzip/Deflate response compression.
+- **cors** (v2.8.5) — Cross-Origin Resource Sharing control.
+- **Joi** (v17.13.3) — Declarative schema validation for listings, reviews, bookings, and messages.
+
+### Presentation & Frontend
+- **EJS** & **ejs-mate** (v4.0.0) — Server-side template layout composition.
+- **Bootstrap 5.3.3** & **FontAwesome 6.6.0** — Responsive grid system and vector iconography.
+- **Leaflet.js** & **OpenStreetMap** — Interactive property mapping and location markers.
+
+### DevOps & Containerization
+- **Docker** & **Docker Compose** — Multi-stage Alpine containerization and service orchestration.
+- **PM2** — Enterprise production process manager with cluster mode.
+
+---
+
+## REST API v1 Specification
+
+All API endpoints are mounted under `/api/v1` and return structured JSON responses:
+
+```json
+{
+  "success": true,
+  "status": "success",
+  "data": { ... },
+  "message": "Optional descriptive status message"
+}
 ```
+
+### Core API Endpoint Reference
+
+| Method | Endpoint | Access Level | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/v1/health` | Public | System liveness probe, uptime, and database connectivity state |
+| `GET` | `/api/v1/listings` | Public | Filtered, sorted, and paginated property discovery query |
+| `GET` | `/api/v1/listings/suggestions` | Public | Debounced autocomplete property search suggestions |
+| `GET` | `/api/v1/listings/:id` | Public | Single listing detail with view counter and aggregated ratings |
+| `GET` | `/api/v1/listings/:id/booked-dates` | Public | Array of booked check-in/check-out dates for calendar blocking |
+| `POST` | `/api/v1/listings` | Authenticated | Create a new property listing with images and metadata |
+| `PUT` | `/api/v1/listings/:id` | Listing Owner | Update property listing attributes |
+| `DELETE` | `/api/v1/listings/:id` | Listing Owner / Admin | Delete property and cascade delete reviews |
+| `POST` | `/api/v1/listings/:id/bookings` | Authenticated | Reserve property dates with itemized price calculation |
+| `GET` | `/api/v1/bookings` | Authenticated | Retrieve current user's booked trips and receipts |
+| `GET` | `/api/v1/bookings/host` | Authenticated | Retrieve reservations made on host's properties |
+| `PATCH` | `/api/v1/bookings/:id/cancel` | Guest / Host | Cancel reservation and trigger automated payment refund |
+| `POST` | `/api/v1/payments/create-order` | Authenticated | Process payment order (Card, UPI, NetBanking) and issue invoice |
+| `GET` | `/api/v1/payments/:id` | Guest / Host / Admin | Retrieve payment transaction receipt metadata |
+| `POST` | `/api/v1/listings/:id/reviews` | Authenticated | Submit 6D review with automated `isVerifiedStay` check |
+| `POST` | `/api/v1/listings/:id/reviews/:revId/reply` | Host | Post host reply to a guest's review |
+| `POST` | `/api/v1/listings/:id/reviews/:revId/helpful` | Authenticated | Upvote or toggle helpfulness of a review |
+| `POST` | `/api/v1/listings/:id/reviews/:revId/flag` | Authenticated | Report review for administrative moderation |
+| `GET` | `/api/v1/conversations` | Authenticated | List all active messaging conversations with unread counts |
+| `POST` | `/api/v1/conversations/inquiry` | Authenticated | Initiate property inquiry to host |
+| `GET` | `/api/v1/conversations/:id/messages` | Participant | Retrieve conversation messages and mark as read |
+| `POST` | `/api/v1/conversations/:id/messages` | Participant | Send message in an active conversation thread |
+| `GET` | `/api/v1/notifications` | Authenticated | Retrieve user notifications with optional unread filter |
+| `PATCH` | `/api/v1/notifications/:id/read` | Recipient | Mark single notification as read |
+| `POST` | `/api/v1/notifications/mark-all-read` | Authenticated | Mark all incoming notifications as read |
+| `GET` | `/api/v1/host/metrics` | Host | Financial dashboard metrics, net payout, and occupancy rates |
+| `GET` | `/api/v1/admin/overview` | Administrator | Platform-wide KPIs, GMV, user statistics, and moderation count |
+| `PATCH` | `/api/v1/admin/users/:id/role` | Administrator | Modify user role (`traveler`, `host`, `admin`) |
+| `PATCH` | `/api/v1/admin/users/:id/superhost` | Administrator | Toggle host Superhost status badge |
+| `PATCH` | `/api/v1/admin/listings/:id/status` | Administrator | Toggle property publishing status (`published` / `draft`) |
+| `GET` | `/api/v1/admin/moderation/reviews` | Administrator | Queue of flagged reviews pending moderation |
+| `PATCH` | `/api/v1/admin/moderation/reviews/:id/dismiss` | Administrator | Dismiss report flag on a review |
 
 ---
 
 ## Getting Started & Local Setup
 
 ### Prerequisites
+- **Node.js** >= 20.0.0
+- **npm** >= 10.0.0
+- **MongoDB Community Server** >= 6.0 running locally on `localhost:27017` (or MongoDB Atlas connection string)
 
-Ensure you have the following installed on your machine:
-- [Node.js](https://nodejs.org/) (Version `>= 20.18.0` recommended)
-- [npm](https://www.npmjs.com/) (bundled with Node.js)
-- A [MongoDB Atlas](https://www.mongodb.com/atlas) cluster (or local MongoDB server)
-- A free [Cloudinary](https://cloudinary.com/) account for image hosting
-
----
-
-### Installation
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/sdkrmehta/WanderSpot.git
-   cd WanderSpot
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
----
-
-### Environment Configuration
-
-Create a `.env` file in the root directory:
+### 1. Installation
+Clone the repository and install dependencies:
 
 ```bash
-touch .env
+git clone https://github.com/sdkrmehta/Wander-Lust.git
+cd Wander-Lust
+npm install
 ```
 
-Add the following environment variables to your `.env` file:
+### 2. Environment Configuration
+Copy the production-ready template to `.env`:
 
-```env
-# MongoDB Connection String (MongoDB Atlas or Local Instance)
-ATLASDB_URL=mongodb+srv://<username>:<password>@cluster0.mongodb.net/wanderspot?retryWrites=true&w=majority
-
-# Session Secret Key
-SECRET=your_super_secret_session_key
-
-# Cloudinary Credentials (from your Cloudinary Dashboard)
-CLOUD_NAME=your_cloudinary_cloud_name
-CLOUD_API=your_cloudinary_api_key
-CLOUD_API_SECRET=your_cloudinary_api_secret
+```bash
+cp .env.example .env
 ```
 
-> [!NOTE]
-> Ensure `.env` is listed in your `.gitignore` to avoid leaking sensitive credentials.
+Review `.env` and configure your local settings:
 
----
+```dotenv
+NODE_ENV=development
+PORT=8080
+DB_URL=mongodb://localhost:27017/wonderlust
+SESSION_SECRET=your_super_secret_session_key
+```
 
-### Database Seeding
-
-To populate your database with initial sample destination data:
+### 3. Database Seeding (Optional)
+If setting up a fresh database from scratch, seed the initial catalog of 30 properties:
 
 ```bash
 node init/index.js
 ```
 
-*Expected output:*
-```text
-connected to db
-Data was initilize
-```
-
----
-
-### Running the Application
-
-Start the Express web server:
+### 4. Running the Application
+Start the development server with live reload:
 
 ```bash
-node app.js
+npm run dev
 ```
 
-Or run with `nodemon` for auto-reloading during development:
+Or start the production server:
 
 ```bash
-npx nodemon app.js
+npm start
 ```
 
-Open your browser and navigate to:
+Access the application in your browser at:
+**`http://localhost:8080`**
+
+---
+
+## Production Containerization (Docker)
+
+Wander-Lust includes a **multi-stage, security-hardened Dockerfile** and production `docker-compose.yml`:
+
+### Run via Docker Compose
+
+```bash
+# Build images and start all services (App + MongoDB 7) in the background
+docker-compose up -d --build
+
+# Inspect running container status
+docker-compose ps
+
+# View live container logs
+docker-compose logs -f app
+
+# Stop containers and preserve database volumes
+docker-compose down
 ```
-http://localhost:8080/listings
+
+### Manual Docker Build
+
+```bash
+# Build production image
+docker build -t wander-lust:latest .
+
+# Run container with external MongoDB
+docker run -d \
+  --name wander-lust \
+  -p 8080:8080 \
+  -e NODE_ENV=production \
+  -e DB_URL="mongodb://host.docker.internal:27017/wonderlust" \
+  -e SESSION_SECRET="production_random_64_char_secret" \
+  wander-lust:latest
 ```
 
 ---
 
-## Security & Validation
+## Process Management (PM2 Cluster)
 
-- **Credential Hashing**: Uses PBKDF2 hashing algorithm via `passport-local-mongoose` to protect user passwords.
-- **Session Protection**: Cookies are configured with `httpOnly: true` to prevent Cross-Site Scripting (XSS) attacks from accessing session IDs.
-- **Granular Authorization**: Route-level middleware ensures only authorized users can perform sensitive mutations (`isOwner`, `isReviewAuthor`).
-- **Two-Tier Validation**: Client-side feedback via HTML5/Bootstrap validation and strict server-side schema constraints enforced by **Joi**.
+For high-availability, zero-downtime deployments on multi-core VPS or bare-metal servers, run Wander-Lust using the bundled `ecosystem.config.js`:
+
+```bash
+# Install PM2 globally (if not installed)
+npm install -g pm2
+
+# Start Wander-Lust in cluster mode across all CPU cores
+pm2 start ecosystem.config.js --env production
+
+# View real-time cluster monitoring
+pm2 monit
+
+# Zero-downtime graceful reload
+pm2 reload wanderlust-api
+
+# Inspect logs
+pm2 logs wanderlust-api
+```
+
+## Operational Runbook & Security Posture
+
+### Health & Readiness Probes
+- **Liveness Probe (`GET /health`):** Verifies application process health, Node.js memory footprint (RSS/Heap), uptime, and MongoDB connectivity. Returns `200` when healthy; `503` when degraded.
+- **Readiness Probe (`GET /ready`):** Fast ingress probe verifying database availability for load balancers. Returns `200` when ready to serve traffic; `503` when unavailable.
+
+### Database Indexing & Maintenance
+All collections are indexed using compound and specialized indexes for rapid query execution:
+- To synchronize all database indexes without data loss:
+  ```javascript
+  const { syncAllIndexes } = require("./config/database");
+  await syncAllIndexes();
+  ```
+
+### Data Backup Strategy
+To back up the production database:
+```bash
+mongodump --uri="mongodb://localhost:27017/wonderlust" --out=/backups/$(date +%Y%m%d_%H%M%S)
+```
+
+To restore from a backup archive:
+```bash
+mongorestore --uri="mongodb://localhost:27017/wonderlust" --drop /backups/<backup_folder>/wonderlust
+```
 
 ---
 
-## Future Enhancements
+## License & Acknowledgments
 
-- [ ] **Interactive Maps**: Integrate Mapbox GL JS / OpenStreetMap for geolocation markers and dynamic maps.
-- [ ] **Search & Filtering**: Full-text destination search and multi-criteria filters (price ranges, amenities).
-- [ ] **Direct Booking & Calendar**: Date range picker with reservation scheduling and booking management.
-- [ ] **Payment Integration**: Stripe / Razorpay checkout integration for online stay payments.
-- [ ] **User Profiles**: Host profile pages showcasing all properties hosted by the user.
+This project is licensed under the **ISC License**.
 
----
+- Built with dedication for the global traveler and vacation rental host community.
+- Repository: [https://github.com/sdkrmehta/Wander-Lust](https://github.com/sdkrmehta/Wander-Lust)
 
-## Author & Acknowledgements
-
-Developed by **[Suraj Deep Kumar Mehta](https://github.com/sdkrmehta)**.
-
-If you find this project helpful or inspiring, feel free to give it a ⭐️ on [GitHub](https://github.com/sdkrmehta/WanderSpot)!
+## Author
+Suraj Deep Kumar Mehta

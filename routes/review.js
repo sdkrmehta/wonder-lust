@@ -1,17 +1,14 @@
 const express = require("express");
 const router = express.Router({ mergeParams: true });
 const wrapAsync = require("../utils/wrapAsync.js");
-const ExpressError = require("../utils/ExpressError.js");
-const Review = require("../models/review.js");
-const Listing = require("../models/listing.js");
 const {
 	validateReview,
+	validateHostReply,
+	validateFlagReview,
 	isLoggedIn,
 	isReviewAuthor,
 } = require("../middleware.js");
-
 const reviewController = require("../controllers/reviews.js");
-const review = require("../models/review.js");
 
 // POST Route: Add a review to a listing
 router.post(
@@ -27,6 +24,29 @@ router.delete(
 	isLoggedIn,
 	isReviewAuthor,
 	wrapAsync(reviewController.destroyReview),
+);
+
+// POST Route: Host reply to a review
+router.post(
+	"/:reviewId/reply",
+	isLoggedIn,
+	validateHostReply,
+	wrapAsync(reviewController.addHostReply),
+);
+
+// POST Route: Helpfulness upvote
+router.post(
+	"/:reviewId/helpful",
+	isLoggedIn,
+	wrapAsync(reviewController.toggleHelpful),
+);
+
+// POST Route: Flag inappropriate review
+router.post(
+	"/:reviewId/flag",
+	isLoggedIn,
+	validateFlagReview,
+	wrapAsync(reviewController.flagReview),
 );
 
 module.exports = router;

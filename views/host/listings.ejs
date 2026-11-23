@@ -1,0 +1,103 @@
+<% layout("layouts/boilerplate") %>
+
+<style>
+	.host-listing-card {
+		background: #ffffff;
+		border: 1px solid var(--border-color);
+		border-radius: 1.25rem;
+		overflow: hidden;
+		transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+	}
+
+	.host-listing-card:hover {
+		transform: translateY(-3px);
+		box-shadow: var(--shadow-hover);
+		border-color: var(--forest-200);
+	}
+
+	.host-card-media {
+		height: 210px;
+		background: var(--paper-200);
+		overflow: hidden;
+		position: relative;
+	}
+
+	.host-card-media img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transition: transform 0.4s ease;
+	}
+
+	.host-listing-card:hover .host-card-media img {
+		transform: scale(1.04);
+	}
+</style>
+
+<div class="container my-4 my-md-5">
+	<!-- Header Banner -->
+	<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom" style="border-color: var(--border-color) !important;">
+		<div>
+			<h1 class="editorial-title mb-1" style="font-size: 2.1rem; color: var(--ink-900);">Manage Host Properties</h1>
+			<p class="text-muted small mb-0">Overview and control of your published and draft vacation listings.</p>
+		</div>
+		<div class="d-flex flex-wrap gap-2 mt-3 mt-md-0">
+			<a href="/listings/new" class="btn btn-forest rounded-pill px-4">
+				<i class="fa-solid fa-plus me-1"></i> Add Property
+			</a>
+			<a href="/host/dashboard" class="btn btn-outline-dark rounded-pill px-3">
+				<i class="fa-solid fa-chart-line me-1"></i> Dashboard
+			</a>
+		</div>
+	</div>
+
+	<% if (!listings || listings.length === 0) { %>
+		<div class="text-center py-5 border rounded-4 bg-white shadow-sm" style="border-color: var(--border-color) !important;">
+			<div class="mb-3 d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 80px; height: 80px; background: var(--forest-50); color: var(--forest-800);">
+				<i class="fa-solid fa-house-chimney fa-2x"></i>
+			</div>
+			<h4 class="fw-bold mb-2">No properties listed yet</h4>
+			<p class="text-muted col-md-6 mx-auto mb-4" style="line-height: 1.6;">
+				Start earning as a host by creating your first vacation property listing on Wander-Lust.
+			</p>
+			<a href="/listings/new" class="btn btn-forest rounded-pill px-4 py-2">Create Listing</a>
+		</div>
+	<% } else { %>
+		<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+			<% for (let l of listings) { %>
+				<div class="col">
+					<div class="host-listing-card h-100 d-flex flex-column">
+						<div class="host-card-media">
+							<img
+								src="<%= l.image && l.image.url ? l.image.url : '/images/listing-placeholder.jpg' %>"
+								alt="<%= l.title %>"
+								onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';"
+							/>
+							<div class="position-absolute top-0 end-0 m-3 z-3">
+								<% if (l.status === 'draft') { %>
+									<span class="stamp stamp-draft shadow-sm">Draft</span>
+								<% } else { %>
+									<span class="stamp stamp-published shadow-sm">Published</span>
+								<% } %>
+							</div>
+						</div>
+						<div class="card-body p-3 d-flex flex-column flex-grow-1">
+							<h6 class="fw-bold mb-1 text-truncate text-dark" style="font-size: 1.05rem;" title="<%= l.title %>"><%= l.title %></h6>
+							<p class="text-muted small mb-2">
+								<i class="fa-solid fa-location-dot me-1 text-danger"></i> <%= l.location %>, <%= l.country %>
+							</p>
+							<div class="d-flex justify-content-between align-items-center mb-3 small p-2 rounded-3" style="background-color: var(--paper-100); border: 1px solid var(--border-color);">
+								<span>Nightly: <strong class="tabular-nums" style="color: var(--forest-900);">&#x20B9;<%= (l.price || 0).toLocaleString("en-IN") %></strong></span>
+								<span class="text-muted"><i class="fa-solid fa-eye me-1"></i><%= l.views || 0 %> views</span>
+							</div>
+							<div class="d-flex gap-2 mt-auto pt-2 border-top" style="border-color: var(--border-color) !important;">
+								<a href="/listings/<%= l._id %>" class="btn btn-sm btn-outline-dark rounded-pill w-50">View</a>
+								<a href="/listings/<%= l._id %>/edit" class="btn btn-sm btn-forest rounded-pill w-50">Edit</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			<% } %>
+		</div>
+	<% } %>
+</div>

@@ -1,0 +1,53 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wanderlust-dev-app
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=development
+      - PORT=8080
+      - DB_URL=mongodb://mongo:27017/wonderlust
+      - SESSION_SECRET=development_session_secret_code
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - app-dev-uploads:/app/uploads
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - wanderlust-dev-network
+    command: ["npx", "nodemon", "server.js"]
+
+  mongo:
+    image: mongo:7.0-jammy
+    container_name: wanderlust-dev-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-dev-data:/data/db
+    networks:
+      - wanderlust-dev-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+networks:
+  wanderlust-dev-network:
+    driver: bridge
+
+volumes:
+  mongo-dev-data:
+    driver: local
+  app-dev-uploads:
+    driver: local

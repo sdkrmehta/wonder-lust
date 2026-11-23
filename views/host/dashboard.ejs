@@ -1,0 +1,315 @@
+<% layout("layouts/boilerplate") %>
+
+<style>
+	.kpi-metric-card {
+		background: #ffffff;
+		border: 1px solid var(--border-color);
+		border-radius: 1.25rem;
+		padding: 1.5rem;
+		box-shadow: var(--shadow-subtle);
+		transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+	}
+
+	.kpi-metric-card:hover {
+		transform: translateY(-2px);
+		box-shadow: var(--shadow-hover);
+		border-color: var(--forest-200);
+	}
+
+	.kpi-icon-badge {
+		width: 44px;
+		height: 44px;
+		border-radius: 0.75rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.dashboard-table-card {
+		background: #ffffff;
+		border: 1px solid var(--border-color);
+		border-radius: 1.25rem;
+		padding: 1.75rem;
+		box-shadow: var(--shadow-subtle);
+	}
+</style>
+
+<div class="container my-4 my-md-5">
+	<!-- Dashboard Header -->
+	<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom" style="border-color: var(--border-color) !important;">
+		<div>
+			<div class="d-flex align-items-center gap-2 mb-1">
+				<h1 class="editorial-title mb-0" style="font-size: 2.1rem; color: var(--ink-900);">Host Performance Dashboard</h1>
+				<span class="stamp stamp-confirmed py-1 px-3">
+					<i class="fa-solid fa-crown me-1"></i> Host
+				</span>
+			</div>
+			<p class="text-muted small mb-0">Track real-time reservations, gross revenues, and property engagement.</p>
+		</div>
+
+		<div class="d-flex flex-wrap gap-2 mt-3 mt-md-0">
+			<a href="/listings/new" class="btn btn-forest rounded-pill px-4">
+				<i class="fa-solid fa-plus me-1"></i> Add New Listing
+			</a>
+			<a href="/profile" class="btn btn-outline-dark rounded-pill px-3">
+				<i class="fa-solid fa-user me-1"></i> Profile
+			</a>
+		</div>
+	</div>
+
+	<!-- KPI Metric Cards Grid -->
+	<div class="row g-3 mb-4">
+		<!-- Total Revenue -->
+		<div class="col-12 col-sm-6 col-lg-3">
+			<div class="kpi-metric-card h-100 d-flex flex-column justify-content-between">
+				<div class="d-flex align-items-center justify-content-between mb-2">
+					<span class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.05em;">Total Revenue</span>
+					<div class="kpi-icon-badge" style="background-color: var(--color-success-bg); color: var(--color-success);">
+						<i class="fa-solid fa-indian-rupee-sign fa-lg"></i>
+					</div>
+				</div>
+				<h2 class="fw-bold mb-1 tabular-nums" style="color: var(--forest-900); font-size: 1.85rem;">
+					&#x20B9;<%= (metrics.totalRevenue || 0).toLocaleString("en-IN") %>
+				</h2>
+				<span class="text-muted small">
+					Net Payout: <strong class="tabular-nums" style="color: var(--forest-800);">&#x20B9;<%= (metrics.netEarnings || 0).toLocaleString("en-IN") %></strong>
+				</span>
+			</div>
+		</div>
+
+		<!-- Total Bookings -->
+		<div class="col-12 col-sm-6 col-lg-3">
+			<div class="kpi-metric-card h-100 d-flex flex-column justify-content-between">
+				<div class="d-flex align-items-center justify-content-between mb-2">
+					<span class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.05em;">Reservations</span>
+					<div class="kpi-icon-badge" style="background-color: var(--forest-100); color: var(--forest-800);">
+						<i class="fa-solid fa-calendar-check fa-lg"></i>
+					</div>
+				</div>
+				<h2 class="fw-bold text-dark mb-1 tabular-nums" style="font-size: 1.85rem;"><%= metrics.totalBookings || 0 %></h2>
+				<span class="text-muted small">
+					<span class="text-success fw-semibold"><%= metrics.confirmedBookings || 0 %> confirmed</span> &bull;
+					<span class="text-danger"><%= metrics.cancelledBookings || 0 %> cancelled</span>
+				</span>
+			</div>
+		</div>
+
+		<!-- Active Properties -->
+		<div class="col-12 col-sm-6 col-lg-3">
+			<div class="kpi-metric-card h-100 d-flex flex-column justify-content-between">
+				<div class="d-flex align-items-center justify-content-between mb-2">
+					<span class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.05em;">Properties</span>
+					<div class="kpi-icon-badge" style="background-color: var(--color-warning-bg); color: var(--color-warning);">
+						<i class="fa-solid fa-house-chimney fa-lg"></i>
+					</div>
+				</div>
+				<h2 class="fw-bold text-dark mb-1 tabular-nums" style="font-size: 1.85rem;"><%= metrics.totalListings || 0 %></h2>
+				<span class="text-muted small">
+					<span class="text-success"><%= metrics.publishedListings || 0 %> published</span> &bull;
+					<span><%= metrics.draftListings || 0 %> drafts</span>
+				</span>
+			</div>
+		</div>
+
+		<!-- Views & Rating -->
+		<div class="col-12 col-sm-6 col-lg-3">
+			<div class="kpi-metric-card h-100 d-flex flex-column justify-content-between">
+				<div class="d-flex align-items-center justify-content-between mb-2">
+					<span class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.05em;">Rating &amp; Views</span>
+					<div class="kpi-icon-badge" style="background-color: var(--color-info-bg); color: var(--color-info);">
+						<i class="fa-solid fa-chart-line fa-lg"></i>
+					</div>
+				</div>
+				<h2 class="fw-bold text-dark mb-1 tabular-nums" style="font-size: 1.85rem;">
+					<i class="fa-solid fa-star text-warning fs-5"></i> <%= metrics.avgRating || "New" %>
+				</h2>
+				<span class="text-muted small tabular-nums"><%= (metrics.totalViews || 0).toLocaleString("en-IN") %> total listing impressions</span>
+			</div>
+		</div>
+	</div>
+
+	<!-- 2-Column Section: Recent Reservations & Monthly Earnings -->
+	<div class="row g-4 mb-4">
+		<!-- Recent Reservations Table -->
+		<div class="col-12 col-lg-8">
+			<div class="dashboard-table-card h-100">
+				<div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom" style="border-color: var(--border-color) !important;">
+					<h5 class="fw-bold mb-0" style="color: var(--ink-900);">Recent Reservations</h5>
+					<a href="/bookings/host" class="small text-decoration-none fw-semibold" style="color: var(--forest-800);">View All &rarr;</a>
+				</div>
+
+				<% if (!recentBookings || recentBookings.length === 0) { %>
+					<div class="text-center py-5 text-muted small">
+						<i class="fa-regular fa-calendar-xmark fa-2x mb-2" style="opacity: 0.5;"></i>
+						<p class="mb-0">No guest bookings recorded yet.</p>
+					</div>
+				<% } else { %>
+					<div class="table-responsive">
+						<table class="table table-hover align-middle mb-0 small">
+							<thead style="background-color: var(--paper-100);">
+								<tr>
+									<th class="py-2 px-3 fw-semibold small text-muted">Property</th>
+									<th class="py-2 px-3 fw-semibold small text-muted">Guest</th>
+									<th class="py-2 px-3 fw-semibold small text-muted">Dates</th>
+									<th class="py-2 px-3 fw-semibold small text-muted">Payout</th>
+									<th class="py-2 px-3 fw-semibold small text-muted">Status</th>
+								</tr>
+							</thead>
+							<tbody>
+								<% for (let b of recentBookings) { %>
+									<% const listing = b.listing || {}; %>
+									<% const guest = b.user || {}; %>
+									<tr>
+										<td class="py-2 px-3">
+											<div class="fw-semibold text-truncate text-dark" style="max-width: 180px;" title="<%= listing.title %>">
+												<%= listing.title || "Rental" %>
+											</div>
+											<span class="text-muted" style="font-size: 0.72rem;"><%= listing.location %></span>
+										</td>
+										<td class="py-2 px-3">
+											<div class="fw-semibold text-dark"><%= guest.fullName || guest.username || "Traveler" %></div>
+											<span class="text-muted" style="font-size: 0.72rem;"><%= guest.email %></span>
+										</td>
+										<td class="py-2 px-3">
+											<%= new Date(b.checkIn).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' }) %> &ndash;
+											<%= new Date(b.checkOut).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' }) %>
+											<div class="text-muted" style="font-size: 0.72rem;"><%= b.totalNights %> night<%= b.totalNights > 1 ? 's' : '' %></div>
+										</td>
+										<td class="py-2 px-3 fw-bold tabular-nums" style="color: var(--forest-900);">
+											&#x20B9;<%= (b.totalPrice || 0).toLocaleString("en-IN") %>
+										</td>
+										<td class="py-2 px-3">
+											<% if (b.status === 'confirmed') { %>
+												<span class="stamp stamp-confirmed py-1 px-2" style="font-size: 0.7rem;">Confirmed</span>
+											<% } else if (b.status === 'cancelled') { %>
+												<span class="stamp stamp-cancelled py-1 px-2" style="font-size: 0.7rem;">Cancelled</span>
+											<% } else { %>
+												<span class="stamp stamp-pending py-1 px-2" style="font-size: 0.7rem;"><%= b.status %></span>
+											<% } %>
+										</td>
+									</tr>
+								<% } %>
+							</tbody>
+						</table>
+					</div>
+				<% } %>
+			</div>
+		</div>
+
+		<!-- Monthly Earnings Breakdown -->
+		<div class="col-12 col-lg-4">
+			<div class="dashboard-table-card h-100">
+				<h5 class="fw-bold mb-3 pb-2 border-bottom" style="border-color: var(--border-color) !important; color: var(--ink-900);">
+					Annual Revenue (<%= new Date().getFullYear() %>)
+				</h5>
+				<div class="table-responsive">
+					<table class="table table-sm table-borderless align-middle mb-0 small">
+						<thead>
+							<tr class="text-muted border-bottom" style="border-color: var(--border-color) !important;">
+								<th class="py-2">Month</th>
+								<th class="text-end py-2">Gross</th>
+								<th class="text-end py-2">Net Payout</th>
+							</tr>
+						</thead>
+						<tbody>
+							<% for (let m of monthlyEarnings) { %>
+								<% if (m.revenue > 0) { %>
+									<tr>
+										<td class="fw-semibold text-dark py-2"><%= m.month %></td>
+										<td class="text-end text-muted tabular-nums py-2">&#x20B9;<%= m.revenue.toLocaleString("en-IN") %></td>
+										<td class="text-end fw-bold tabular-nums py-2" style="color: var(--forest-800);">&#x20B9;<%= m.netPayout.toLocaleString("en-IN") %></td>
+									</tr>
+								<% } %>
+							<% } %>
+							<% const hasAnyRevenue = monthlyEarnings.some(m => m.revenue > 0); %>
+							<% if (!hasAnyRevenue) { %>
+								<tr>
+									<td colspan="3" class="text-center text-muted py-4">No earnings recorded for this year yet.</td>
+								</tr>
+							<% } %>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Host Listings Management Grid -->
+	<div class="dashboard-table-card">
+		<div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom" style="border-color: var(--border-color) !important;">
+			<h5 class="fw-bold mb-0" style="color: var(--ink-900);">Your Properties (<%= listings.length %>)</h5>
+			<a href="/listings/new" class="btn btn-sm btn-forest-outline rounded-pill px-3">
+				<i class="fa-solid fa-plus me-1"></i> Add Property
+			</a>
+		</div>
+
+		<% if (!listings || listings.length === 0) { %>
+			<div class="text-center py-5 text-muted small">
+				<i class="fa-solid fa-house-chimney fa-2x mb-2" style="opacity: 0.5;"></i>
+				<p class="mb-2">You haven't added any vacation rentals yet.</p>
+				<a href="/listings/new" class="btn btn-forest rounded-pill px-4">Create Your First Listing</a>
+			</div>
+		<% } else { %>
+			<div class="table-responsive">
+				<table class="table table-hover align-middle mb-0 small">
+					<thead style="background-color: var(--paper-100);">
+						<tr>
+							<th class="py-2 px-3 fw-semibold small text-muted">Property</th>
+							<th class="py-2 px-3 fw-semibold small text-muted">Location</th>
+							<th class="py-2 px-3 fw-semibold small text-muted">Nightly Rate</th>
+							<th class="py-2 px-3 fw-semibold small text-muted">Impressions</th>
+							<th class="py-2 px-3 fw-semibold small text-muted">Rating</th>
+							<th class="py-2 px-3 fw-semibold small text-muted">Status</th>
+							<th class="text-end py-2 px-3 fw-semibold small text-muted">Actions</th>
+						</tr>
+					</thead>
+					<tbody>
+						<% for (let l of listings) { %>
+							<tr>
+								<td class="py-2 px-3">
+									<div class="d-flex align-items-center gap-2">
+										<img
+											src="<%= l.image && l.image.url ? l.image.url : '/images/listing-placeholder.jpg' %>"
+											alt="<%= l.title %>"
+											class="rounded-3 shadow-sm"
+											style="width: 48px; height: 48px; object-fit: cover;"
+											onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';"
+										/>
+										<div class="fw-semibold text-truncate text-dark" style="max-width: 220px;" title="<%= l.title %>">
+											<%= l.title %>
+										</div>
+									</div>
+								</td>
+								<td class="py-2 px-3"><%= l.location %>, <%= l.country %></td>
+								<td class="py-2 px-3 fw-bold tabular-nums" style="color: var(--forest-900);">&#x20B9;<%= (l.price || 0).toLocaleString("en-IN") %></td>
+								<td class="py-2 px-3">
+									<i class="fa-solid fa-eye me-1 text-muted"></i> <%= l.views || 0 %>
+								</td>
+								<td class="py-2 px-3">
+									<i class="fa-solid fa-star text-warning"></i> <%= (l.avgRating && l.avgRating > 0) ? Number(l.avgRating).toFixed(1) : "New" %>
+								</td>
+								<td class="py-2 px-3">
+									<% if (l.status === 'draft') { %>
+										<span class="stamp stamp-draft py-1 px-2" style="font-size: 0.7rem;">Draft</span>
+									<% } else { %>
+										<span class="stamp stamp-published py-1 px-2" style="font-size: 0.7rem;">Published</span>
+									<% } %>
+								</td>
+								<td class="text-end py-2 px-3">
+									<div class="d-flex justify-content-end gap-1">
+										<a href="/listings/<%= l._id %>" class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-1" title="View Property">
+											<i class="fa-solid fa-eye"></i>
+										</a>
+										<a href="/listings/<%= l._id %>/edit" class="btn btn-sm btn-forest-outline rounded-pill px-2 py-1" title="Edit Property">
+											<i class="fa-solid fa-pen-to-square"></i>
+										</a>
+									</div>
+								</td>
+							</tr>
+						<% } %>
+					</tbody>
+				</table>
+			</div>
+		<% } %>
+	</div>
+</div>

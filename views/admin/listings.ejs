@@ -1,0 +1,148 @@
+<% layout("/layouts/boilerplate") %>
+
+<div class="container-wide py-4 my-2">
+	<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-3 border-bottom">
+		<div>
+			<nav aria-label="breadcrumb">
+				<ol class="breadcrumb small mb-1">
+					<li class="breadcrumb-item"><a href="/admin" class="text-decoration-none text-forest">Admin Console</a></li>
+					<li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Listings Governance</li>
+				</ol>
+			</nav>
+			<h1 class="editorial-title h2 fw-bold mb-1 d-flex align-items-center gap-2 text-dark">
+				<i class="fa-solid fa-house-chimney text-forest"></i>
+				<span>Listings Governance &amp; Moderation</span>
+			</h1>
+			<p class="text-muted small mb-0">Oversee all platform properties, toggle publishing availability, and remove non-compliant listings.</p>
+		</div>
+		<a href="/admin" class="btn btn-forest-outline btn-sm rounded-pill px-3">
+			<i class="fa-solid fa-arrow-left me-1"></i> Back to Dashboard
+		</a>
+	</div>
+
+	<!-- Search & Filters -->
+	<div class="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4">
+		<form method="GET" action="/admin/listings" class="row g-2 align-items-center">
+			<div class="col-12 col-md-5">
+				<div class="input-group">
+					<span class="input-group-text bg-light border-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+					<input type="text" name="search" class="form-control bg-light border-0" placeholder="Search by title, city, or country..." value="<%= search %>">
+				</div>
+			</div>
+			<div class="col-6 col-md-3">
+				<select name="status" class="form-select bg-light border-0">
+					<option value="" <%= !status ? 'selected' : '' %>>All Statuses</option>
+					<option value="published" <%= status === 'published' ? 'selected' : '' %>>Published Only</option>
+					<option value="draft" <%= status === 'draft' ? 'selected' : '' %>>Drafts Only</option>
+				</select>
+			</div>
+			<div class="col-6 col-md-2">
+				<button type="submit" class="btn btn-forest w-100 rounded-pill">Filter</button>
+			</div>
+			<div class="col-12 col-md-2">
+				<a href="/admin/listings" class="btn btn-forest-outline w-100 rounded-pill">Reset</a>
+			</div>
+		</form>
+	</div>
+
+	<!-- Listings Table -->
+	<div class="card border-0 shadow-sm rounded-4 p-0 bg-white overflow-hidden mb-4">
+		<div class="table-responsive">
+			<table class="table table-hover align-middle mb-0">
+				<thead class="table-light small text-uppercase">
+					<tr>
+						<th class="ps-4">Property</th>
+						<th>Location</th>
+						<th>Host</th>
+						<th>Price / Night</th>
+						<th>Status</th>
+						<th class="text-end pe-4">Actions</th>
+					</tr>
+				</thead>
+				<tbody class="small">
+					<% if (!listings || listings.length === 0) { %>
+						<tr>
+							<td colspan="6" class="text-center py-5 text-muted">
+								<i class="fa-solid fa-house-chimney fa-2x mb-2 d-block opacity-50"></i>
+								No listings matched your criteria.
+							</td>
+						</tr>
+					<% } else { %>
+						<% for (const l of listings) { %>
+							<tr>
+								<td class="ps-4">
+									<div class="d-flex align-items-center gap-3">
+										<% const thumb = (l.images && l.images.length > 0) ? l.images[0].url : (l.image ? l.image.url : '/images/listing-placeholder.jpg'); %>
+										<img src="<%= thumb %>" class="rounded-3 shadow-sm flex-shrink-0" style="width: 52px; height: 40px; object-fit: cover;" alt="<%= l.title %>">
+										<div>
+											<a href="/listings/<%= l._id %>" class="fw-bold text-dark text-decoration-none">
+												<%= l.title %>
+											</a>
+											<div class="text-muted" style="font-size: 0.75rem;"><%= l.propertyType || 'Villa' %> &bull; <%= l.category || 'Trending' %></div>
+										</div>
+									</div>
+								</td>
+								<td class="text-secondary"><%= l.location %>, <%= l.country %></td>
+								<td>
+									<% if (l.owner) { %>
+										<span class="fw-semibold text-dark"><%= l.owner.username %></span>
+										<% if (l.owner.isSuperhost) { %>
+											<i class="fa-solid fa-crown ms-1 text-gold" title="Superhost" style="color: var(--gold);"></i>
+										<% } %>
+									<% } else { %>
+										<span class="text-muted">Unassigned</span>
+									<% } %>
+								</td>
+								<td class="fw-bold text-forest font-tabular">₹<%= (l.price || 0).toLocaleString('en-IN') %></td>
+								<td>
+									<form action="/admin/listings/<%= l._id %>/toggle-status" method="POST" class="d-inline">
+										<button type="submit" class="btn btn-sm rounded-pill px-2 py-0 <%= l.status === 'draft' ? 'btn-outline-warning text-dark' : 'btn-success-subtle text-success' %>" title="Toggle visibility">
+											<%= l.status === 'draft' ? 'Draft' : 'Published' %>
+										</button>
+									</form>
+								</td>
+								<td class="text-end pe-4">
+									<div class="d-flex align-items-center justify-content-end gap-2">
+										<a href="/listings/<%= l._id %>" class="btn btn-sm btn-forest-outline rounded-pill px-3 py-1">
+											View
+										</a>
+										<form action="/admin/listings/<%= l._id %>/delete" method="POST" class="d-inline">
+											<button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1" onclick="return confirm('Permanently delete listing: <%= l.title %>?');" title="Delete listing">
+												<i class="fa-regular fa-trash-can"></i>
+											</button>
+										</form>
+									</div>
+								</td>
+							</tr>
+						<% } %>
+					<% } %>
+				</tbody>
+			</table>
+		</div>
+	</div>
+
+	<!-- Pagination -->
+	<% if (totalPages > 1) { %>
+		<nav class="d-flex justify-content-center" aria-label="Listings pagination">
+			<ul class="pagination pagination-sm gap-1">
+				<li class="page-item <%= page <= 1 ? 'disabled' : '' %>">
+					<a class="page-link rounded-circle px-3" href="/admin/listings?search=<%= search %>&status=<%= status %>&page=<%= page - 1 %>">
+						<i class="fa-solid fa-chevron-left"></i>
+					</a>
+				</li>
+				<% for (let p = 1; p <= totalPages; p++) { %>
+					<li class="page-item <%= p === page ? 'active' : '' %>">
+						<a class="page-link rounded-circle px-3 <%= p === page ? 'btn-forest border-0 text-white' : '' %>" href="/admin/listings?search=<%= search %>&status=<%= status %>&page=<%= p %>">
+							<%= p %>
+						</a>
+					</li>
+				<% } %>
+				<li class="page-item <%= page >= totalPages ? 'disabled' : '' %>">
+					<a class="page-link rounded-circle px-3" href="/admin/listings?search=<%= search %>&status=<%= status %>&page=<%= page + 1 %>">
+						<i class="fa-solid fa-chevron-right"></i>
+					</a>
+				</li>
+			</ul>
+		</nav>
+	<% } %>
+</div>
