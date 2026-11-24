@@ -1,10 +1,12 @@
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
 const mongoose = require("mongoose");
 const initData = require("./data.js");
 const Listing = require("../models/listing.js");
 const User = require("../models/user.js");
 const { geocodeLocation } = require("../utils/geocoder.js");
 
-const MONGO_URL = process.env.ATLASDB_URL || "mongodb://localhost:27017/wonderlust";
+const MONGO_URL = process.env.ATLASDB_URL || process.env.DB_URL || process.env.MONGO_URL || "mongodb://localhost:27017/wonderlust";
 
 async function main() {
 	await mongoose.connect(MONGO_URL);
