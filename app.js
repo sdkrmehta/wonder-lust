@@ -31,6 +31,11 @@ const { getConnectionState } = require("./config/database");
 
 const app = express();
 
+// Trust reverse proxy for secure cookies on cloud hosts (Render, Heroku, AWS)
+if (process.env.NODE_ENV === "production") {
+	app.set("trust proxy", 1);
+}
+
 // View Engine Setup
 app.engine("ejs", ejsMate);
 app.set("view engine", "ejs");

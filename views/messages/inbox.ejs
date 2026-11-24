@@ -1,10 +1,10 @@
 <% layout("layouts/boilerplate") %>
 
-<div class="container-wide my-4 my-md-5">
-	<div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-white" style="height: 750px; max-height: 85vh;">
+<div class="container-wide my-3 my-md-4">
+	<div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-white inbox-card-container" style="height: 750px; max-height: 85vh;">
 		<div class="row g-0 h-100">
 			<!-- Left Panel: Conversation Threads List -->
-			<div class="col-12 col-md-5 col-lg-4 border-end d-flex flex-column h-100" style="background-color: var(--paper-100);">
+			<div class="col-12 col-md-5 col-lg-4 border-end <%= (activeConversation && otherUser) ? 'd-none d-md-flex' : 'd-flex' %> flex-column h-100" style="background-color: var(--paper-100);">
 				<!-- Header -->
 				<div class="p-3 bg-white border-bottom d-flex justify-content-between align-items-center">
 					<h5 class="editorial-title fw-bold mb-0 text-dark d-flex align-items-center gap-2">
@@ -95,7 +95,7 @@
 			</div>
 
 			<!-- Right Panel: Active Chat Thread -->
-			<div class="col-12 col-md-7 col-lg-8 d-flex flex-column h-100 bg-white">
+			<div class="col-12 col-md-7 col-lg-8 <%= (activeConversation && otherUser) ? 'd-flex' : 'd-none d-md-flex' %> flex-column h-100 bg-white">
 				<% if (activeConversation && otherUser) { %>
 					<!-- Chat Top Bar -->
 					<div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-white shadow-sm z-2">
@@ -183,7 +183,7 @@
 					</div>
 
 					<!-- Message Composer Bar -->
-					<div class="p-3 bg-white border-top">
+					<div class="p-3 bg-white border-top chat-composer-bar">
 						<form
 							action="/messages/<%= activeConversation._id %>"
 							method="POST"

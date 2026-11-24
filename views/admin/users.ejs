@@ -29,7 +29,7 @@
 					<input type="text" name="search" class="form-control bg-light border-0" placeholder="Search by username, full name, or email..." value="<%= search %>">
 				</div>
 			</div>
-			<div class="col-6 col-md-3">
+			<div class="col-12 col-sm-6 col-md-3">
 				<select name="role" class="form-select bg-light border-0">
 					<option value="" <%= !role ? 'selected' : '' %>>All Roles</option>
 					<option value="traveler" <%= role === 'traveler' ? 'selected' : '' %>>Travelers Only</option>
@@ -37,10 +37,10 @@
 					<option value="admin" <%= role === 'admin' ? 'selected' : '' %>>Admins Only</option>
 				</select>
 			</div>
-			<div class="col-6 col-md-2">
+			<div class="col-6 col-sm-3 col-md-2">
 				<button type="submit" class="btn btn-forest w-100 rounded-pill">Filter</button>
 			</div>
-			<div class="col-12 col-md-2">
+			<div class="col-6 col-sm-3 col-md-2">
 				<a href="/admin/users" class="btn btn-forest-outline w-100 rounded-pill">Reset</a>
 			</div>
 		</form>

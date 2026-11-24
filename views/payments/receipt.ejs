@@ -72,25 +72,25 @@
 
 				<!-- Invoice Metadata Grid -->
 				<div class="row g-3 py-2 border-bottom mb-4 small" style="border-color: var(--border-color) !important;">
-					<div class="col-6 col-md-3">
+					<div class="col-12 col-sm-6 col-md-3">
 						<div class="invoice-meta-item">
 							<span class="text-muted d-block small mb-1">Invoice Number</span>
 							<span class="font-monospace fw-bold fs-6 text-dark"><%= payment.receiptNumber %></span>
 						</div>
 					</div>
-					<div class="col-6 col-md-3">
+					<div class="col-12 col-sm-6 col-md-3">
 						<div class="invoice-meta-item">
 							<span class="text-muted d-block small mb-1">Issue Date</span>
 							<span class="fw-semibold text-dark"><%= new Date(payment.createdAt).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' }) %></span>
 						</div>
 					</div>
-					<div class="col-6 col-md-3">
+					<div class="col-12 col-sm-6 col-md-3">
 						<div class="invoice-meta-item">
 							<span class="text-muted d-block small mb-1">Transaction ID</span>
 							<span class="font-monospace fw-semibold text-truncate d-block text-dark" title="<%= payment.transactionId %>"><%= payment.transactionId %></span>
 						</div>
 					</div>
-					<div class="col-6 col-md-3">
+					<div class="col-12 col-sm-6 col-md-3">
 						<div class="invoice-meta-item">
 							<span class="text-muted d-block small mb-1">SAC / HSN Code</span>
 							<span class="font-monospace fw-semibold text-dark">996311 (Accommodation)</span>
@@ -267,11 +267,11 @@
 			</div>
 
 			<!-- Screen-Only Actions -->
-			<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-4 no-print">
-				<a href="/bookings" class="btn btn-outline-dark rounded-pill px-4">
+			<div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3 mt-4 no-print">
+				<a href="/bookings" class="btn btn-outline-dark rounded-pill px-4 w-100 w-sm-auto text-center">
 					<i class="fa-solid fa-arrow-left me-1"></i> Back to My Trips
 				</a>
-				<div class="d-flex gap-2">
+				<div class="d-flex flex-wrap gap-2 w-100 w-sm-auto justify-content-center justify-content-sm-end">
 					<% if (booking && booking._id) { %>
 						<a href="/bookings/<%= booking._id %>" class="btn btn-outline-secondary rounded-pill px-3">
 							<i class="fa-solid fa-eye me-1"></i> View Booking Details

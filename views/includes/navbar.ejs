@@ -215,17 +215,49 @@
 						</a>
 					</li>
 					<% if (!navUser) { %>
+						<li class="nav-item">
+							<a class="nav-link mobile-nav-link" href="javascript:void(0)" onclick="openWishlistModal()">
+								<i class="fa-regular fa-heart me-2"></i>Saved Wishlist
+							</a>
+						</li>
 						<li class="nav-item d-flex gap-2 mt-2">
 							<a class="btn btn-outline-light btn-sm flex-fill rounded-pill" href="/login">Log In</a>
 							<a class="btn btn-warm-orange btn-sm flex-fill rounded-pill" href="/signup">Sign Up</a>
 						</li>
 					<% } else { %>
+						<% if (navUser.role === 'admin') { %>
+							<li class="nav-item">
+								<a class="nav-link mobile-nav-link text-danger fw-bold" href="/admin">
+									<i class="fa-solid fa-shield-halved me-2"></i>Admin Console
+								</a>
+							</li>
+						<% } %>
 						<li class="nav-item">
 							<a class="nav-link mobile-nav-link" href="/profile">
 								<i class="fa-regular fa-user me-2"></i>My Profile (<%= navUser.username %>)
 							</a>
 						</li>
 						<li class="nav-item">
+							<a class="nav-link mobile-nav-link" href="/bookings">
+								<i class="fa-solid fa-suitcase-rolling me-2"></i>My Bookings &amp; Trips
+							</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link mobile-nav-link" href="/messages">
+								<i class="fa-regular fa-comment-dots me-2"></i>Messages
+							</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link mobile-nav-link" href="/host/dashboard">
+								<i class="fa-solid fa-chart-line me-2"></i>Host Dashboard
+							</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link mobile-nav-link" href="javascript:void(0)" onclick="openWishlistModal()">
+								<i class="fa-regular fa-heart me-2"></i>Saved Wishlist
+							</a>
+						</li>
+						<li class="nav-item border-top pt-2 mt-2">
 							<a class="nav-link mobile-nav-link text-danger" href="/logout">
 								<i class="fa-solid fa-arrow-right-from-bracket me-2"></i>Log Out
 							</a>

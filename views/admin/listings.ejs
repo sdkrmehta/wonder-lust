@@ -29,17 +29,17 @@
 					<input type="text" name="search" class="form-control bg-light border-0" placeholder="Search by title, city, or country..." value="<%= search %>">
 				</div>
 			</div>
-			<div class="col-6 col-md-3">
+			<div class="col-12 col-sm-6 col-md-3">
 				<select name="status" class="form-select bg-light border-0">
 					<option value="" <%= !status ? 'selected' : '' %>>All Statuses</option>
 					<option value="published" <%= status === 'published' ? 'selected' : '' %>>Published Only</option>
 					<option value="draft" <%= status === 'draft' ? 'selected' : '' %>>Drafts Only</option>
 				</select>
 			</div>
-			<div class="col-6 col-md-2">
+			<div class="col-6 col-sm-3 col-md-2">
 				<button type="submit" class="btn btn-forest w-100 rounded-pill">Filter</button>
 			</div>
-			<div class="col-12 col-md-2">
+			<div class="col-6 col-sm-3 col-md-2">
 				<a href="/admin/listings" class="btn btn-forest-outline w-100 rounded-pill">Reset</a>
 			</div>
 		</form>
