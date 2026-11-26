@@ -14,7 +14,11 @@
 		"etl:full": "node scripts/etl-reviews-calendar.js",
 		"docker:build": "docker build -t wander-lust .",
 		"docker:up": "docker-compose up -d",
-		"docker:down": "docker-compose down",
+		"docker:up:proxy": "docker-compose --profile proxy up -d",
+		"docker:down": "docker-compose --profile proxy down",
+		"secrets:generate": "node scripts/generate-secrets.js",
+		"audit:atlas": "node scripts/verify-atlas-readiness.js",
+		"audit:kdf": "node scripts/audit-password-migration.js",
 		"test": "node tests/runAllTests.js",
 		"test:all": "node tests/runAllTests.js",
 		"test:phase16": "node tests/phase16.test.js",
@@ -55,12 +59,15 @@
 		"express-rate-limit": "^8.7.4",
 		"express-session": "^1.19.0",
 		"helmet": "^8.3.0",
+		"ioredis": "^6.1.0",
 		"joi": "^17.13.9",
 		"method-override": "^3.0.0",
 		"mongoose": "^8.24.11",
 		"multer": "^1.4.5-lts.1",
 		"passport": "^0.7.0",
 		"passport-local": "^1.0.0",
-		"passport-local-mongoose": "^8.0.0"
+		"passport-local-mongoose": "^8.0.0",
+		"rate-limit-redis": "^6.0.2",
+		"razorpay": "^2.9.8"
 	}
 }
