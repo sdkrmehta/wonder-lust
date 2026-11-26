@@ -1,271 +1,5 @@
 <% layout("layouts/boilerplate") %>
 
-<style>
-	/* Media Showcase & Gallery */
-	.gallery-thumb {
-		height: 85px;
-		object-fit: cover;
-		border-radius: 0.65rem;
-		cursor: pointer;
-		opacity: 0.72;
-		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-		border: 2px solid transparent;
-	}
-	.gallery-thumb:hover, .gallery-thumb.active {
-		opacity: 1;
-		border-color: var(--forest-800);
-		transform: scale(1.03);
-	}
-	.show-hero-img {
-		width: 100%;
-		max-height: 480px;
-		object-fit: cover;
-		border-radius: 1.25rem;
-		transition: opacity 0.25s ease;
-		background-color: var(--paper-200);
-	}
-
-	/* Sticky Booking Engine Card */
-	.booking-card-sticky {
-		position: sticky;
-		top: 6.2rem;
-		z-index: 20;
-		background: #ffffff;
-		border: 1px solid var(--border-color) !important;
-		border-radius: 1.25rem !important;
-		box-shadow: var(--shadow-card) !important;
-	}
-
-	/* Spec Chips */
-	.spec-chip {
-		background: var(--paper-100);
-		border: 1px solid var(--border-color);
-		border-radius: 0.85rem;
-		padding: 0.85rem 1rem;
-		transition: all 0.2s ease;
-	}
-	.spec-chip:hover {
-		background: #ffffff;
-		border-color: var(--forest-200);
-	}
-
-	/* Rating Score Hero */
-	.rating-hero-score {
-		font-family: var(--font-display);
-		font-size: 2.8rem;
-		font-weight: 700;
-		line-height: 1;
-		color: var(--forest-900);
-	}
-
-	/* Dimension Cards */
-	.dimension-card {
-		background: var(--paper-50);
-		border: 1px solid var(--border-color);
-		border-radius: 0.75rem;
-		padding: 0.75rem 0.95rem;
-		transition: background-color 0.15s ease;
-	}
-	.dimension-card:hover {
-		background: #ffffff;
-		border-color: var(--forest-200);
-	}
-
-	/* Review Card Styling */
-	.review-card {
-		background: #ffffff;
-		border: 1px solid var(--border-color) !important;
-		border-radius: 1.15rem !important;
-		padding: 1.5rem;
-		transition: box-shadow 0.2s ease;
-	}
-	.review-card:hover {
-		box-shadow: var(--shadow-subtle) !important;
-	}
-
-	/* Host Reply Bubble */
-	.host-reply-bubble {
-		background: var(--paper-100);
-		border-left: 3px solid var(--forest-700);
-		border-radius: 0 0.85rem 0.85rem 0;
-		padding: 1rem 1.25rem;
-	}
-
-	/* Interactive Availability Calendar */
-	.availability-calendar-card {
-		background: #ffffff;
-		border: 1px solid var(--border-color);
-		border-radius: 1.25rem;
-		padding: 1.5rem;
-		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-	}
-	.calendar-grid-wrapper {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: 2rem;
-	}
-	@media (max-width: 991px) {
-		.calendar-grid-wrapper {
-			grid-template-columns: 1fr;
-			gap: 1.5rem;
-		}
-	}
-	.calendar-month-table {
-		width: 100%;
-		table-layout: fixed;
-		border-collapse: separate;
-		border-spacing: 3px;
-	}
-	.calendar-month-table th {
-		font-size: 0.76rem;
-		font-weight: 600;
-		color: #64748b;
-		text-align: center;
-		padding: 0.35rem 0;
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
-	}
-	.calendar-day-cell {
-		height: 48px;
-		text-align: center;
-		vertical-align: middle;
-		font-size: 0.92rem;
-		font-weight: 500;
-		border-radius: 0.65rem;
-		position: relative;
-		user-select: none;
-		transition: all 0.15s ease;
-	}
-	.calendar-day-empty {
-		visibility: hidden;
-	}
-	.calendar-day-num {
-		line-height: 1.2;
-		display: block;
-	}
-	.calendar-day-available {
-		cursor: pointer;
-		background: #ffffff;
-		border: 1px solid #f1f5f9;
-		color: var(--ink-900, #1e293b);
-	}
-	.calendar-day-available:hover {
-		background: var(--forest-100, #e8f0eb);
-		color: var(--forest-900, #1b382b);
-		border-color: var(--forest-800, #2d5a43);
-		transform: scale(1.04);
-		z-index: 2;
-	}
-	.calendar-day-booked {
-		cursor: not-allowed !important;
-		background-color: #fff1f2 !important;
-		border: 1px dashed #fecdd3 !important;
-		color: #be123c !important;
-		opacity: 0.9;
-	}
-	.calendar-day-booked .calendar-day-num {
-		text-decoration: line-through;
-		color: #e11d48;
-		font-weight: 600;
-	}
-	.calendar-day-booked .booked-tag {
-		display: block;
-		font-size: 0.58rem;
-		font-weight: 700;
-		line-height: 1;
-		color: #e11d48;
-		letter-spacing: -0.02em;
-		margin-top: 1px;
-	}
-	.calendar-day-booked:hover {
-		background-color: #ffe4e6 !important;
-		border-color: #f43f5e !important;
-	}
-	.calendar-day-past {
-		cursor: not-allowed;
-		color: #cbd5e1 !important;
-		background: transparent;
-		opacity: 0.45;
-	}
-	.calendar-day-selected-start {
-		background: var(--forest-900, #1b382b) !important;
-		color: #ffffff !important;
-		font-weight: 700 !important;
-		border-radius: 0.65rem 0 0 0.65rem !important;
-		box-shadow: 0 2px 6px rgba(27, 56, 43, 0.35);
-	}
-	.calendar-day-selected-end {
-		background: var(--forest-900, #1b382b) !important;
-		color: #ffffff !important;
-		font-weight: 700 !important;
-		border-radius: 0 0.65rem 0.65rem 0 !important;
-		box-shadow: 0 2px 6px rgba(27, 56, 43, 0.35);
-	}
-	.calendar-day-selected-start.calendar-day-selected-end {
-		border-radius: 0.65rem !important;
-	}
-	.calendar-day-in-range {
-		background: #eaf3ed !important;
-		color: var(--forest-900, #1b382b) !important;
-		border-radius: 0 !important;
-		font-weight: 600;
-	}
-	.calendar-legend-box {
-		width: 14px;
-		height: 14px;
-		border-radius: 4px;
-		display: inline-block;
-	}
-	.legend-available {
-		background: #ffffff;
-		border: 1px solid #cbd5e1;
-	}
-	.legend-booked {
-		background: #fff1f2;
-		border: 1px dashed #fecdd3;
-	}
-	.legend-selected {
-		background: var(--forest-900, #1b382b);
-		border: 1px solid var(--forest-900, #1b382b);
-	}
-	@keyframes shake-booked {
-		0%, 100% { transform: translateX(0); }
-		20%, 60% { transform: translateX(-4px); }
-		40%, 80% { transform: translateX(4px); }
-	}
-	.shake-booked {
-		animation: shake-booked 0.4s ease;
-	}
-	.booking-toast-popup {
-		position: fixed;
-		bottom: 2rem;
-		left: 50%;
-		transform: translateX(-50%) translateY(100px);
-		z-index: 9999;
-		opacity: 0;
-		transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-		pointer-events: none;
-	}
-	.booking-toast-popup.show {
-		transform: translateX(-50%) translateY(0);
-		opacity: 1;
-		pointer-events: auto;
-	}
-	.booking-toast-content {
-		background: #991b1b;
-		color: #ffffff;
-		padding: 0.85rem 1.4rem;
-		border-radius: 2rem;
-		box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		font-size: 0.92rem;
-		font-weight: 500;
-		border: 1px solid rgba(255, 255, 255, 0.2);
-	}
-</style>
-
 <div class="row mt-3 mb-5 pdp-page">
 	<div class="col-12 col-xl-10 offset-xl-1">
 		<!-- Header & Title with Badges -->
@@ -318,57 +52,43 @@
 		%>
 
 		<!-- Desktop 5-Photo Mosaic Grid -->
-		<div class="d-none d-md-block pdp-mosaic-wrapper position-relative mb-4 overflow-hidden rounded-4 shadow-sm" style="height: 440px;">
-			<div class="row g-2 h-100">
-				<!-- Hero Photo (Left 58%) -->
-				<div class="col-7 h-100">
-					<div class="mosaic-hero-tile h-100 position-relative overflow-hidden cursor-pointer" onclick="openLightbox(0)">
-						<img
-							id="mainHeroImg"
-							src="<%= primaryImg.url %>"
-							class="w-100 h-100 object-fit-cover mosaic-zoom-img"
-							alt="<%= listing.title %>"
-							onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';"
-						/>
-						<% if (listing.propertyType) { %>
-							<span class="position-absolute top-0 start-0 m-3 property-badge-glass shadow-sm">
-								<%= listing.propertyType %>
-							</span>
-						<% } %>
-					</div>
+		<div class="d-none d-md-block pdp-mosaic-wrapper position-relative mb-4">
+			<div class="pdp-mosaic-grid">
+				<!-- Hero Photo (Left Column) -->
+				<div class="mosaic-hero-tile position-relative overflow-hidden cursor-pointer" onclick="openLightbox(0)">
+					<img
+						id="mainHeroImg"
+						src="<%= primaryImg.url %>"
+						class="mosaic-zoom-img"
+						alt="<%= listing.title %>"
+						onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';"
+					/>
+					<% if (listing.propertyType) { %>
+						<span class="position-absolute top-0 start-0 m-3 property-badge-glass shadow-sm">
+							<%= listing.propertyType %>
+						</span>
+					<% } %>
 				</div>
 
-				<!-- 4-Grid Secondary Photos (Right 42%) -->
-				<div class="col-5 h-100">
-					<div class="row g-2 h-100">
-						<div class="col-6 h-50">
-							<div class="mosaic-sub-tile h-100 position-relative overflow-hidden cursor-pointer" onclick="openLightbox(1)">
-								<img src="<%= mosaicSlots[1].url %>" class="w-100 h-100 object-fit-cover mosaic-zoom-img" alt="Property view 2" onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';">
-							</div>
-						</div>
-						<div class="col-6 h-50">
-							<div class="mosaic-sub-tile h-100 position-relative overflow-hidden cursor-pointer" onclick="openLightbox(2)">
-								<img src="<%= mosaicSlots[2].url %>" class="w-100 h-100 object-fit-cover mosaic-zoom-img" alt="Property view 3" onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';">
-							</div>
-						</div>
-						<div class="col-6 h-50">
-							<div class="mosaic-sub-tile h-100 position-relative overflow-hidden cursor-pointer" onclick="openLightbox(3)">
-								<img src="<%= mosaicSlots[3].url %>" class="w-100 h-100 object-fit-cover mosaic-zoom-img" alt="Property view 4" onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';">
-							</div>
-						</div>
-						<div class="col-6 h-50 position-relative">
-							<div class="mosaic-sub-tile h-100 position-relative overflow-hidden cursor-pointer" onclick="openLightbox(4)">
-								<img src="<%= mosaicSlots[4].url %>" class="w-100 h-100 object-fit-cover mosaic-zoom-img" alt="Property view 5" onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';">
-							</div>
-						</div>
-					</div>
+				<!-- 4 Secondary Photos (Right 2x2 Grid) -->
+				<div class="mosaic-sub-tile position-relative overflow-hidden cursor-pointer" onclick="openLightbox(1)">
+					<img src="<%= mosaicSlots[1].url %>" class="mosaic-zoom-img" alt="Property view 2" onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';">
+				</div>
+				<div class="mosaic-sub-tile position-relative overflow-hidden cursor-pointer" onclick="openLightbox(2)">
+					<img src="<%= mosaicSlots[2].url %>" class="mosaic-zoom-img" alt="Property view 3" onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';">
+				</div>
+				<div class="mosaic-sub-tile position-relative overflow-hidden cursor-pointer" onclick="openLightbox(3)">
+					<img src="<%= mosaicSlots[3].url %>" class="mosaic-zoom-img" alt="Property view 4" onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';">
+				</div>
+				<div class="mosaic-sub-tile position-relative overflow-hidden cursor-pointer" onclick="openLightbox(4)">
+					<img src="<%= mosaicSlots[4].url %>" class="mosaic-zoom-img" alt="Property view 5" onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';">
 				</div>
 			</div>
 
 			<!-- "Show all photos" Floating Pill Action Button -->
 			<button
 				type="button"
-				class="btn btn-light position-absolute bottom-0 end-0 m-3 px-3 py-2 rounded-3 shadow fw-semibold small d-flex align-items-center gap-2 border"
+				class="btn btn-light position-absolute bottom-0 end-0 m-3 px-3 py-2 rounded-pill shadow fw-semibold small d-flex align-items-center gap-2 border"
 				data-bs-toggle="modal"
 				data-bs-target="#photoLightboxModal"
 				style="z-index: 10;"
@@ -1030,7 +750,7 @@
 </div>
 
 <!-- Mobile Sticky Bottom Reserve Bar (Under 992px) -->
-<div class="mobile-pdp-sticky-bar d-lg-none fixed-bottom bg-white border-top shadow-lg px-3 py-2 z-3 d-flex justify-content-between align-items-center">
+<div class="mobile-pdp-sticky-bar d-lg-none fixed-bottom d-flex justify-content-between align-items-center">
 	<div>
 		<div>
 			<span class="fw-bold fs-5 text-dark">&#x20B9;<%= (listing.price || 0).toLocaleString("en-IN") %></span>
@@ -1062,7 +782,7 @@
 					<img id="lightboxActiveImg" src="<%= primaryImg.url %>" alt="Expanded photo" class="img-fluid rounded-3 shadow-lg" style="max-height: 70vh; object-fit: contain;">
 				</div>
 				<!-- Lightbox Thumbnails Bar -->
-				<div class="w-100 p-2 overflow-x-auto bg-black bg-opacity-50 d-flex justify-content-center gap-2" style="scrollbar-width: thin;">
+				<div class="w-100 p-2 overflow-x-auto bg-black bg-opacity-50 d-flex justify-content-start justify-content-md-center gap-2" style="scrollbar-width: thin;">
 					<% galleryImages.forEach((img, idx) => { %>
 						<img
 							src="<%= img.url %>"
@@ -1170,7 +890,7 @@
 			const customPin = L.divIcon({
 				html: `
 					<div style="
-						background: #214B3E;
+						background: #1D3557;
 						color: #ffffff;
 						width: 36px;
 						height: 36px;
@@ -1179,7 +899,7 @@
 						display: flex;
 						align-items: center;
 						justify-content: center;
-						box-shadow: 0 4px 12px rgba(33, 75, 62, 0.4);
+						box-shadow: 0 4px 12px rgba(16, 42, 67, 0.4);
 						border: 2px solid #ffffff;
 					">
 						<i class="fa-solid fa-hotel" style="transform: rotate(45deg); font-size: 14px;"></i>
@@ -1196,7 +916,7 @@
 					<div class="fw-bold mb-1" style="color: #102A43; font-size: 0.95rem;"><%- listing.title.replace(/"/g, '&quot;') %></div>
 					<div class="text-muted small mb-1"><i class="fa-solid fa-location-dot text-danger me-1"></i><%- listing.location %>, <%- listing.country %></div>
 					<div class="mt-1 pt-1 border-top d-flex justify-content-between align-items-center">
-						<span class="fw-bold" style="color: #214B3E;">&#x20B9;<%- (listing.price || 0).toLocaleString("en-IN") %> <span class="fw-normal text-muted small">/ night</span></span>
+						<span class="fw-bold" style="color: #1D3557;">&#x20B9;<%- (listing.price || 0).toLocaleString("en-IN") %> <span class="fw-normal text-muted small">/ night</span></span>
 					</div>
 				</div>
 			`;

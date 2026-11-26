@@ -9,11 +9,11 @@
   const containerClass = (typeof extraClass !== 'undefined' && extraClass) ? extraClass : '';
 %>
 <form action="/listings" method="GET" class="hero-search-card wanderlust-search-form shadow-lg p-3 p-md-4 rounded-4 <%= isDropdownForm ? 'dropdown-search-card' : '' %> <%= containerClass %>" id="<%= fid %>" novalidate>
-	<div class="row g-2 g-md-3 align-items-center">
+	<div class="search-grid-row">
 		<!-- 1. Destination Input -->
-		<div class="col-12 col-md-6 col-lg-3 position-relative search-col-destination">
+		<div class="position-relative search-col-destination">
 			<label class="form-label search-field-label" for="<%= fid %>_q">
-				<i class="fa-solid fa-location-dot text-danger me-1"></i> Destination
+				<i class="fa-solid fa-location-dot"></i> Destination
 			</label>
 			<div class="input-wrapper position-relative">
 				<input
@@ -30,9 +30,9 @@
 		</div>
 
 		<!-- 2. Check-in Date -->
-		<div class="col-6 col-md-3 col-lg-2 search-col-checkin">
+		<div class="search-col-checkin">
 			<label class="form-label search-field-label" for="<%= fid %>_checkIn">
-				<i class="fa-regular fa-calendar text-primary me-1"></i> Check-in
+				<i class="fa-regular fa-calendar"></i> Check-in
 			</label>
 			<input
 				type="date"
@@ -45,9 +45,9 @@
 		</div>
 
 		<!-- 3. Check-out Date -->
-		<div class="col-6 col-md-3 col-lg-2 search-col-checkout">
+		<div class="search-col-checkout">
 			<label class="form-label search-field-label" for="<%= fid %>_checkOut">
-				<i class="fa-regular fa-calendar-check text-success me-1"></i> Check-out
+				<i class="fa-regular fa-calendar-check"></i> Check-out
 			</label>
 			<input
 				type="date"
@@ -60,9 +60,9 @@
 		</div>
 
 		<!-- 4. Rooms Selector -->
-		<div class="col-6 col-md-3 col-lg-2 search-col-rooms">
+		<div class="search-col-rooms">
 			<label class="form-label search-field-label" for="<%= fid %>_rooms">
-				<i class="fa-solid fa-door-open text-secondary me-1"></i> Rooms
+				<i class="fa-solid fa-door-open"></i> Rooms
 			</label>
 			<select name="bedrooms" id="<%= fid %>_rooms" class="form-select hero-input rooms-input" aria-label="Number of rooms">
 				<option value="1" <%= roomVal === '1' ? 'selected' : '' %>>1 Room</option>
@@ -73,9 +73,9 @@
 		</div>
 
 		<!-- 5. Guests Selector -->
-		<div class="col-6 col-md-3 col-lg-1 search-col-guests">
+		<div class="search-col-guests">
 			<label class="form-label search-field-label" for="<%= fid %>_guests">
-				<i class="fa-solid fa-user-group text-info me-1"></i> Guests
+				<i class="fa-solid fa-user-group"></i> Guests
 			</label>
 			<select name="guests" id="<%= fid %>_guests" class="form-select hero-input guests-input" aria-label="Number of guests">
 				<option value="1" <%= guestVal === '1' ? 'selected' : '' %>>1</option>
@@ -87,9 +87,8 @@
 		</div>
 
 		<!-- 6. Search Submit Button -->
-		<div class="col-12 col-md-6 col-lg-2 search-col-submit">
-			<label class="form-label d-none d-md-block search-field-label invisible">&nbsp;</label>
-			<button type="submit" class="btn btn-warm-orange w-100 py-3 rounded-pill fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm hero-search-btn">
+		<div class="search-col-submit">
+			<button type="submit" class="btn btn-warm-orange w-100 rounded-pill fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm hero-search-btn">
 				<i class="fa-solid fa-magnifying-glass"></i>
 				<span>Search Stays</span>
 			</button>

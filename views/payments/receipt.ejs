@@ -1,41 +1,5 @@
 <% layout("layouts/boilerplate") %>
 
-<style>
-	.invoice-paper-card {
-		background: #ffffff;
-		border: 1px solid var(--border-color);
-		border-radius: 1.25rem;
-		padding: 2.5rem;
-		box-shadow: var(--shadow-card);
-	}
-
-	.invoice-meta-item {
-		background: var(--paper-50);
-		border: 1px solid var(--border-color);
-		border-radius: 0.75rem;
-		padding: 0.85rem 1rem;
-	}
-
-	@media print {
-		nav, footer, .no-print, .flash-message, #bottomNav, .navbar, .mobile-bottom-nav {
-			display: none !important;
-		}
-		.invoice-paper-card {
-			border: none !important;
-			box-shadow: none !important;
-			padding: 0 !important;
-		}
-		body {
-			background: white !important;
-		}
-		.container {
-			max-width: 100% !important;
-			padding: 0 !important;
-			margin: 0 !important;
-		}
-	}
-</style>
-
 <div class="container my-4 my-md-5">
 	<div class="row">
 		<div class="col-12 col-lg-10 offset-lg-1 col-xl-8 offset-xl-2">
@@ -202,7 +166,7 @@
 						<tbody>
 							<% if (booking) { %>
 								<tr>
-									<td class="py-2 px-3">
+									<td class="py-2 px-3 text-wrap-cell">
 										<div class="fw-semibold text-dark">Accommodation Services</div>
 										<div class="text-muted small">Standard stay at <%= listing ? listing.title : 'property' %></div>
 									</td>
@@ -211,7 +175,7 @@
 									<td class="text-end fw-medium tabular-nums py-2 px-3">&#x20B9;<%= ((booking.nightlyPrice || 0) * (booking.totalNights || 1)).toLocaleString("en-IN") %></td>
 								</tr>
 								<tr>
-									<td class="py-2 px-3">
+									<td class="py-2 px-3 text-wrap-cell">
 										<div class="fw-semibold text-dark">Cleaning and Hygiene Fee</div>
 										<div class="text-muted small">Standard room sanitization charge</div>
 									</td>

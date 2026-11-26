@@ -1,46 +1,5 @@
 <% layout("layouts/boilerplate") %>
 
-<style>
-	.itinerary-card {
-		background: #ffffff;
-		border: 1px solid var(--border-color);
-		border-radius: 1.5rem;
-		box-shadow: var(--shadow-card);
-		overflow: hidden;
-	}
-
-	.itinerary-header-banner {
-		padding: 2.5rem 2rem;
-		text-align: center;
-		background: var(--paper-50);
-		border-bottom: 1px solid var(--border-color);
-	}
-
-	.status-icon-circle {
-		width: 72px;
-		height: 72px;
-		border-radius: 50%;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		margin-bottom: 1rem;
-	}
-
-	.property-itinerary-preview {
-		background: var(--paper-100);
-		border: 1px solid var(--border-color);
-		border-radius: 1rem;
-		padding: 1.25rem;
-	}
-
-	.stay-date-box {
-		background: var(--paper-50);
-		border: 1px solid var(--border-color);
-		border-radius: 0.85rem;
-		padding: 1rem;
-	}
-</style>
-
 <div class="row my-4">
 	<div class="col-12 col-md-10 offset-md-1 col-lg-8 offset-lg-2">
 		<div class="itinerary-card">
@@ -81,15 +40,15 @@
 			<div class="p-4 p-md-5">
 				<!-- Listing Details Card -->
 				<% const listing = booking.listing || {}; %>
-				<div class="property-itinerary-preview d-flex align-items-center gap-3 mb-4">
+				<div class="property-itinerary-preview d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-3 mb-4">
 					<img
 						src="<%= listing.image && listing.image.url ? listing.image.url : '/images/listing-placeholder.jpg' %>"
 						alt="<%= listing.title %>"
-						class="rounded-3 shadow-sm"
+						class="rounded-3 shadow-sm flex-shrink-0"
 						style="width: 84px; height: 84px; object-fit: cover;"
 						onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';"
 					/>
-					<div>
+					<div class="min-w-0">
 						<h5 class="fw-bold mb-1" style="color: var(--ink-900);"><%= listing.title %></h5>
 						<p class="text-muted small mb-2">
 							<i class="fa-solid fa-location-dot me-1 text-danger"></i>

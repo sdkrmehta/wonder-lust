@@ -1,84 +1,5 @@
 <% layout("layouts/boilerplate") %>
 
-<style>
-	.checkout-section-card {
-		background: #ffffff;
-		border: 1px solid var(--border-color);
-		border-radius: 1.25rem;
-		padding: 2rem;
-		margin-bottom: 1.75rem;
-		box-shadow: var(--shadow-subtle);
-		transition: border-color 0.2s ease, box-shadow 0.2s ease;
-	}
-
-	.checkout-section-card:focus-within {
-		border-color: var(--forest-200);
-		box-shadow: var(--shadow-card);
-	}
-
-	.method-pill-group {
-		background: var(--paper-100);
-		padding: 0.35rem;
-		border-radius: 2rem;
-		border: 1px solid var(--border-color);
-	}
-
-	.method-tab-btn {
-		border: none;
-		background: transparent;
-		color: var(--ink-500);
-		font-weight: 600;
-		font-size: 0.88rem;
-		padding: 0.55rem 1rem;
-		border-radius: 2rem;
-		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.45rem;
-		width: 100%;
-	}
-
-	.method-tab-btn.active-method-btn {
-		background: #ffffff !important;
-		color: var(--forest-900) !important;
-		box-shadow: 0 2px 8px rgba(24, 59, 50, 0.08) !important;
-	}
-
-	.bank-select-card {
-		border: 1px solid var(--border-color);
-		border-radius: 0.75rem;
-		padding: 0.85rem 1rem;
-		background: var(--paper-50);
-		transition: all 0.15s ease;
-		cursor: pointer;
-		width: 100%;
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.bank-select-card:hover {
-		background: #ffffff;
-		border-color: var(--forest-200);
-	}
-
-	.bank-select-card input:checked ~ span {
-		color: var(--forest-900);
-		font-weight: 600;
-	}
-
-	.summary-sticky-card {
-		position: sticky;
-		top: 6.2rem;
-		background: #ffffff;
-		border: 1px solid var(--border-color) !important;
-		border-radius: 1.25rem !important;
-		padding: 1.75rem;
-		box-shadow: var(--shadow-card) !important;
-	}
-</style>
-
 <div class="container my-4 my-md-5">
 	<!-- Page Heading & Breadcrumb -->
 	<div class="mb-4">
@@ -97,7 +18,7 @@
 
 	<div class="row g-4 g-lg-5">
 		<!-- Left Column: Payment Form -->
-		<div class="col-12 col-lg-7">
+		<div class="col-12 col-lg-7 order-2 order-lg-1">
 			<form
 				action="/payments/process/<%= booking._id %>"
 				method="POST"
@@ -361,7 +282,7 @@
 		</div>
 
 		<!-- Right Column: Reservation Summary Card -->
-		<div class="col-12 col-lg-5">
+		<div class="col-12 col-lg-5 order-1 order-lg-2">
 			<div class="summary-sticky-card">
 				<h5 class="fw-bold mb-3" style="color: var(--ink-900);">Reservation Summary</h5>
 

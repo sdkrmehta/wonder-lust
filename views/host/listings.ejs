@@ -1,39 +1,5 @@
 <% layout("layouts/boilerplate") %>
 
-<style>
-	.host-listing-card {
-		background: #ffffff;
-		border: 1px solid var(--border-color);
-		border-radius: 1.25rem;
-		overflow: hidden;
-		transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
-	}
-
-	.host-listing-card:hover {
-		transform: translateY(-3px);
-		box-shadow: var(--shadow-hover);
-		border-color: var(--forest-200);
-	}
-
-	.host-card-media {
-		height: 210px;
-		background: var(--paper-200);
-		overflow: hidden;
-		position: relative;
-	}
-
-	.host-card-media img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-		transition: transform 0.4s ease;
-	}
-
-	.host-listing-card:hover .host-card-media img {
-		transform: scale(1.04);
-	}
-</style>
-
 <div class="container my-4 my-md-5">
 	<!-- Header Banner -->
 	<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom" style="border-color: var(--border-color) !important;">

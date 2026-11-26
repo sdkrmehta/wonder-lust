@@ -11,7 +11,7 @@
 	aria-label="Main Navigation"
 	id="mainNavbar"
 >
-	<div class="container-fluid px-lg-4 px-md-3">
+	<div class="container-fluid flex-nowrap px-lg-4 px-md-3">
 		<!-- Left Section: Wander-Lust Logo & Brand Name -->
 		<a class="navbar-brand d-flex align-items-center gap-2" href="/home" aria-label="Wander-Lust Home">
 			<div class="brand-icon-wrapper d-flex align-items-center justify-content-center">
@@ -21,7 +21,7 @@
 		</a>
 
 		<!-- Mobile Search & Menu Triggers (Below 992px) -->
-		<div class="d-flex align-items-center gap-2 d-lg-none">
+		<div class="d-flex align-items-center gap-2 d-lg-none ms-auto flex-shrink-0">
 			<!-- Mobile Quick Search Trigger Pill -->
 			<button
 				type="button"
@@ -35,7 +35,7 @@
 			</button>
 
 			<!-- Mobile Notification Icon -->
-			<a class="nav-icon-link position-relative p-2" href="/notifications" title="Notifications" aria-label="Notifications">
+			<a class="nav-icon-link position-relative p-2 rounded-circle" href="/notifications" title="Notifications" aria-label="Notifications">
 				<i class="fa-regular fa-bell"></i>
 				<span id="navUnreadBadgeMobile" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" style="font-size: 0.6rem;">0</span>
 			</a>

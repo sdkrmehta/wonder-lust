@@ -1,47 +1,5 @@
 <% layout("layouts/boilerplate") %>
 
-<style>
-	.trip-card {
-		background: #ffffff;
-		border: 1px solid var(--border-color);
-		border-radius: 1.25rem;
-		overflow: hidden;
-		transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
-	}
-
-	.trip-card:hover {
-		transform: translateY(-3px);
-		box-shadow: var(--shadow-hover);
-		border-color: var(--forest-200);
-	}
-
-	.trip-img-wrapper {
-		height: 100%;
-		min-height: 200px;
-		background: var(--paper-200);
-		overflow: hidden;
-		position: relative;
-	}
-
-	.trip-img-wrapper img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-		transition: transform 0.4s ease;
-	}
-
-	.trip-card:hover .trip-img-wrapper img {
-		transform: scale(1.04);
-	}
-
-	.stay-info-box {
-		background: var(--paper-50);
-		border: 1px solid var(--border-color);
-		border-radius: 0.85rem;
-		padding: 0.85rem 1rem;
-	}
-</style>
-
 <div class="row my-4">
 	<div class="col-12 col-xl-10 offset-xl-1">
 		<!-- Header Banner -->
@@ -71,28 +29,11 @@
 				</a>
 			</div>
 		<% } else { %>
-			<div class="row row-cols-1 row-cols-md-2 g-4">
+			<div class="row row-cols-1 row-cols-xl-2 g-4">
 				<% for (let booking of bookings) { %>
 					<% const listing = booking.listing || {}; %>
 					<div class="col">
 						<div class="trip-card h-100 d-flex flex-column position-relative">
-							<!-- Status Stamp Badge (Top Right) -->
-							<div class="position-absolute top-0 end-0 m-3 z-3">
-								<% if (booking.status === 'confirmed') { %>
-									<span class="stamp stamp-confirmed shadow-sm">
-										<i class="fa-solid fa-circle-check"></i> Confirmed
-									</span>
-								<% } else if (booking.status === 'cancelled') { %>
-									<span class="stamp stamp-cancelled shadow-sm">
-										<i class="fa-solid fa-ban"></i> Cancelled
-									</span>
-								<% } else { %>
-									<span class="stamp stamp-pending shadow-sm">
-										<%= booking.status %>
-									</span>
-								<% } %>
-							</div>
-
 							<div class="row g-0 h-100">
 								<!-- Property Media Left -->
 								<div class="col-sm-5">
@@ -106,12 +47,27 @@
 								</div>
 
 								<!-- Booking Details Right -->
-								<div class="col-sm-7 d-flex flex-column">
+								<div class="col-sm-7 d-flex flex-column min-w-0">
 									<div class="p-3 d-flex flex-column h-100">
-										<h5 class="fw-bold text-truncate mb-1" style="font-size: 1.05rem; color: var(--ink-900);" title="<%= listing.title %>">
-											<%= listing.title || "Vacation Rental" %>
-										</h5>
-										<p class="text-muted small mb-2">
+										<div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+											<h5 class="fw-bold text-truncate min-w-0 mb-0" style="font-size: 1.05rem; color: var(--ink-900);" title="<%= listing.title %>">
+												<%= listing.title || "Vacation Rental" %>
+											</h5>
+											<% if (booking.status === 'confirmed') { %>
+												<span class="stamp stamp-confirmed flex-shrink-0">
+													<i class="fa-solid fa-circle-check"></i> Confirmed
+												</span>
+											<% } else if (booking.status === 'cancelled') { %>
+												<span class="stamp stamp-cancelled flex-shrink-0">
+													<i class="fa-solid fa-ban"></i> Cancelled
+												</span>
+											<% } else { %>
+												<span class="stamp stamp-pending flex-shrink-0">
+													<%= booking.status %>
+												</span>
+											<% } %>
+										</div>
+										<p class="text-muted small text-truncate mb-2">
 											<i class="fa-solid fa-location-dot me-1 text-danger"></i>
 											<%= listing.location %>, <%= listing.country %>
 										</p>

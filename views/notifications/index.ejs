@@ -22,7 +22,7 @@
 	</div>
 
 	<!-- Filter Tabs -->
-	<div class="d-flex align-items-center gap-2 mb-4">
+	<div class="d-flex flex-wrap align-items-center gap-2 mb-4">
 		<a href="/notifications?filter=all" class="btn btn-sm rounded-pill px-3 <%= activeFilter === 'all' ? 'btn-forest' : 'btn-forest-outline' %>">
 			All Notifications <span class="badge rounded-pill bg-white text-dark ms-1 font-tabular"><%= total %></span>
 		</a>
@@ -99,7 +99,7 @@
 							<p class="text-secondary small mb-2"><%= item.message %></p>
 
 							<!-- Actions Bar -->
-							<div class="d-flex align-items-center gap-2 mt-2">
+							<div class="d-flex flex-wrap align-items-center gap-2 mt-2">
 								<% if (item.link) { %>
 									<form action="/notifications/<%= item._id %>/read" method="POST" class="d-inline">
 										<button type="submit" class="btn btn-sm btn-forest rounded-pill px-3 py-1" style="font-size: 0.8rem;">
@@ -134,19 +134,19 @@
 			<nav class="d-flex justify-content-center mt-4 pt-2" aria-label="Notifications pagination">
 				<ul class="pagination pagination-sm gap-1">
 					<li class="page-item <%= page <= 1 ? 'disabled' : '' %>">
-						<a class="page-link rounded-circle px-3" href="/notifications?filter=<%= activeFilter %>&page=<%= page - 1 %>">
+						<a class="page-link rounded-circle" href="/notifications?filter=<%= activeFilter %>&page=<%= page - 1 %>">
 							<i class="fa-solid fa-chevron-left"></i>
 						</a>
 					</li>
 					<% for (let p = 1; p <= totalPages; p++) { %>
 						<li class="page-item <%= p === page ? 'active' : '' %>">
-							<a class="page-link rounded-circle px-3 <%= p === page ? 'btn-forest border-0 text-white' : '' %>" href="/notifications?filter=<%= activeFilter %>&page=<%= p %>">
+							<a class="page-link rounded-circle" href="/notifications?filter=<%= activeFilter %>&page=<%= p %>">
 								<%= p %>
 							</a>
 						</li>
 					<% } %>
 					<li class="page-item <%= page >= totalPages ? 'disabled' : '' %>">
-						<a class="page-link rounded-circle px-3" href="/notifications?filter=<%= activeFilter %>&page=<%= page + 1 %>">
+						<a class="page-link rounded-circle" href="/notifications?filter=<%= activeFilter %>&page=<%= page + 1 %>">
 							<i class="fa-solid fa-chevron-right"></i>
 						</a>
 					</li>

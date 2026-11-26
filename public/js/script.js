@@ -100,7 +100,7 @@ function openWishlistModal() {
 				<i class="fa-regular fa-heart fa-3x text-muted mb-3" style="opacity: 0.5;"></i>
 				<h6>Your wishlist is empty</h6>
 				<p class="text-muted small">Tap the heart icon on any property to save your favorite vacation rentals.</p>
-				<a href="/listings" class="btn btn-dark btn-sm rounded-pill px-4 mt-2" data-bs-dismiss="modal">Explore Properties</a>
+				<a href="/listings" class="btn btn-forest btn-sm rounded-pill px-4 mt-2" data-bs-dismiss="modal">Explore Properties</a>
 			</div>
 		`;
 	} else {
@@ -147,8 +147,11 @@ function clearAllWishlist() {
 
 // 4. Live Unread Notification Badge Updater
 function updateNotificationBadge() {
-	const badge = document.getElementById("navUnreadBadge");
-	if (!badge) return;
+	const badges = [
+		document.getElementById("navUnreadBadge"),
+		document.getElementById("navUnreadBadgeMobile"),
+	].filter(Boolean);
+	if (badges.length === 0) return;
 
 	fetch("/notifications/unread-count")
 		.then((res) => {
@@ -158,12 +161,14 @@ function updateNotificationBadge() {
 		.then((payload) => {
 			if (!payload || !payload.data) return;
 			const count = payload.data.unreadCount || 0;
-			if (count > 0) {
-				badge.textContent = count > 99 ? "99+" : count;
-				badge.classList.remove("d-none");
-			} else {
-				badge.classList.add("d-none");
-			}
+			badges.forEach((badge) => {
+				if (count > 0) {
+					badge.textContent = count > 99 ? "99+" : count;
+					badge.classList.remove("d-none");
+				} else {
+					badge.classList.add("d-none");
+				}
+			});
 		})
 		.catch(() => {});
 }

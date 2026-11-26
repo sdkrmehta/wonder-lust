@@ -1,6 +1,10 @@
+<%
+  const curPath = (typeof currentPath !== 'undefined' && currentPath) ? currentPath : '';
+  const navUser = (typeof currUser !== 'undefined' && currUser) ? currUser : ((typeof locals !== 'undefined' && locals.currUser) ? locals.currUser : null);
+%>
 <!-- Responsive Mobile Bottom Navigation Bar -->
 <nav class="mobile-bottom-nav" aria-label="Mobile Navigation">
-	<a href="/listings" class="bottom-nav-item <%= (typeof originalUrl !== 'undefined' && originalUrl === '/listings') ? 'active' : '' %>">
+	<a href="/listings" class="bottom-nav-item <%= (curPath.startsWith('/listings') && curPath !== '/listings/new') || curPath === '/' || curPath === '/home' ? 'active' : '' %>">
 		<i class="fa-regular fa-compass"></i>
 		<span>Explore</span>
 	</a>
@@ -8,22 +12,21 @@
 		<i class="fa-regular fa-heart"></i>
 		<span>Wishlist</span>
 	</a>
-	<a href="/listings/new" class="bottom-nav-item">
-		<i class="fa-solid fa-circle-plus" style="font-size: 1.4rem; color: var(--forest-800);"></i>
+	<a href="/listings/new" class="bottom-nav-item <%= curPath === '/listings/new' ? 'active' : '' %>">
+		<i class="fa-solid fa-circle-plus text-forest" style="font-size: 1.35rem;"></i>
 		<span>Host</span>
 	</a>
-	<% const navUser = (typeof currUser !== 'undefined' && currUser) ? currUser : ((typeof locals !== 'undefined' && locals.currUser) ? locals.currUser : null); %>
 	<% if (navUser) { %>
-		<a href="/bookings" class="bottom-nav-item">
+		<a href="/bookings" class="bottom-nav-item <%= curPath.startsWith('/bookings') ? 'active' : '' %>">
 			<i class="fa-solid fa-suitcase-rolling"></i>
 			<span>Trips</span>
 		</a>
-		<a href="/profile" class="bottom-nav-item" title="My Profile">
+		<a href="/profile" class="bottom-nav-item <%= curPath.startsWith('/profile') ? 'active' : '' %>" title="My Profile">
 			<i class="fa-regular fa-user"></i>
 			<span class="text-truncate" style="max-width: 60px;"><%= navUser.username %></span>
 		</a>
 	<% } else { %>
-		<a href="/login" class="bottom-nav-item">
+		<a href="/login" class="bottom-nav-item <%= curPath === '/login' ? 'active' : '' %>">
 			<i class="fa-regular fa-user"></i>
 			<span>Log In</span>
 		</a>

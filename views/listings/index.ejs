@@ -1,161 +1,5 @@
 <% layout("layouts/boilerplate") %>
 
-<style>
-	/* Category Filter Carousel Styling */
-	#filters-container {
-		display: flex;
-		align-items: center;
-		overflow-x: auto;
-		white-space: nowrap;
-		scrollbar-width: thin;
-		padding: 0.75rem 0 0.5rem;
-		border-bottom: 1px solid var(--border-color);
-		gap: 1.5rem;
-		-webkit-overflow-scrolling: touch;
-	}
-
-	#filters-container::-webkit-scrollbar {
-		height: 3px;
-	}
-
-	#filters-container::-webkit-scrollbar-thumb {
-		background: var(--paper-300);
-		border-radius: 3px;
-	}
-
-	.filter-item {
-		display: inline-flex;
-		flex-direction: column;
-		align-items: center;
-		text-align: center;
-		opacity: 0.7;
-		text-decoration: none;
-		color: var(--ink-700);
-		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-		cursor: pointer;
-		padding: 0.35rem 0.65rem 0.5rem;
-		border-bottom: 2px solid transparent;
-		min-width: 60px;
-		flex-shrink: 0;
-	}
-
-	.filter-item:hover {
-		opacity: 1;
-		color: var(--navy-800);
-		transform: translateY(-1px);
-	}
-
-	.filter-item.active {
-		opacity: 1;
-		color: var(--navy-900);
-		font-weight: 600;
-		border-bottom: 2px solid var(--navy-800);
-	}
-
-	.filter-item i {
-		font-size: 1.28rem;
-		margin-bottom: 0.45rem;
-		transition: transform 0.2s ease;
-	}
-
-	.filter-item:hover i {
-		transform: scale(1.1);
-	}
-
-	.filter-item p {
-		font-size: 0.75rem;
-		letter-spacing: -0.01em;
-		margin-bottom: 0;
-	}
-
-	/* Tax Toggle Pill */
-	.tax-toggle {
-		border: 1px solid var(--border-color);
-		border-radius: 2rem;
-		padding: 0.45rem 1.15rem;
-		display: flex;
-		align-items: center;
-		background-color: var(--paper-100);
-		transition: all 0.2s ease;
-	}
-
-	.tax-toggle:hover {
-		background-color: #ffffff;
-		border-color: var(--navy-100);
-	}
-
-	/* Filter Modal Styling */
-	.filter-modal-section {
-		border-bottom: 1px solid var(--border-color);
-		padding-bottom: 1.25rem;
-		margin-bottom: 1.25rem;
-	}
-
-	.filter-modal-section:last-child {
-		border-bottom: none;
-		margin-bottom: 0;
-		padding-bottom: 0;
-	}
-
-	.filter-modal-section h6 {
-		font-size: 0.92rem;
-		font-weight: 600;
-		color: var(--ink-900);
-	}
-
-	/* Editorial Hero Header Banner */
-	.discovery-hero {
-		background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-800) 100%);
-		border-radius: 1.25rem;
-		padding: 2.25rem 2rem;
-		color: #ffffff;
-		margin-bottom: 1.5rem;
-		box-shadow: 0 10px 30px rgba(16, 42, 67, 0.15);
-		position: relative;
-		overflow: hidden;
-	}
-
-	.discovery-hero::after {
-		content: "";
-		position: absolute;
-		right: -40px;
-		bottom: -40px;
-		width: 220px;
-		height: 220px;
-		border-radius: 50%;
-		background: rgba(255, 255, 255, 0.05);
-		pointer-events: none;
-	}
-
-	.discovery-hero h1 {
-		font-family: var(--font-display);
-		font-size: 2.15rem;
-		font-weight: 600;
-		color: #ffffff;
-		letter-spacing: -0.03em;
-		margin-bottom: 0.4rem;
-	}
-
-	.discovery-hero p {
-		color: rgba(255, 255, 255, 0.82);
-		font-size: 0.98rem;
-		max-width: 580px;
-		margin-bottom: 0;
-	}
-
-	.property-badge-glass {
-		background: rgba(252, 251, 247, 0.92);
-		backdrop-filter: blur(8px);
-		border: 1px solid rgba(255, 255, 255, 0.5);
-		color: var(--ink-900);
-		font-size: 0.74rem;
-		font-weight: 600;
-		padding: 0.35rem 0.75rem;
-		border-radius: 2rem;
-		letter-spacing: 0.02em;
-	}
-</style>
-
 <!-- Expanded Search Interface (Unified Search Engine) -->
 <div class="listings-search-wrapper mb-4 expanded-search-container" id="listingsSearchWrapper">
 	<%- include("../includes/search-bar.ejs", {
@@ -236,7 +80,7 @@
 
 <div class="serp-toolbar my-3">
 	<!-- Top Row: Filters Button & Action Controls -->
-	<div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+	<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 gap-md-3">
 		<!-- Main Filter Modal Trigger Button -->
 		<div>
 			<button
@@ -254,16 +98,15 @@
 		</div>
 
 		<!-- Right Side Controls: Sort & Tax Switch -->
-		<div class="d-flex align-items-center gap-3 ms-auto">
+		<div class="d-flex flex-wrap align-items-center gap-2 gap-md-3 ms-md-auto">
 			<!-- Sort Dropdown -->
-			<div class="d-flex align-items-center gap-2">
+			<div class="d-flex align-items-center gap-2 flex-grow-1 flex-sm-grow-0">
 				<label for="sortDropdown" class="text-muted small text-nowrap d-none d-lg-inline fw-medium">
 					<i class="fa-solid fa-arrow-down-short-wide me-1"></i>Sort:
 				</label>
 				<select
 					id="sortDropdown"
-					class="form-select form-select-sm rounded-pill py-2 shadow-sm"
-					style="min-width: 195px; width: auto; font-size: 0.88rem; padding-left: 1.15rem; padding-right: 2.6rem; border-color: var(--border-color); background-color: #ffffff; cursor: pointer;"
+					class="form-select form-select-sm rounded-pill py-2 shadow-sm serp-sort-select"
 					onchange="window.location.href = this.value"
 				>
 					<option value="<%= buildUrl({ sort: 'recommended', page: 1 }) %>" <%= filters.sort === 'recommended' ? 'selected' : '' %>>Recommended</option>
@@ -274,8 +117,8 @@
 				</select>
 			</div>
 
-			<!-- Tax Switch Toggle -->
-			<div class="tax-toggle border-start ps-3 d-none d-md-block" style="border-color: var(--border-color) !important;">
+			<!-- Tax Switch Toggle (Accessible across Desktop & Mobile) -->
+			<div class="tax-toggle">
 				<div class="form-check form-switch m-0 d-flex align-items-center gap-2">
 					<input
 						class="form-check-input"
@@ -395,7 +238,7 @@
 		</a>
 	</div>
 <% } else { %>
-	<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3 g-md-4 mt-1" id="listingsGridContainer">
+	<div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3 g-md-4 mt-1" id="listingsGridContainer">
 		<% for (let listing of allListings) { %>
 			<div class="col">
 				<div class="card h-100 listing-card shadow-sm position-relative property-card-enhanced" data-listing-id="<%= listing._id %>">
@@ -413,7 +256,7 @@
 
 					<a href="/listings/<%= listing._id %>" class="listing-link d-flex flex-column h-100">
 						<!-- Property Media Frame -->
-						<div class="card-img-wrapper position-relative overflow-hidden rounded-4">
+						<div class="card-img-wrapper position-relative overflow-hidden">
 							<img
 								src="<%= listing.image && listing.image.url ? listing.image.url : '/images/listing-placeholder.jpg' %>"
 								class="card-img-top property-thumb-img"
@@ -446,12 +289,12 @@
 
 						<!-- Property Details Body -->
 						<div class="card-body p-3 d-flex flex-column flex-grow-1">
-							<div class="d-flex justify-content-between align-items-start mb-1">
-								<h6 class="card-title fw-bold text-truncate mb-0" style="color: var(--ink-900); font-size: 1.02rem;" title="<%= listing.title %>">
+							<div class="d-flex justify-content-between align-items-start mb-1 min-w-0">
+								<h6 class="card-title fw-bold text-truncate min-w-0 w-100 mb-0" style="color: var(--ink-900); font-size: 1.02rem;" title="<%= listing.title %>">
 									<%= listing.title %>
 								</h6>
 							</div>
-							<p class="card-text text-muted small mb-1">
+							<p class="card-text text-muted small text-truncate mb-1">
 								<i class="fa-solid fa-location-dot me-1 text-danger"></i>
 								<%= listing.location %>, <%= listing.country %>
 							</p>
@@ -525,7 +368,7 @@
 				<% for (let p = startPage; p <= endPage; p++) { %>
 					<li class="page-item <%= p === current ? 'active' : '' %>">
 						<a
-							class="page-link rounded-pill <%= p === current ? 'bg-dark border-dark text-white' : '' %>"
+							class="page-link rounded-pill"
 							href="<%= buildUrl({ page: p }) %>"
 						>
 							<%= p %>
@@ -655,7 +498,7 @@
 					<div class="filter-modal-section">
 						<h6 class="mb-3">Rooms and Guests</h6>
 						<div class="row g-3">
-							<div class="col-4">
+							<div class="col-12 col-sm-4">
 								<label class="form-label small text-muted">Bedrooms</label>
 								<select class="form-select form-select-sm" name="bedrooms">
 									<option value="" <%= !filters.bedrooms ? 'selected' : '' %>>Any</option>
@@ -665,7 +508,7 @@
 									<option value="4" <%= filters.bedrooms == 4 ? 'selected' : '' %>>4+</option>
 								</select>
 							</div>
-							<div class="col-4">
+							<div class="col-12 col-sm-4">
 								<label class="form-label small text-muted">Bathrooms</label>
 								<select class="form-select form-select-sm" name="bathrooms">
 									<option value="" <%= !filters.bathrooms ? 'selected' : '' %>>Any</option>
@@ -674,7 +517,7 @@
 									<option value="3" <%= filters.bathrooms == 3 ? 'selected' : '' %>>3+</option>
 								</select>
 							</div>
-							<div class="col-4">
+							<div class="col-12 col-sm-4">
 								<label class="form-label small text-muted">Guests</label>
 								<select class="form-select form-select-sm" name="guests">
 									<option value="" <%= !filters.guests ? 'selected' : '' %>>Any</option>
@@ -707,7 +550,7 @@
 						%>
 						<div class="row g-2">
 							<% for (let am of amenityOptions) { %>
-								<div class="col-6">
+								<div class="col-12 col-sm-6">
 									<div class="form-check p-2 rounded-3 border bg-light-subtle d-flex align-items-center gap-2">
 										<input
 											class="form-check-input ms-0 me-1"

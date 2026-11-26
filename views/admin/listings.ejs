@@ -126,19 +126,19 @@
 		<nav class="d-flex justify-content-center" aria-label="Listings pagination">
 			<ul class="pagination pagination-sm gap-1">
 				<li class="page-item <%= page <= 1 ? 'disabled' : '' %>">
-					<a class="page-link rounded-circle px-3" href="/admin/listings?search=<%= search %>&status=<%= status %>&page=<%= page - 1 %>">
+					<a class="page-link rounded-circle" href="/admin/listings?search=<%= search %>&status=<%= status %>&page=<%= page - 1 %>">
 						<i class="fa-solid fa-chevron-left"></i>
 					</a>
 				</li>
 				<% for (let p = 1; p <= totalPages; p++) { %>
 					<li class="page-item <%= p === page ? 'active' : '' %>">
-						<a class="page-link rounded-circle px-3 <%= p === page ? 'btn-forest border-0 text-white' : '' %>" href="/admin/listings?search=<%= search %>&status=<%= status %>&page=<%= p %>">
+						<a class="page-link rounded-circle" href="/admin/listings?search=<%= search %>&status=<%= status %>&page=<%= p %>">
 							<%= p %>
 						</a>
 					</li>
 				<% } %>
 				<li class="page-item <%= page >= totalPages ? 'disabled' : '' %>">
-					<a class="page-link rounded-circle px-3" href="/admin/listings?search=<%= search %>&status=<%= status %>&page=<%= page + 1 %>">
+					<a class="page-link rounded-circle" href="/admin/listings?search=<%= search %>&status=<%= status %>&page=<%= page + 1 %>">
 						<i class="fa-solid fa-chevron-right"></i>
 					</a>
 				</li>
