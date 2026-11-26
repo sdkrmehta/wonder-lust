@@ -31,6 +31,7 @@ const { csrfProtection } = require("./middleware/csrf.middleware");
 const { isAuthorizedHealthCaller } = require("./middleware/auth.middleware");
 const { notFoundHandler, errorHandler } = require("./middleware/error.middleware");
 const { getConnectionState } = require("./config/database");
+const { getRateLimitStoreInfo } = require("./config/rateLimitStore");
 
 const app = express();
 
@@ -200,6 +201,7 @@ app.get("/health", (req, res) => {
 		version: "1.0.0",
 		environment: env.NODE_ENV,
 		database: states[dbState] || "unknown",
+		rateLimitStore: getRateLimitStoreInfo(),
 		uptime: Math.round(process.uptime()),
 		memory: {
 			rssMb: Math.round(memUsage.rss / 1024 / 1024),

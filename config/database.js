@@ -60,6 +60,7 @@ async function syncAllIndexes() {
 		require("../models/booking"),
 		require("../models/bookingNightLock"),
 		require("../models/payment"),
+		require("../models/rateLimitHit"),
 		require("../models/review"),
 		require("../models/user"),
 		require("../models/notification"),

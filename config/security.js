@@ -2,6 +2,7 @@ const helmet = require("helmet");
 const cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const env = require("./env");
+const { createRateLimitStore } = require("./rateLimitStore");
 
 /**
  * Configure Helmet HTTP Security Headers with custom Content Security Policy (CSP).
@@ -17,6 +18,7 @@ function createHelmetConfig() {
 					"https://cdn.jsdelivr.net",
 					"https://unpkg.com",
 					"https://cdnjs.cloudflare.com",
+					"https://checkout.razorpay.com",
 				],
 				scriptSrcAttr: ["'none'"],
 				styleSrc: [
@@ -39,6 +41,8 @@ function createHelmetConfig() {
 					"blob:",
 					"https://images.unsplash.com",
 					"https://res.cloudinary.com",
+					"https://cdn.razorpay.com",
+					"https://*.razorpay.com",
 					"https://server.arcgisonline.com",
 					"https://*.arcgisonline.com",
 					"https://*.tile.openstreetmap.org",
@@ -51,6 +55,9 @@ function createHelmetConfig() {
 				],
 				connectSrc: [
 					"'self'",
+					"https://api.razorpay.com",
+					"https://lumberjack.razorpay.com",
+					"https://checkout.razorpay.com",
 					"https://server.arcgisonline.com",
 					"https://*.arcgisonline.com",
 					"https://*.tile.openstreetmap.org",
@@ -61,6 +68,11 @@ function createHelmetConfig() {
 					"https://basemaps.cartocdn.com",
 					"https://nominatim.openstreetmap.org",
 					"https://photon.komoot.io",
+				],
+				frameSrc: [
+					"'self'",
+					"https://api.razorpay.com",
+					"https://checkout.razorpay.com",
 				],
 				objectSrc: ["'none'"],
 				baseUri: ["'self'"],
@@ -109,12 +121,15 @@ function createCorsConfig() {
 /**
  * General API Rate Limiter.
  */
+const apiLimiterStore = createRateLimitStore("rl:api:");
 const apiLimiter = rateLimit({
 	windowMs: env.RATE_LIMIT_WINDOW_MS,
 	max: (req) =>
 		!env.isProduction && req.headers["x-test-rate-limit"]
 			? 5
 			: env.RATE_LIMIT_MAX_API,
+	...(apiLimiterStore ? { store: apiLimiterStore } : {}),
+	passOnStoreError: true,
 	keyGenerator: (req) => {
 		const useTestBucket =
 			!env.isProduction && Boolean(req.headers["x-test-rate-limit"]);
@@ -133,12 +148,15 @@ const apiLimiter = rateLimit({
 /**
  * Sensitive Authentication Routes Rate Limiter.
  */
+const authLimiterStore = createRateLimitStore("rl:auth:");
 const authLimiter = rateLimit({
 	windowMs: env.RATE_LIMIT_WINDOW_MS,
 	max: (req) =>
 		!env.isProduction && req.headers["x-test-rate-limit"]
 			? 3
 			: env.RATE_LIMIT_MAX_AUTH,
+	...(authLimiterStore ? { store: authLimiterStore } : {}),
+	passOnStoreError: true,
 	keyGenerator: (req) => {
 		const useTestBucket =
 			!env.isProduction && Boolean(req.headers["x-test-rate-limit"]);
@@ -168,9 +186,12 @@ const authLimiter = rateLimit({
 /**
  * Public Newsletter Rate Limiter.
  */
+const newsletterLimiterStore = createRateLimitStore("rl:newsletter:");
 const newsletterLimiter = rateLimit({
 	windowMs: env.RATE_LIMIT_WINDOW_MS,
 	max: 15,
+	...(newsletterLimiterStore ? { store: newsletterLimiterStore } : {}),
+	passOnStoreError: true,
 	keyGenerator: (req) =>
 		`std-newsletter:${req.ip || req.socket?.remoteAddress || "127.0.0.1"}`,
 	validate: { keyGeneratorIpFallback: false },
