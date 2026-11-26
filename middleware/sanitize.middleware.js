@@ -3,6 +3,8 @@
  * Defense against NoSQL query operator injection and stored XSS vectors.
  */
 
+const FORBIDDEN_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
 function cleanNoSql(obj) {
 	if (!obj || typeof obj !== "object") return obj;
 
@@ -12,27 +14,48 @@ function cleanNoSql(obj) {
 
 	const cleaned = {};
 	for (const key of Object.keys(obj)) {
-		if (key.startsWith("$") || key.includes(".")) {
-			continue; // Strip hazardous MongoDB operator keys
+		if (
+			FORBIDDEN_KEYS.has(key) ||
+			key.startsWith("$") ||
+			key.includes(".")
+		) {
+			continue; // Strip MongoDB operators & prototype-pollution keys
 		}
 		const val = obj[key];
-		cleaned[key] = typeof val === "object" && val !== null ? cleanNoSql(val) : val;
+		cleaned[key] =
+			typeof val === "object" && val !== null ? cleanNoSql(val) : val;
 	}
 	return cleaned;
+}
+
+function cleanXssString(input) {
+	let current = input;
+	let previous;
+	do {
+		previous = current;
+		current = current
+			.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, "")
+			.replace(/<\/?\s*(?:script|iframe|object|embed|svg|math|base|form)\b[^>]*>/gi, "")
+			.replace(/\bon[a-z]{1,20}\s*=/gi, "")
+			.replace(/\b(?:javascript|vbscript)\s*:/gi, "")
+			.replace(/\bdata\s*:\s*text\/html\b/gi, "");
+	} while (current !== previous);
+	return current;
 }
 
 function cleanXss(obj) {
 	if (!obj) return obj;
 	if (typeof obj === "string") {
-		return obj.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "");
+		return cleanXssString(obj);
 	}
 	if (Array.isArray(obj)) {
 		return obj.map(cleanXss);
 	}
 	if (typeof obj === "object") {
 		const result = {};
-		for (const [k, v] of Object.entries(obj)) {
-			result[k] = cleanXss(v);
+		for (const key of Object.keys(obj)) {
+			if (FORBIDDEN_KEYS.has(key)) continue;
+			result[key] = cleanXss(obj[key]);
 		}
 		return result;
 	}

@@ -1,7 +1,39 @@
 const mongoose = require("mongoose");
 const Booking = require("../models/booking");
+const BookingNightLock = require("../models/bookingNightLock");
 const Listing = require("../models/listing");
 const AppError = require("../utils/AppError");
+const env = require("../config/env");
+
+function toUtcMidnight(dateInput) {
+	const d = new Date(dateInput);
+	return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+}
+
+function enumerateBookingNights(checkInDate, checkOutDate) {
+	const startDay = toUtcMidnight(checkInDate);
+	const endDay = toUtcMidnight(checkOutDate);
+
+	const nights = [];
+	const cursor = new Date(startDay);
+	while (cursor < endDay) {
+		nights.push(cursor.toISOString().slice(0, 10));
+		cursor.setUTCDate(cursor.getUTCDate() + 1);
+		if (nights.length > 365) {
+			throw AppError.badRequest("Bookings cannot exceed 365 consecutive nights");
+		}
+	}
+	return nights;
+}
+
+function isReplicaSetConnected() {
+	try {
+		const descType = mongoose.connection?.client?.topology?.description?.type || "";
+		return descType.includes("ReplicaSet") || descType === "Sharded";
+	} catch {
+		return false;
+	}
+}
 
 class BookingService {
 	/**
@@ -35,7 +67,7 @@ class BookingService {
 	/**
 	 * Check if requested dates overlap with an existing booking.
 	 */
-	static async hasDateConflict(listingId, checkIn, checkOut, excludeBookingId = null) {
+	static async hasDateConflict(listingId, checkIn, checkOut, excludeBookingId = null, session = null) {
 		const start = new Date(checkIn);
 		const end = new Date(checkOut);
 
@@ -50,12 +82,14 @@ class BookingService {
 			query._id = { $ne: excludeBookingId };
 		}
 
-		const conflict = await Booking.findOne(query);
+		const q = Booking.findOne(query);
+		if (session) q.session(session);
+		const conflict = await q;
 		return Boolean(conflict);
 	}
 
 	/**
-	 * Create and persist a new reservation.
+	 * Create and persist a new reservation atomically to prevent concurrent double-booking.
 	 */
 	static async createBooking(listingId, bookingData, user) {
 		if (!mongoose.Types.ObjectId.isValid(listingId)) {
@@ -72,23 +106,21 @@ class BookingService {
 			throw AppError.badRequest("You cannot book your own property!");
 		}
 
-		const checkIn = new Date(bookingData.checkIn);
-		const checkOut = new Date(bookingData.checkOut);
-
-		// Validate dates are not in the distant past
-		const yesterday = new Date();
-		yesterday.setHours(0, 0, 0, 0);
-		yesterday.setDate(yesterday.getDate() - 1);
-		if (checkIn < yesterday) {
-			throw AppError.badRequest("Check-in date cannot be in the past");
+		const rawCheckIn = new Date(bookingData.checkIn);
+		const rawCheckOut = new Date(bookingData.checkOut);
+		if (Number.isNaN(rawCheckIn.getTime()) || Number.isNaN(rawCheckOut.getTime())) {
+			throw AppError.badRequest("Valid check-in and check-out dates are required");
 		}
+		const checkIn = toUtcMidnight(rawCheckIn);
+		const checkOut = toUtcMidnight(rawCheckOut);
 
-		// Date overlap conflict check
-		const isConflicting = await this.hasDateConflict(listingId, checkIn, checkOut);
-		if (isConflicting) {
-			throw AppError.badRequest(
-				"These dates are already booked! Please select another date range.",
-			);
+		// Validate dates are not in the distant past (normalized to UTC date boundary)
+		const now = new Date();
+		const yesterdayUtc = new Date(
+			Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1),
+		);
+		if (checkIn < yesterdayUtc) {
+			throw AppError.badRequest("Check-in date cannot be in the past");
 		}
 
 		// Validate guest capacity
@@ -100,34 +132,103 @@ class BookingService {
 			);
 		}
 
-		// Calculate transparent pricing
+		// Calculate transparent pricing & discrete booked nights
 		const pricing = this.calculatePricing(listing.price, checkIn, checkOut);
+		const nights = enumerateBookingNights(checkIn, checkOut);
+		if (nights.length === 0) {
+			throw AppError.badRequest("Check-out date must be after check-in date");
+		}
 
-		const booking = new Booking({
+		const initialStatus =
+			env.isProduction || env.PAYMENT_GATEWAY_MODE === "strict"
+				? "pending"
+				: "confirmed";
+
+		const bookingId = new mongoose.Types.ObjectId();
+		const lockDocs = nights.map((night) => ({
 			listing: listingId,
-			user: user._id,
-			checkIn,
-			checkOut,
-			guests: requestedGuests,
-			totalNights: pricing.totalNights,
-			nightlyPrice: pricing.nightlyPrice,
-			cleaningFee: pricing.cleaningFee,
-			taxAmount: pricing.taxAmount,
-			totalPrice: pricing.totalPrice,
-			status: "confirmed",
-		});
+			night,
+			booking: bookingId,
+		}));
 
-		const savedBooking = await booking.save();
+		const createDoc = () =>
+			new Booking({
+				_id: bookingId,
+				listing: listingId,
+				user: user._id,
+				checkIn,
+				checkOut,
+				guests: requestedGuests,
+				totalNights: pricing.totalNights,
+				nightlyPrice: pricing.nightlyPrice,
+				cleaningFee: pricing.cleaningFee,
+				taxAmount: pricing.taxAmount,
+				totalPrice: pricing.totalPrice,
+				status: initialStatus,
+			});
+
+		let savedBooking;
+		try {
+			if (isReplicaSetConnected()) {
+				const session = await mongoose.startSession();
+				try {
+					await session.withTransaction(async () => {
+						const conflict = await this.hasDateConflict(
+							listingId,
+							checkIn,
+							checkOut,
+							null,
+							session,
+						);
+						if (conflict) {
+							throw AppError.badRequest(
+								"These dates are already booked! Please select another date range.",
+							);
+						}
+						await BookingNightLock.insertMany(lockDocs, { ordered: true, session });
+						savedBooking = await createDoc().save({ session });
+					});
+				} finally {
+					await session.endSession();
+				}
+			} else {
+				// Standalone topology: unique index on BookingNightLock provides wiredTiger atomic lock
+				await BookingNightLock.insertMany(lockDocs, { ordered: true });
+				try {
+					const conflict = await this.hasDateConflict(listingId, checkIn, checkOut);
+					if (conflict) {
+						throw AppError.badRequest(
+							"These dates are already booked! Please select another date range.",
+						);
+					}
+					savedBooking = await createDoc().save();
+				} catch (innerErr) {
+					await BookingNightLock.deleteMany({ booking: bookingId }).catch(() => {});
+					throw innerErr;
+				}
+			}
+		} catch (err) {
+			if (err && (err.code === 11000 || String(err.message || "").includes("E11000"))) {
+				await BookingNightLock.deleteMany({ booking: bookingId }).catch(() => {});
+				throw AppError.badRequest(
+					"These dates are already booked! Please select another date range.",
+				);
+			}
+			throw err;
+		}
 
 		// Notify host of new reservation
 		try {
 			const NotificationService = require("./notification.service");
+			const isPending = initialStatus === "pending";
 			await NotificationService.createNotification({
 				recipient: listing.owner,
 				sender: user._id,
-				type: "booking_confirmed",
-				title: "New Reservation Confirmed!",
-				message: `${user.username || "A traveler"} booked ${listing.title} for ${pricing.totalNights} night${pricing.totalNights > 1 ? "s" : ""} (₹${pricing.totalPrice.toLocaleString("en-IN")}).`,
+				type: isPending ? "system_alert" : "booking_confirmed",
+				title: isPending ? "New Pending Reservation" : "New Reservation Confirmed!",
+				message: isPending
+					? `${user.username || "A traveler"} initiated a booking for ${listing.title} for ${pricing.totalNights} night${pricing.totalNights > 1 ? "s" : ""} (₹${pricing.totalPrice.toLocaleString("en-IN")}) awaiting payment confirmation.`
+					: `${user.username || "A traveler"} booked ${listing.title} for ${pricing.totalNights} night${pricing.totalNights > 1 ? "s" : ""} (₹${pricing.totalPrice.toLocaleString("en-IN")}).`,
 				link: `/bookings/host`,
 				metadata: {
 					bookingId: savedBooking._id,
@@ -238,6 +339,7 @@ class BookingService {
 		}
 
 		booking.status = "cancelled";
+		await BookingNightLock.deleteMany({ booking: booking._id });
 
 		// Trigger automatic refund if paid
 		try {

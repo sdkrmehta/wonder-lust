@@ -41,7 +41,7 @@
 										<img
 											src="<%= listing.image && listing.image.url ? listing.image.url : '/images/listing-placeholder.jpg' %>"
 											alt="<%= listing.title %>"
-											onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';"
+											data-fallback-src="/images/listing-placeholder.jpg"
 										/>
 									</div>
 								</div>
@@ -109,7 +109,7 @@
 													<form
 														action="/bookings/<%= booking._id %>/cancel"
 														method="POST"
-														onsubmit="return confirm('Are you sure you want to cancel this reservation?');"
+														data-confirm="Are you sure you want to cancel this reservation?"
 														class="d-inline"
 													>
 														<button class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1" style="font-size: 0.75rem;">

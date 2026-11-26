@@ -15,6 +15,7 @@
 	<!-- Login Card -->
 	<div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white mb-4">
 		<form action="/login" method="POST" class="needs-validation" novalidate>
+			<input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
 			<!-- Username Field -->
 			<div class="mb-3">
 				<label for="username" class="form-label small fw-semibold text-dark mb-1">
@@ -63,7 +64,7 @@
 						class="btn btn-outline-secondary border-start-0 px-3"
 						type="button"
 						id="togglePasswordBtn"
-						onclick="togglePasswordVisibility('password', this)"
+						data-toggle-password="password"
 						title="Toggle password visibility"
 						aria-label="Toggle password visibility"
 					>
@@ -108,16 +109,4 @@
 	</div>
 </div>
 
-<script>
-	function togglePasswordVisibility(fieldId, btn) {
-		const inp = document.getElementById(fieldId);
-		if (!inp) return;
-		if (inp.type === 'password') {
-			inp.type = 'text';
-			btn.innerHTML = '<i class="fa-regular fa-eye-slash"></i>';
-		} else {
-			inp.type = 'password';
-			btn.innerHTML = '<i class="fa-regular fa-eye"></i>';
-		}
-	}
-</script>
+<script nonce="<%= cspNonce || '' %>" src="/js/auth-profile.js"></script>

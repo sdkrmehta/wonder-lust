@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const express = require("express");
 const path = require("path");
 const compression = require("compression");
@@ -24,16 +25,18 @@ const adminRouter = require("./routes/admin");
 const userRouter = require("./routes/user");
 const apiV1Router = require("./routes/api/v1");
 const homeController = require("./controllers/home.controller");
-const { createHelmetConfig, createCorsConfig, apiLimiter } = require("./config/security");
+const { createHelmetConfig, createCorsConfig, apiLimiter, newsletterLimiter } = require("./config/security");
 const { sanitizeInput } = require("./middleware/sanitize.middleware");
+const { csrfProtection } = require("./middleware/csrf.middleware");
+const { isAuthorizedHealthCaller } = require("./middleware/auth.middleware");
 const { notFoundHandler, errorHandler } = require("./middleware/error.middleware");
 const { getConnectionState } = require("./config/database");
 
 const app = express();
 
-// Trust reverse proxy for secure cookies on cloud hosts (Render, Heroku, AWS)
-if (process.env.NODE_ENV === "production") {
-	app.set("trust proxy", 1);
+// Trust configured reverse proxy hops for secure cookies and real client IP
+if (env.TRUST_PROXY !== false) {
+	app.set("trust proxy", env.TRUST_PROXY);
 }
 
 // View Engine Setup
@@ -41,7 +44,13 @@ app.engine("ejs", ejsMate);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-// HTTP Security Headers (Helmet with Custom CSP)
+// Per-request CSP nonce generation (before Helmet headers)
+app.use((req, res, next) => {
+	res.locals.cspNonce = crypto.randomBytes(16).toString("base64");
+	next();
+});
+
+// HTTP Security Headers (Helmet with Nonce-Based CSP)
 app.use(createHelmetConfig());
 
 // HTTP Payload Compression (Gzip / Deflate)
@@ -52,9 +61,18 @@ app.use(
 	}),
 );
 
-// Request Parsing & Method Override
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Request Parsing (capturing rawBody for HMAC webhook verification) & Method Override
+app.use(
+	express.json({
+		limit: "256kb",
+		verify: (req, _res, buf) => {
+			if (req.originalUrl && req.originalUrl.startsWith("/api/v1/payments/webhook")) {
+				req.rawBody = buf;
+			}
+		},
+	}),
+);
+app.use(express.urlencoded({ extended: true, limit: "256kb" }));
 app.use(methodOverride("_method"));
 
 // Input Sanitization (Defense against NoSQL Injection & Stored XSS)
@@ -65,11 +83,15 @@ const staticOptions = {
 	maxAge: "1d",
 	etag: true,
 	lastModified: true,
+	dotfiles: "deny",
+	index: false,
+	setHeaders: (res) => {
+		res.setHeader("X-Content-Type-Options", "nosniff");
+	},
 };
 
 app.use(express.static(path.join(__dirname, "public"), staticOptions));
 app.use("/uploads", express.static(uploadDir, staticOptions));
-app.use("/uploads", express.static(path.join(__dirname, "uploads"), staticOptions));
 app.use(express.static(path.join(__dirname, "assets"), staticOptions));
 
 // Session & Flash
@@ -84,6 +106,32 @@ passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
+// Invalidate stale sessions after password changes
+app.use((req, res, next) => {
+	if (
+		req.isAuthenticated &&
+		req.isAuthenticated() &&
+		req.user &&
+		req.session &&
+		typeof req.session.userSessionVersion === "number" &&
+		Number(req.user.sessionVersion || 1) !== req.session.userSessionVersion
+	) {
+		return req.logout((err) => {
+			if (err) return next(err);
+			delete req.session.userSessionVersion;
+			if (req.originalUrl.startsWith("/api/") || req.xhr) {
+				return res.status(401).json({ status: "fail", message: "Session expired due to password change" });
+			}
+			req.flash("error", "Your session expired after a password change. Please log in again.");
+			return res.redirect("/login");
+		});
+	}
+	return next();
+});
+
+// CSRF & Origin Validation (after session + passport initialization)
+app.use(csrfProtection);
+
 // Default Application Template Locals (guards against ReferenceErrors in views and includes)
 app.locals.currUser = null;
 app.locals.success = [];
@@ -92,25 +140,44 @@ app.locals.isFluid = false;
 app.locals.currentPath = "";
 app.locals.searchQuery = "";
 app.locals.filters = {};
+app.locals.csrfToken = "";
+app.locals.cspNonce = "";
+app.locals.escapeHtml = function escapeHtml(val) {
+	return String(val ?? "")
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#39;");
+};
+app.locals.safeJson = function safeJson(val) {
+	return JSON.stringify(val)
+		.replace(/</g, "\\u003c")
+		.replace(/>/g, "\\u003e")
+		.replace(/&/g, "\\u0026")
+		.replace(/\u2028/g, "\\u2028")
+		.replace(/\u2029/g, "\\u2029");
+};
 
 // Template Locals Middleware
 app.use((req, res, next) => {
+	const safeStr = (v) => (typeof v === "string" ? v : "");
 	res.locals.success = req.flash("success") || [];
 	res.locals.error = req.flash("error") || [];
 	res.locals.currUser = req.user || null;
 	res.locals.currentPath = req.path || "";
-	res.locals.searchQuery = req.query.q || "";
+	res.locals.searchQuery = safeStr(req.query.q);
 	res.locals.filters = {
-		q: req.query.q || "",
-		checkIn: req.query.checkIn || "",
-		checkOut: req.query.checkOut || "",
-		bedrooms: req.query.bedrooms || "",
-		guests: req.query.guests || "",
+		q: safeStr(req.query.q),
+		checkIn: safeStr(req.query.checkIn),
+		checkOut: safeStr(req.query.checkOut),
+		bedrooms: safeStr(req.query.bedrooms),
+		guests: safeStr(req.query.guests),
 	};
 	next();
 });
 
-// Liveness / Health Check Endpoint
+// Liveness / Health Check Endpoint (minimal response for unauthenticated production probes)
 app.get("/health", (req, res) => {
 	const dbState = getConnectionState();
 	const states = {
@@ -121,6 +188,12 @@ app.get("/health", (req, res) => {
 	};
 
 	const isHealthy = dbState === 1;
+	if (env.isProduction && !isAuthorizedHealthCaller(req)) {
+		return res.status(isHealthy ? 200 : 503).json({
+			status: isHealthy ? "healthy" : "degraded",
+		});
+	}
+
 	const memUsage = process.memoryUsage();
 	res.status(isHealthy ? 200 : 503).json({
 		status: isHealthy ? "healthy" : "degraded",
@@ -140,6 +213,11 @@ app.get("/health", (req, res) => {
 app.get("/ready", (req, res) => {
 	const dbState = getConnectionState();
 	const isReady = dbState === 1;
+	if (env.isProduction && !isAuthorizedHealthCaller(req)) {
+		return res.status(isReady ? 200 : 503).json({
+			status: isReady ? "ready" : "not_ready",
+		});
+	}
 	res.status(isReady ? 200 : 503).json({
 		status: isReady ? "ready" : "not_ready",
 		database: isReady ? "connected" : "unavailable",
@@ -159,7 +237,7 @@ app.get("/terms", (req, res) => {
 // Homepage & Discovery Routes
 app.get("/home", homeController.renderHome);
 app.get("/hotels", (req, res) => res.redirect("/listings"));
-app.post("/newsletter", homeController.handleNewsletter);
+app.post("/newsletter", newsletterLimiter, homeController.handleNewsletter);
 
 // Root Route:
 // Renders the redesigned homepage for standard web visits (browsers requesting text/html).

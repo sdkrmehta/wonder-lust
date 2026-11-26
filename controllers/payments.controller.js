@@ -35,6 +35,13 @@ module.exports.processPayment = async (req, res) => {
 			req.body,
 			req.user,
 		);
+		if (payment.status === "pending") {
+			req.flash(
+				"info",
+				"Payment initiated. Reservation awaits confirmed payment webhook from gateway.",
+			);
+			return res.redirect(`/bookings/${bookingId}`);
+		}
 		req.flash("success", "Payment Successful! Your reservation is fully confirmed.");
 		res.redirect(`/payments/receipt/${payment._id}`);
 	} catch (err) {

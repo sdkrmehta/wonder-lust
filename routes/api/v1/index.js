@@ -10,6 +10,8 @@ const notificationsApi = require("./notifications.api");
 const adminApi = require("./admin.api");
 const ApiResponse = require("../../../utils/apiResponse");
 const { getConnectionState } = require("../../../config/database");
+const { isAuthorizedHealthCaller } = require("../../../middleware/auth.middleware");
+const env = require("../../../config/env");
 
 // API v1 Health Check
 router.get("/health", (req, res) => {
@@ -21,10 +23,18 @@ router.get("/health", (req, res) => {
 		3: "disconnecting",
 	};
 
+	const isAuthorized = isAuthorizedHealthCaller(req);
+
+	if (env.isProduction && !isAuthorized) {
+		return ApiResponse.success(res, {
+			status: dbState === 1 ? "healthy" : "degraded",
+		});
+	}
+
 	return ApiResponse.success(res, {
 		status: dbState === 1 ? "healthy" : "degraded",
 		version: "v1",
-		environment: process.env.NODE_ENV || "development",
+		environment: env.NODE_ENV,
 		database: states[dbState] || "unknown",
 		uptime: Math.round(process.uptime()),
 		timestamp: new Date().toISOString(),

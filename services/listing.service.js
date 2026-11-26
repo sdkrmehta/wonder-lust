@@ -11,9 +11,11 @@ class ListingService {
 	static buildQueryFilter(criteria = {}) {
 		const filter = {};
 		const andConditions = [];
+		const viewer = criteria.viewer || null;
+		const isAdmin = Boolean(viewer && viewer.role === "admin");
 
 		// 1. Text / Multi-keyword search
-		if (criteria.q && criteria.q.trim()) {
+		if (typeof criteria.q === "string" && criteria.q.trim()) {
 			const rawQuery = criteria.q.trim();
 			// Split multi-keyword search
 			const keywords = rawQuery
@@ -40,20 +42,39 @@ class ListingService {
 		}
 
 		// 2. Category Filter
-		if (criteria.category && criteria.category !== "All") {
+		if (typeof criteria.category === "string" && criteria.category && criteria.category !== "All") {
 			andConditions.push({ category: criteria.category });
 		}
 
 		// 3. Property Type Filter
-		if (criteria.propertyType && criteria.propertyType !== "All") {
+		if (typeof criteria.propertyType === "string" && criteria.propertyType && criteria.propertyType !== "All") {
 			andConditions.push({ propertyType: criteria.propertyType });
 		}
 
-		// 4. Status Filter (default excludes archived unless explicitly requested)
-		if (criteria.status && criteria.status !== "All") {
-			andConditions.push({ status: criteria.status });
+		// 4. Status Filter (never expose draft/archived listings to non-owners)
+		if (typeof criteria.status === "string" && criteria.status && criteria.status !== "All") {
+			if (criteria.status === "published") {
+				andConditions.push({ status: "published" });
+			} else if (isAdmin) {
+				andConditions.push({ status: criteria.status });
+			} else if (viewer && viewer._id) {
+				andConditions.push({ status: criteria.status, owner: viewer._id });
+			} else {
+				andConditions.push({ _id: { $in: [] } });
+			}
 		} else if (!criteria.includeDrafts) {
-			andConditions.push({ status: { $ne: "archived" } });
+			andConditions.push({ status: { $nin: ["draft", "archived"] } });
+		} else if (!isAdmin) {
+			if (viewer && viewer._id) {
+				andConditions.push({
+					$or: [
+						{ status: { $nin: ["draft", "archived"] } },
+						{ owner: viewer._id, status: { $ne: "archived" } },
+					],
+				});
+			} else {
+				andConditions.push({ status: { $nin: ["draft", "archived"] } });
+			}
 		}
 
 		// 5. Price Range (Min & Max Price)
@@ -105,8 +126,10 @@ class ListingService {
 		// 9. Amenities (All selected amenities must be present)
 		if (criteria.amenities) {
 			const amenityList = Array.isArray(criteria.amenities)
-				? criteria.amenities
-				: criteria.amenities.split(",").map((a) => a.trim()).filter(Boolean);
+				? criteria.amenities.filter((a) => typeof a === "string").map((a) => a.trim()).filter(Boolean)
+				: typeof criteria.amenities === "string"
+					? criteria.amenities.split(",").map((a) => a.trim()).filter(Boolean)
+					: [];
 
 			if (amenityList.length > 0) {
 				andConditions.push({ amenities: { $all: amenityList } });
@@ -203,20 +226,20 @@ class ListingService {
 				prevPage: page > 1 ? page - 1 : null,
 			},
 			filters: {
-				q: criteria.q || "",
-				checkIn: criteria.checkIn || "",
-				checkOut: criteria.checkOut || "",
-				category: criteria.category || "All",
-				propertyType: criteria.propertyType || "All",
-				status: criteria.status || "All",
-				minPrice: criteria.minPrice || "",
-				maxPrice: criteria.maxPrice || "",
-				bedrooms: criteria.bedrooms || "",
-				bathrooms: criteria.bathrooms || "",
-				guests: criteria.guests || "",
-				amenities: criteria.amenities || [],
-				rating: criteria.rating || "",
-				sort: criteria.sort || "recommended",
+				q: typeof criteria.q === "string" ? criteria.q : "",
+				checkIn: typeof criteria.checkIn === "string" ? criteria.checkIn : "",
+				checkOut: typeof criteria.checkOut === "string" ? criteria.checkOut : "",
+				category: typeof criteria.category === "string" ? criteria.category : "All",
+				propertyType: typeof criteria.propertyType === "string" ? criteria.propertyType : "All",
+				status: typeof criteria.status === "string" ? criteria.status : "All",
+				minPrice: typeof criteria.minPrice === "string" || typeof criteria.minPrice === "number" ? criteria.minPrice : "",
+				maxPrice: typeof criteria.maxPrice === "string" || typeof criteria.maxPrice === "number" ? criteria.maxPrice : "",
+				bedrooms: typeof criteria.bedrooms === "string" || typeof criteria.bedrooms === "number" ? criteria.bedrooms : "",
+				bathrooms: typeof criteria.bathrooms === "string" || typeof criteria.bathrooms === "number" ? criteria.bathrooms : "",
+				guests: typeof criteria.guests === "string" || typeof criteria.guests === "number" ? criteria.guests : "",
+				amenities: Array.isArray(criteria.amenities) || typeof criteria.amenities === "string" ? criteria.amenities : [],
+				rating: typeof criteria.rating === "string" || typeof criteria.rating === "number" ? criteria.rating : "",
+				sort: typeof criteria.sort === "string" ? criteria.sort : "recommended",
 			},
 		};
 	}
@@ -225,7 +248,7 @@ class ListingService {
 	 * Provide instant debounced autocomplete suggestions based on location, country, and title
 	 */
 	static async getSearchSuggestions(query = "") {
-		if (!query || query.trim().length < 2) {
+		if (typeof query !== "string" || query.trim().length < 2) {
 			return [];
 		}
 
@@ -233,7 +256,7 @@ class ListingService {
 		const regex = new RegExp(cleanQuery, "i");
 
 		const matches = await Listing.find({
-			status: { $ne: "archived" },
+			status: { $nin: ["draft", "archived"] },
 			$or: [{ location: regex }, { country: regex }, { title: regex }],
 		})
 			.select("title location country propertyType")
@@ -285,15 +308,10 @@ class ListingService {
 	 */
 	static async getListingById(
 		id,
-		{ populateReviews = true, populateOwner = true, incrementView = false } = {},
+		{ populateReviews = true, populateOwner = true, incrementView = false, viewer = null } = {},
 	) {
 		if (!mongoose.Types.ObjectId.isValid(id)) {
 			throw AppError.notFound("Invalid listing ID format");
-		}
-
-		// Atomically increment views count when viewed by a user
-		if (incrementView) {
-			await Listing.findByIdAndUpdate(id, { $inc: { views: 1 } });
 		}
 
 		let query = Listing.findById(id);
@@ -302,19 +320,35 @@ class ListingService {
 			query = query.populate({
 				path: "reviews",
 				populate: [
-					{ path: "author", select: "username email avatar fullName" },
+					{ path: "author", select: "username avatar fullName" },
 					{ path: "hostReply.author", select: "username avatar fullName" },
 				],
 			});
 		}
 
 		if (populateOwner) {
-			query = query.populate("owner", "username email");
+			query = query.populate("owner", "username avatar fullName isSuperhost");
 		}
 
 		const listing = await query.exec();
 		if (!listing) {
 			throw AppError.notFound("Listing does not exist");
+		}
+
+		if (listing.status === "draft" || listing.status === "archived") {
+			const ownerId =
+				listing.owner && listing.owner._id ? listing.owner._id : listing.owner;
+			const isOwnerViewer =
+				viewer && ownerId && String(ownerId) === String(viewer._id);
+			const isAdminViewer = viewer && viewer.role === "admin";
+			if (!isOwnerViewer && !isAdminViewer) {
+				throw AppError.notFound("Listing does not exist");
+			}
+		}
+
+		// Atomically increment views count only after existence & visibility check
+		if (incrementView) {
+			await Listing.findByIdAndUpdate(id, { $inc: { views: 1 } });
 		}
 
 		// Ensure images array is synthesized if missing for backwards compatibility

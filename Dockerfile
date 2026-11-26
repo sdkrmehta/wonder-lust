@@ -28,14 +28,17 @@ ENV NODE_ENV=production \
 RUN apk add --no-cache curl wget
 
 # Create necessary upload directories and assign ownership to non-root 'node' user
-RUN mkdir -p /app/uploads /app/public /app/views && \
-    chown -R node:node /app
+RUN mkdir -p /app/public/uploads /app/views && \
+    chown -R node:node /app && \
+    chmod 750 /app/public/uploads
 
 # Copy production node_modules from dependencies stage
 COPY --from=dependencies --chown=node:node /app/node_modules ./node_modules
 
 # Copy application source code with non-root ownership
 COPY --chown=node:node . .
+
+RUN chown -R node:node /app/public/uploads && chmod 750 /app/public/uploads
 
 # Ensure secure runtime execution as non-root user
 USER node

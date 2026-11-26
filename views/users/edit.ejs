@@ -32,6 +32,7 @@
 					novalidate
 					class="needs-validation"
 				>
+					<input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
 					<!-- Avatar Upload Section -->
 					<div class="p-3 rounded-4 mb-4" style="background-color: var(--paper-100); border: 1px dashed var(--forest-700);">
 						<div class="d-flex flex-column flex-sm-row align-items-center gap-4">
@@ -65,7 +66,6 @@
 									id="avatarInput"
 									name="avatar"
 									accept="image/jpeg,image/png,image/webp,image/gif"
-									onchange="previewAvatar(this)"
 								/>
 								<div class="form-text small text-muted mt-1">
 									Recommended: Square JPG, PNG, or WEBP. Maximum file size 5MB.
@@ -235,6 +235,7 @@
 					novalidate
 					class="needs-validation"
 				>
+					<input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
 					<!-- Current Password -->
 					<div class="mb-3">
 						<label for="currentPassword" class="form-label small fw-semibold text-dark">
@@ -313,27 +314,4 @@
 	</div>
 </div>
 
-<script>
-	function previewAvatar(input) {
-		if (input.files && input.files[0]) {
-			const reader = new FileReader();
-			reader.onload = function(e) {
-				let preview = document.getElementById("avatarPreviewImg");
-				const placeholder = document.getElementById("avatarPlaceholder");
-				if (!preview && placeholder) {
-					preview = document.createElement("img");
-					preview.id = "avatarPreviewImg";
-					preview.className = "rounded-circle shadow-sm border border-2 border-white";
-					preview.style.width = "90px";
-					preview.style.height = "90px";
-					preview.style.objectFit = "cover";
-					placeholder.parentNode.replaceChild(preview, placeholder);
-				}
-				if (preview) {
-					preview.src = e.target.result;
-				}
-			};
-			reader.readAsDataURL(input.files[0]);
-		}
-	}
-</script>
+<script nonce="<%= cspNonce || '' %>" src="/js/auth-profile.js"></script>

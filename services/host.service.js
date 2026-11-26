@@ -9,7 +9,7 @@ class HostService {
 	 * Aggregate comprehensive host analytics, earnings, and property performances.
 	 */
 	static async getHostDashboardMetrics(hostId) {
-		const host = await User.findById(hostId);
+		const host = await User.findById(hostId).select("-hash -salt -attempts -last");
 		if (!host) {
 			throw AppError.notFound("Host account not found");
 		}

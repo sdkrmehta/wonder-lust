@@ -9,13 +9,17 @@ const {
 	validatePasswordChange,
 } = require("../../../middleware");
 const { handleAvatarUpload } = require("../../../config/storage");
+const { authLimiter } = require("../../../config/security");
+const { generateCsrfToken } = require("../../../middleware/csrf.middleware");
 
 // GET /api/v1/users/profile - Current user profile & statistics
 router.get(
 	"/profile",
 	isLoggedIn,
 	wrapAsync(async (req, res) => {
-		const profileData = await UserService.getUserProfileWithStats(req.user._id);
+		const profileData = await UserService.getUserProfileWithStats(req.user._id, {
+			includePrivate: true,
+		});
 		return ApiResponse.success(res, profileData);
 	}),
 );
@@ -39,11 +43,25 @@ router.put(
 // POST /api/v1/users/change-password - Change account password
 router.post(
 	"/change-password",
+	authLimiter,
 	isLoggedIn,
 	validatePasswordChange,
 	wrapAsync(async (req, res) => {
 		const { currentPassword, newPassword } = req.body;
-		await UserService.changePassword(req.user._id, currentPassword, newPassword);
+		const updatedUser = await UserService.changePassword(
+			req.user._id,
+			currentPassword,
+			newPassword,
+		);
+		await new Promise((resolve) => {
+			req.login(updatedUser, (err) => {
+				if (!err && req.session) {
+					req.session.csrfToken = generateCsrfToken();
+					req.session.userSessionVersion = Number(updatedUser.sessionVersion || 1);
+				}
+				resolve();
+			});
+		});
 		return ApiResponse.success(res, null, "Password updated successfully");
 	}),
 );

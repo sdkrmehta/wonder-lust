@@ -1,5 +1,20 @@
 const Joi = require("joi");
 
+function validateSafeUrl(value, helpers) {
+	if (!value) return value;
+	if (typeof value !== "string") {
+		return helpers.error("any.invalid");
+	}
+	const trimmed = value.trim();
+	if (
+		/^https?:\/\/[^\s"'<>]+$/i.test(trimmed) ||
+		(/^\/[^\s"'<>\\]+$/.test(trimmed) && !trimmed.startsWith("//"))
+	) {
+		return trimmed;
+	}
+	return helpers.message("Image URL must be an http(s) URL or relative application path");
+}
+
 const listingSchema = Joi.object({
 	listing: Joi.object({
 		title: Joi.string().required().trim().messages({
@@ -34,9 +49,9 @@ const listingSchema = Joi.object({
 			.optional(),
 		image: Joi.alternatives()
 			.try(
-				Joi.string().allow("", null),
+				Joi.string().allow("", null).custom(validateSafeUrl),
 				Joi.object({
-					url: Joi.string().allow("", null),
+					url: Joi.string().allow("", null).custom(validateSafeUrl),
 					filename: Joi.string().allow("", null),
 				}).allow(null),
 			)
@@ -45,7 +60,7 @@ const listingSchema = Joi.object({
 			.items(
 				Joi.object({
 					_id: Joi.any().optional(),
-					url: Joi.string().required(),
+					url: Joi.string().required().custom(validateSafeUrl),
 					filename: Joi.string().allow("", null).optional(),
 					isPrimary: Joi.boolean().optional(),
 				}),
@@ -60,4 +75,5 @@ const listingSchema = Joi.object({
 
 module.exports = {
 	listingSchema,
+	validateSafeUrl,
 };

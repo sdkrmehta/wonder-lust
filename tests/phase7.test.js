@@ -181,8 +181,8 @@ async function runTests() {
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({
 			booking: {
-				checkIn: "2026-11-20",
-				checkOut: "2026-11-23",
+				checkIn: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+				checkOut: new Date(Date.now() + 33 * 86400000).toISOString().slice(0, 10),
 				guests: 2,
 			},
 		}),

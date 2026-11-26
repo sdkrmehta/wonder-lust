@@ -239,7 +239,7 @@
 											alt="<%= l.title %>"
 											class="rounded-3 shadow-sm"
 											style="width: 48px; height: 48px; object-fit: cover;"
-											onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';"
+											data-fallback-src="/images/listing-placeholder.jpg"
 										/>
 										<div class="fw-semibold text-truncate text-dark" style="max-width: 220px;" title="<%= l.title %>">
 											<%= l.title %>

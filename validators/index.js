@@ -6,7 +6,11 @@ const {
 } = require("./review.validator");
 const { bookingSchema } = require("./booking.validator");
 const { paymentSchema } = require("./payment.validator");
-const { profileUpdateSchema, passwordChangeSchema } = require("./user.validator");
+const {
+	signupSchema,
+	profileUpdateSchema,
+	passwordChangeSchema,
+} = require("./user.validator");
 
 const {
 	sendMessageSchema,
@@ -20,6 +24,7 @@ module.exports = {
 	flagReviewSchema,
 	bookingSchema,
 	paymentSchema,
+	signupSchema,
 	profileUpdateSchema,
 	passwordChangeSchema,
 	sendMessageSchema,

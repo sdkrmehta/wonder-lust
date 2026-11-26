@@ -39,6 +39,11 @@ class ReviewService {
 			status: { $in: ["confirmed", "completed"] },
 		});
 
+		const env = require("../config/env");
+		if (env.REQUIRE_VERIFIED_STAY_REVIEWS && !verifiedBooking) {
+			throw AppError.forbidden("Only travelers with a confirmed or completed stay can review this property");
+		}
+
 		const newReview = new Review({
 			...reviewData,
 			author: user._id,
@@ -126,9 +131,20 @@ class ReviewService {
 			throw AppError.forbidden("Only the property host can reply to guest reviews");
 		}
 
+		const belongsToListing =
+			Array.isArray(listing.reviews) &&
+			listing.reviews.some((rid) => String(rid) === String(reviewId));
+		if (!belongsToListing) {
+			throw AppError.notFound("Review does not belong to this listing");
+		}
+
 		const review = await Review.findById(reviewId);
 		if (!review) {
 			throw AppError.notFound("Review not found");
+		}
+
+		if (typeof replyComment !== "string" || !replyComment.trim()) {
+			throw AppError.badRequest("Reply comment is required");
 		}
 
 		review.hostReply = {

@@ -1,9 +1,12 @@
 const Joi = require("joi");
 
 const paymentSchema = Joi.object({
+	bookingId: Joi.string().optional(),
+	requireWebhookConfirmation: Joi.boolean().optional(),
 	paymentMethod: Joi.string()
 		.valid("card", "upi", "netbanking", "wallet")
 		.default("card"),
+	amount: Joi.number().min(0).optional(),
 	cardNumber: Joi.string()
 		.allow("", null)
 		.custom((value, helpers) => {
@@ -17,22 +20,22 @@ const paymentSchema = Joi.object({
 		.messages({
 			"string.pattern.base": "Please provide a valid 16-digit card number",
 		}),
-	cardExpiry: Joi.string().allow("", null),
-	cardCvc: Joi.string().allow("", null),
-	cardHolderName: Joi.string().allow("", null),
-	upiId: Joi.string().allow("", null),
-	bankName: Joi.string().allow("", null),
+	cardExpiry: Joi.string().allow("", null).max(10),
+	cardCvc: Joi.string().allow("", null).max(6),
+	cardHolderName: Joi.string().allow("", null).max(120),
+	upiId: Joi.string().allow("", null).max(100),
+	bankName: Joi.string().allow("", null).max(100),
 	billingDetails: Joi.object({
-		fullName: Joi.string().allow("", null),
+		fullName: Joi.string().allow("", null).max(120),
 		email: Joi.string().email({ tlds: { allow: false } }).allow("", null),
-		phone: Joi.string().allow("", null),
-		address: Joi.string().allow("", null),
-		city: Joi.string().allow("", null),
-		state: Joi.string().allow("", null),
-		postalCode: Joi.string().allow("", null),
-		country: Joi.string().default("India"),
+		phone: Joi.string().allow("", null).max(25),
+		address: Joi.string().allow("", null).max(250),
+		city: Joi.string().allow("", null).max(100),
+		state: Joi.string().allow("", null).max(100),
+		postalCode: Joi.string().allow("", null).max(20),
+		country: Joi.string().default("India").max(100),
 	}).optional(),
-}).unknown(true);
+});
 
 module.exports = {
 	paymentSchema,

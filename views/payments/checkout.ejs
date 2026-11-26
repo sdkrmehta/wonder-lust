@@ -26,6 +26,7 @@
 				novalidate
 				class="needs-validation"
 			>
+				<input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
 				<!-- Hidden field to verify price integrity -->
 				<input type="hidden" name="amount" value="<%= booking.totalPrice %>" />
 
@@ -41,7 +42,7 @@
 							type="button"
 							class="method-tab-btn active-method-btn"
 							id="methodCardBtn"
-							onclick="selectPaymentMethod('card')"
+							data-payment-method="card"
 						>
 							<i class="fa-regular fa-credit-card text-danger"></i> Card
 						</button>
@@ -49,7 +50,7 @@
 							type="button"
 							class="method-tab-btn"
 							id="methodUpiBtn"
-							onclick="selectPaymentMethod('upi')"
+							data-payment-method="upi"
 						>
 							<i class="fa-solid fa-mobile-screen-button text-success"></i> UPI
 						</button>
@@ -57,7 +58,7 @@
 							type="button"
 							class="method-tab-btn"
 							id="methodNetbankingBtn"
-							onclick="selectPaymentMethod('netbanking')"
+							data-payment-method="netbanking"
 						>
 							<i class="fa-solid fa-building-columns text-primary"></i> NetBanking
 						</button>
@@ -151,10 +152,10 @@
 								/>
 							</div>
 							<div class="d-flex flex-wrap gap-2 mt-2">
-								<button type="button" class="btn btn-outline-secondary btn-sm rounded-pill py-0 px-2" style="font-size: 0.75rem;" onclick="setUpiHandle('okhdfcbank')">@okhdfcbank</button>
-								<button type="button" class="btn btn-outline-secondary btn-sm rounded-pill py-0 px-2" style="font-size: 0.75rem;" onclick="setUpiHandle('okicici')">@okicici</button>
-								<button type="button" class="btn btn-outline-secondary btn-sm rounded-pill py-0 px-2" style="font-size: 0.75rem;" onclick="setUpiHandle('oksbi')">@oksbi</button>
-								<button type="button" class="btn btn-outline-secondary btn-sm rounded-pill py-0 px-2" style="font-size: 0.75rem;" onclick="setUpiHandle('paytm')">@paytm</button>
+								<button type="button" class="btn btn-outline-secondary btn-sm rounded-pill py-0 px-2" style="font-size: 0.75rem;" data-upi-handle="okhdfcbank">@okhdfcbank</button>
+								<button type="button" class="btn btn-outline-secondary btn-sm rounded-pill py-0 px-2" style="font-size: 0.75rem;" data-upi-handle="okicici">@okicici</button>
+								<button type="button" class="btn btn-outline-secondary btn-sm rounded-pill py-0 px-2" style="font-size: 0.75rem;" data-upi-handle="oksbi">@oksbi</button>
+								<button type="button" class="btn btn-outline-secondary btn-sm rounded-pill py-0 px-2" style="font-size: 0.75rem;" data-upi-handle="paytm">@paytm</button>
 							</div>
 						</div>
 						<div class="p-3 rounded-3 small text-muted" style="background-color: var(--paper-100); border: 1px solid var(--border-color);">
@@ -293,7 +294,7 @@
 						alt="<%= listing.title %>"
 						class="rounded-3 shadow-sm"
 						style="width: 90px; height: 90px; object-fit: cover;"
-						onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';"
+						data-fallback-src="/images/listing-placeholder.jpg"
 					/>
 					<div>
 						<h6 class="fw-bold mb-1" style="color: var(--ink-900);"><%= listing.title %></h6>
@@ -356,80 +357,4 @@
 	</div>
 </div>
 
-<script>
-	function selectPaymentMethod(method) {
-		document.getElementById("selectedPaymentMethod").value = method;
-
-		const cardBtn = document.getElementById("methodCardBtn");
-		const upiBtn = document.getElementById("methodUpiBtn");
-		const netBtn = document.getElementById("methodNetbankingBtn");
-
-		const cardSec = document.getElementById("cardPaymentSection");
-		const upiSec = document.getElementById("upiPaymentSection");
-		const netSec = document.getElementById("netbankingPaymentSection");
-
-		// Reset buttons
-		[cardBtn, upiBtn, netBtn].forEach(btn => {
-			btn.classList.remove("active-method-btn");
-		});
-
-		// Hide sections
-		cardSec.classList.add("d-none");
-		upiSec.classList.add("d-none");
-		netSec.classList.add("d-none");
-
-		if (method === "card") {
-			cardBtn.classList.add("active-method-btn");
-			cardSec.classList.remove("d-none");
-		} else if (method === "upi") {
-			upiBtn.classList.add("active-method-btn");
-			upiSec.classList.remove("d-none");
-		} else if (method === "netbanking") {
-			netBtn.classList.add("active-method-btn");
-			netSec.classList.remove("d-none");
-		}
-	}
-
-	function setUpiHandle(handle) {
-		const upiInput = document.getElementById("upiId");
-		if (upiInput) {
-			const currentVal = upiInput.value.split("@")[0] || "traveler";
-			upiInput.value = currentVal + "@" + handle;
-		}
-	}
-
-	// Live Card Format & Brand Detection
-	const cardInput = document.getElementById("cardNumber");
-	if (cardInput) {
-		cardInput.addEventListener("input", function(e) {
-			let val = e.target.value.replace(/\D/g, "").substring(0, 16);
-			let formatted = val.match(/.{1,4}/g)?.join(" ") || val;
-			e.target.value = formatted;
-
-			const icon = document.getElementById("cardBrandIcon");
-			if (icon) {
-				if (val.startsWith("4")) {
-					icon.className = "fa-brands fa-cc-visa text-primary";
-				} else if (/^(5[1-5]|2[2-7])/.test(val)) {
-					icon.className = "fa-brands fa-cc-mastercard text-danger";
-				} else if (/^3[47]/.test(val)) {
-					icon.className = "fa-brands fa-cc-amex text-info";
-				} else {
-					icon.className = "fa-regular fa-credit-card";
-				}
-			}
-		});
-	}
-
-	// Loading state on checkout submit
-	const form = document.getElementById("checkoutPaymentForm");
-	if (form) {
-		form.addEventListener("submit", function() {
-			const btn = document.getElementById("submitPaymentBtn");
-			if (btn) {
-				btn.disabled = true;
-				btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Processing Payment...';
-			}
-		});
-	}
-</script>
+<script nonce="<%= cspNonce || '' %>" src="/js/checkout.js"></script>

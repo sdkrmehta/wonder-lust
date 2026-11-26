@@ -8,14 +8,26 @@ services:
     container_name: wanderlust-app
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     environment:
       - NODE_ENV=production
       - PORT=8080
-      - DB_URL=mongodb://mongo:27017/wonderlust
-      - SESSION_SECRET=production_cluster_session_secret_replace_in_env
+      - MONGO_URL=${MONGO_URL:?Set authenticated TLS MongoDB connection string in environment}
+      - SESSION_SECRET=${SESSION_SECRET:?Set strong SESSION_SECRET in environment before running docker compose}
+      - COOKIE_SECURE=${COOKIE_SECURE:-true}
+      - CORS_ORIGIN=${CORS_ORIGIN:-}
+      # External managed MongoDB (Atlas) enforces TLS; set MONGO_REQUIRE_TLS=false only if using unencrypted internal Compose mongo
+      - MONGO_REQUIRE_TLS=${MONGO_REQUIRE_TLS:-true}
+      - PAYMENT_GATEWAY_MODE=${PAYMENT_GATEWAY_MODE:-strict}
+      - PAYMENT_WEBHOOK_SECRET=${PAYMENT_WEBHOOK_SECRET:?Set strong PAYMENT_WEBHOOK_SECRET in environment before running docker compose}
+      - HEALTH_CHECK_TOKEN=${HEALTH_CHECK_TOKEN:-}
+      - REQUIRE_VERIFIED_STAY_REVIEWS=${REQUIRE_VERIFIED_STAY_REVIEWS:-true}
     volumes:
-      - app-uploads:/app/uploads
+      - app-uploads:/app/public/uploads
     depends_on:
       mongo:
         condition: service_healthy
@@ -32,8 +44,13 @@ services:
     image: mongo:7.0-jammy
     container_name: wanderlust-mongo
     restart: unless-stopped
-    ports:
-      - "27017:27017"
+    expose:
+      - "27017"
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME:-wanderlust_admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD:?Set strong MONGO_INITDB_ROOT_PASSWORD before running docker compose}
     volumes:
       - mongo-data:/data/db
     networks:

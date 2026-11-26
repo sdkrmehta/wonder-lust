@@ -1,6 +1,7 @@
 const helmet = require("helmet");
 const cors = require("cors");
 const rateLimit = require("express-rate-limit");
+const env = require("./env");
 
 /**
  * Configure Helmet HTTP Security Headers with custom Content Security Policy (CSP).
@@ -12,20 +13,21 @@ function createHelmetConfig() {
 				defaultSrc: ["'self'"],
 				scriptSrc: [
 					"'self'",
-					"'unsafe-inline'",
+					(_req, res) => `'nonce-${res.locals.cspNonce}'`,
 					"https://cdn.jsdelivr.net",
 					"https://unpkg.com",
 					"https://cdnjs.cloudflare.com",
 				],
-				scriptSrcAttr: ["'unsafe-inline'"],
+				scriptSrcAttr: ["'none'"],
 				styleSrc: [
 					"'self'",
-					"'unsafe-inline'",
+					(_req, res) => `'nonce-${res.locals.cspNonce}'`,
 					"https://cdn.jsdelivr.net",
 					"https://fonts.googleapis.com",
 					"https://unpkg.com",
 					"https://cdnjs.cloudflare.com",
 				],
+				styleSrcAttr: ["'unsafe-inline'"],
 				fontSrc: [
 					"'self'",
 					"https://fonts.gstatic.com",
@@ -62,20 +64,34 @@ function createHelmetConfig() {
 				],
 				objectSrc: ["'none'"],
 				baseUri: ["'self'"],
+				formAction: ["'self'"],
+				frameAncestors: ["'self'"],
+				upgradeInsecureRequests: env.isProduction ? [] : null,
 			},
 		},
 		referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+		hsts: env.isProduction
+			? { maxAge: 31536000, includeSubDomains: true, preload: true }
+			: false,
 		crossOriginEmbedderPolicy: false,
 		crossOriginResourcePolicy: { policy: "cross-origin" },
 	});
 }
 
 /**
- * CORS Middleware configuration for REST API v1.
+ * Strict CORS Middleware configuration for REST API v1.
  */
 function createCorsConfig() {
 	return cors({
-		origin: true, // Allow request origin
+		origin: (origin, callback) => {
+			if (!origin) {
+				return callback(null, true);
+			}
+			if (env.CORS_ORIGIN.includes(origin)) {
+				return callback(null, true);
+			}
+			return callback(null, false);
+		},
 		credentials: true,
 		methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 		allowedHeaders: [
@@ -83,8 +99,10 @@ function createCorsConfig() {
 			"Authorization",
 			"X-Requested-With",
 			"Accept",
-			"X-Test-Rate-Limit",
+			"X-CSRF-Token",
+			...(env.isProduction ? [] : ["X-Test-Rate-Limit"]),
 		],
+		optionsSuccessStatus: 204,
 	});
 }
 
@@ -92,10 +110,15 @@ function createCorsConfig() {
  * General API Rate Limiter.
  */
 const apiLimiter = rateLimit({
-	windowMs: 15 * 60 * 1000,
-	max: (req) => (req.headers["x-test-rate-limit"] ? 5 : 500),
+	windowMs: env.RATE_LIMIT_WINDOW_MS,
+	max: (req) =>
+		!env.isProduction && req.headers["x-test-rate-limit"]
+			? 5
+			: env.RATE_LIMIT_MAX_API,
 	keyGenerator: (req) => {
-		const prefix = req.headers["x-test-rate-limit"] ? "test-rl-api:" : "std-api:";
+		const useTestBucket =
+			!env.isProduction && Boolean(req.headers["x-test-rate-limit"]);
+		const prefix = useTestBucket ? "test-rl-api:" : "std-api:";
 		return prefix + (req.ip || req.socket?.remoteAddress || "127.0.0.1");
 	},
 	validate: { keyGeneratorIpFallback: false },
@@ -111,10 +134,15 @@ const apiLimiter = rateLimit({
  * Sensitive Authentication Routes Rate Limiter.
  */
 const authLimiter = rateLimit({
-	windowMs: 15 * 60 * 1000,
-	max: (req) => (req.headers["x-test-rate-limit"] ? 3 : 50),
+	windowMs: env.RATE_LIMIT_WINDOW_MS,
+	max: (req) =>
+		!env.isProduction && req.headers["x-test-rate-limit"]
+			? 3
+			: env.RATE_LIMIT_MAX_AUTH,
 	keyGenerator: (req) => {
-		const prefix = req.headers["x-test-rate-limit"] ? "test-rl-auth:" : "std-auth:";
+		const useTestBucket =
+			!env.isProduction && Boolean(req.headers["x-test-rate-limit"]);
+		const prefix = useTestBucket ? "test-rl-auth:" : "std-auth:";
 		return prefix + (req.ip || req.socket?.remoteAddress || "127.0.0.1");
 	},
 	validate: { keyGeneratorIpFallback: false },
@@ -137,9 +165,27 @@ const authLimiter = rateLimit({
 	},
 });
 
+/**
+ * Public Newsletter Rate Limiter.
+ */
+const newsletterLimiter = rateLimit({
+	windowMs: env.RATE_LIMIT_WINDOW_MS,
+	max: 15,
+	keyGenerator: (req) =>
+		`std-newsletter:${req.ip || req.socket?.remoteAddress || "127.0.0.1"}`,
+	validate: { keyGeneratorIpFallback: false },
+	standardHeaders: true,
+	legacyHeaders: false,
+	message: {
+		status: "fail",
+		message: "Too many subscription requests. Please try again later.",
+	},
+});
+
 module.exports = {
 	createHelmetConfig,
 	createCorsConfig,
 	apiLimiter,
 	authLimiter,
+	newsletterLimiter,
 };

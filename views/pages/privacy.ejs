@@ -99,7 +99,7 @@
 							<strong class="text-forest small">Architectural Security Protections</strong>
 						</div>
 						<p class="text-secondary small mb-0">
-							Authentication passwords are cryptographically salted and hashed using standard bcrypt hashing. Web sessions use cryptographically signed HTTP-only cookies protected against cross-site scripting (XSS) and injection attacks.
+							Authentication passwords are cryptographically salted and hashed using PBKDF2-HMAC-SHA256 (600,000 iterations for current accounts, with automatic transparent upgrade on login for legacy hashes). Web sessions use cryptographically signed HTTP-only cookies with CSRF verification and strict Content Security Policy nonces to defend against cross-site scripting (XSS) and injection attacks.
 						</p>
 					</div>
 				</section>

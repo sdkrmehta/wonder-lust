@@ -3,7 +3,7 @@ const router = express.Router();
 const wrapAsync = require("../../../utils/wrapAsync");
 const ApiResponse = require("../../../utils/apiResponse");
 const MessagingService = require("../../../services/messaging.service");
-const { isLoggedIn, validateSendMessage } = require("../../../middleware");
+const { isLoggedIn, validateSendMessage, validateInquiry } = require("../../../middleware");
 
 // GET /api/v1/conversations - List conversations
 router.get(
@@ -57,6 +57,7 @@ router.post(
 router.post(
 	"/inquiry",
 	isLoggedIn,
+	validateInquiry,
 	wrapAsync(async (req, res) => {
 		const { listingId, message } = req.body;
 		const conversation = await MessagingService.startInquiry(

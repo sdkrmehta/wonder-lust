@@ -1,4 +1,6 @@
 const UserService = require("../services/user.service");
+const { sanitizeInternalRedirect } = require("../middleware/auth.middleware");
+const { generateCsrfToken } = require("../middleware/csrf.middleware");
 
 module.exports.renderSignupForm = (req, res) => {
 	res.render("users/signup.ejs");
@@ -17,6 +19,10 @@ module.exports.signup = async (req, res, next) => {
 			if (err) {
 				return next(err);
 			}
+			if (req.session) {
+				req.session.csrfToken = generateCsrfToken();
+				req.session.userSessionVersion = Number(registeredUser.sessionVersion || 1);
+			}
 			req.flash(
 				"success",
 				"Welcome to Wander-Lust! Your account has been created.",
@@ -34,9 +40,13 @@ module.exports.renderLoginForm = (req, res) => {
 };
 
 module.exports.login = async (req, res) => {
+	if (req.session) {
+		req.session.csrfToken = generateCsrfToken();
+		req.session.userSessionVersion = Number((req.user && req.user.sessionVersion) || 1);
+	}
 	req.flash("success", "Welcome back to Wander-Lust!");
-	const redirectUrl = res.locals.redirectUrl || "/listings";
-	if (req.session.redirectUrl) {
+	const redirectUrl = sanitizeInternalRedirect(res.locals.redirectUrl, "/listings");
+	if (req.session && req.session.redirectUrl) {
 		delete req.session.redirectUrl;
 	}
 	res.redirect(redirectUrl);
@@ -47,14 +57,26 @@ module.exports.logout = (req, res, next) => {
 		if (err) {
 			return next(err);
 		}
+		if (req.session && typeof req.session.regenerate === "function") {
+			return req.session.regenerate((regenErr) => {
+				if (regenErr) {
+					return res.redirect("/listings");
+				}
+				req.session.csrfToken = generateCsrfToken();
+				req.flash("success", "You have successfully logged out!");
+				return res.redirect("/listings");
+			});
+		}
 		req.flash("success", "You have successfully logged out!");
-		res.redirect("/listings");
+		return res.redirect("/listings");
 	});
 };
 
 module.exports.renderProfile = async (req, res) => {
 	try {
-		const profileData = await UserService.getUserProfileWithStats(req.user._id);
+		const profileData = await UserService.getUserProfileWithStats(req.user._id, {
+			includePrivate: true,
+		});
 		res.render("users/profile.ejs", {
 			profileUser: profileData.user,
 			stats: profileData.stats,
@@ -70,12 +92,14 @@ module.exports.renderProfile = async (req, res) => {
 
 module.exports.renderPublicProfile = async (req, res) => {
 	try {
-		const profileData = await UserService.getUserProfileWithStats(req.params.id);
-		const isOwner = req.user && String(req.user._id) === String(profileData.user._id);
+		const isOwner = Boolean(req.user && String(req.user._id) === String(req.params.id));
+		const profileData = await UserService.getUserProfileWithStats(req.params.id, {
+			includePrivate: isOwner,
+		});
 		res.render("users/profile.ejs", {
 			profileUser: profileData.user,
 			stats: profileData.stats,
-			recentTrips: profileData.recentTrips,
+			recentTrips: isOwner ? profileData.recentTrips : [],
 			userListings: profileData.userListings,
 			isOwner,
 		});
@@ -103,7 +127,20 @@ module.exports.updateProfile = async (req, res) => {
 module.exports.changePassword = async (req, res) => {
 	try {
 		const { currentPassword, newPassword } = req.body;
-		await UserService.changePassword(req.user._id, currentPassword, newPassword);
+		const updatedUser = await UserService.changePassword(
+			req.user._id,
+			currentPassword,
+			newPassword,
+		);
+		await new Promise((resolve) => {
+			req.login(updatedUser, (err) => {
+				if (!err && req.session) {
+					req.session.csrfToken = generateCsrfToken();
+					req.session.userSessionVersion = Number(updatedUser.sessionVersion || 1);
+				}
+				resolve();
+			});
+		});
 		req.flash("success", "Password updated successfully!");
 		res.redirect("/profile");
 	} catch (err) {

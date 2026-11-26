@@ -16,15 +16,15 @@ function createSessionConfig() {
 	});
 
 	return {
+		name: env.SESSION_NAME,
 		store,
 		secret: env.SESSION_SECRET,
 		resave: false,
-		saveUninitialized: true,
+		saveUninitialized: false,
 		cookie: {
-			expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-			maxAge: 7 * 24 * 60 * 60 * 1000,
+			maxAge: env.SESSION_MAX_AGE_DAYS * 24 * 60 * 60 * 1000,
 			httpOnly: true,
-			secure: env.isProduction,
+			secure: env.COOKIE_SECURE,
 			sameSite: "lax",
 		},
 	};

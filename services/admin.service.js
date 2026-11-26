@@ -28,7 +28,7 @@ class AdminService {
 			flaggedReviewsCount,
 			recentUsers,
 			recentBookings,
-			succeededPayments,
+			grossPayments,
 			refundedPayments,
 		] = await Promise.all([
 			User.countDocuments(),
@@ -50,11 +50,11 @@ class AdminService {
 				.populate("listing", "title location")
 				.populate("user", "username email")
 				.lean(),
-			Payment.find({ status: "succeeded" }).select("amount").lean(),
+			Payment.find({ status: { $in: ["succeeded", "refunded"] } }).select("amount").lean(),
 			Payment.find({ status: "refunded" }).select("refundAmount amount").lean(),
 		]);
 
-		const grossBookingValue = succeededPayments.reduce((acc, p) => acc + (p.amount || 0), 0);
+		const grossBookingValue = grossPayments.reduce((acc, p) => acc + (p.amount || 0), 0);
 		const totalRefunded = refundedPayments.reduce(
 			(acc, p) => acc + (p.refundAmount || p.amount || 0),
 			0,
@@ -167,8 +167,9 @@ class AdminService {
 			query.role = role;
 		}
 
-		if (search && search.trim()) {
-			const regex = new RegExp(search.trim(), "i");
+		if (typeof search === "string" && search.trim()) {
+			const escapedSearch = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+			const regex = new RegExp(escapedSearch, "i");
 			query.$or = [{ username: regex }, { email: regex }, { fullName: regex }];
 		}
 
@@ -249,8 +250,9 @@ class AdminService {
 			query.status = { $ne: "draft" };
 		}
 
-		if (search && search.trim()) {
-			const regex = new RegExp(search.trim(), "i");
+		if (typeof search === "string" && search.trim()) {
+			const escapedSearch = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+			const regex = new RegExp(escapedSearch, "i");
 			query.$or = [{ title: regex }, { location: regex }, { country: regex }];
 		}
 

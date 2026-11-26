@@ -18,6 +18,7 @@ module.exports.index = async (req, res) => {
 		checkOut: req.query.checkOut,
 		page: req.query.page,
 		limit: req.query.limit || 9,
+		viewer: req.user || null,
 	};
 
 	const result = await ListingService.findListings(criteria);
@@ -28,8 +29,10 @@ module.exports.index = async (req, res) => {
 		for (const [key, value] of Object.entries(merged)) {
 			if (value !== undefined && value !== null && value !== "" && value !== "All") {
 				if (Array.isArray(value)) {
-					value.forEach((v) => params.append(key, v));
-				} else {
+					value.forEach((v) => {
+						if (typeof v === "string" || typeof v === "number") params.append(key, v);
+					});
+				} else if (typeof value === "string" || typeof value === "number") {
 					params.set(key, value);
 				}
 			}
@@ -64,6 +67,7 @@ module.exports.showListing = async (req, res) => {
 	try {
 		const listing = await ListingService.getListingById(id, {
 			incrementView: true,
+			viewer: req.user || null,
 		});
 		res.render("listings/show.ejs", { listing });
 	} catch (err) {
@@ -93,6 +97,7 @@ module.exports.renderEditForm = async (req, res) => {
 		const listing = await ListingService.getListingById(id, {
 			populateReviews: false,
 			populateOwner: false,
+			viewer: req.user || null,
 		});
 
 		let originalImageUrl = listing.image ? listing.image.url : "";

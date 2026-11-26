@@ -5,6 +5,7 @@ const passport = require("passport");
 const {
 	saveRedirectUrl,
 	isLoggedIn,
+	validateSignup,
 	validateProfileUpdate,
 	validatePasswordChange,
 } = require("../middleware");
@@ -15,7 +16,7 @@ const userController = require("../controllers/users");
 router
 	.route("/signup")
 	.get(userController.renderSignupForm)
-	.post(authLimiter, wrapAsync(userController.signup));
+	.post(authLimiter, validateSignup, wrapAsync(userController.signup));
 
 router
 	.route("/login")
@@ -30,6 +31,7 @@ router
 		userController.login,
 	);
 
+router.post("/logout", userController.logout);
 router.get("/logout", userController.logout);
 
 // User Profile Routes
@@ -46,6 +48,7 @@ router.put(
 
 router.post(
 	"/profile/change-password",
+	authLimiter,
 	isLoggedIn,
 	validatePasswordChange,
 	wrapAsync(userController.changePassword),

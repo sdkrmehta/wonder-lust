@@ -19,6 +19,7 @@
 			enctype="multipart/form-data"
 			id="createListingForm"
 		>
+			<input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
 			<!-- 1. Basic Information -->
 			<div class="form-section-card">
 				<div class="d-flex align-items-center mb-3">
@@ -290,63 +291,4 @@
 </div>
 
 <!-- Image Preview & File Size Validation Script -->
-<script>
-	const imageInput = document.getElementById("imageInput");
-	const previewContainer = document.getElementById("imagePreviewContainer");
-	const warningEl = document.getElementById("fileSizeWarning");
-	const submitBtn = document.getElementById("submitBtn");
-
-	if (imageInput) {
-		imageInput.addEventListener("change", (e) => {
-			previewContainer.innerHTML = "";
-			warningEl.classList.add("d-none");
-			submitBtn.disabled = false;
-
-			const files = Array.from(e.target.files);
-			if (files.length === 0) {
-				previewContainer.classList.add("d-none");
-				return;
-			}
-
-			previewContainer.classList.remove("d-none");
-			let hasOversized = false;
-
-			files.forEach((file, idx) => {
-				const sizeKB = Math.round(file.size / 1024);
-				const isOversized = file.size > 5 * 1024 * 1024;
-				if (isOversized) hasOversized = true;
-
-				const col = document.createElement("div");
-				col.className = "col-6 col-sm-4 col-md-3";
-
-				const card = document.createElement("div");
-				card.className = `card h-100 p-1 position-relative ${isOversized ? 'border-danger' : 'border'}`;
-				card.style.borderRadius = "0.75rem";
-
-				const img = document.createElement("img");
-				img.src = URL.createObjectURL(file);
-				img.className = "card-img-top rounded";
-				img.style.height = "95px";
-				img.style.objectFit = "cover";
-
-				const info = document.createElement("div");
-				info.className = "card-body p-2 text-center";
-				info.innerHTML = `
-					<p class="card-text text-truncate mb-1 small fw-medium" title="${file.name}">${file.name}</p>
-					<span class="badge ${isOversized ? 'bg-danger' : 'bg-light text-dark'} small" style="font-size: 0.7rem;">${sizeKB} KB</span>
-					${idx === 0 ? '<span class="badge bg-success ms-1 small" style="font-size: 0.7rem;">Cover</span>' : ''}
-				`;
-
-				card.appendChild(img);
-				card.appendChild(info);
-				col.appendChild(card);
-				previewContainer.appendChild(col);
-			});
-
-			if (hasOversized) {
-				warningEl.classList.remove("d-none");
-				submitBtn.disabled = true;
-			}
-		});
-	}
-</script>
+<script nonce="<%= cspNonce || '' %>" src="/js/listing-form.js"></script>

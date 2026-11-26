@@ -155,19 +155,22 @@
 						<li><a class="dropdown-item" href="/bookings"><i class="fa-solid fa-suitcase-rolling me-2 text-muted"></i>My Bookings &amp; Trips</a></li>
 						<li><a class="dropdown-item" href="/bookings/host"><i class="fa-solid fa-list-check me-2 text-muted"></i>Host Reservations</a></li>
 						<li><a class="dropdown-item" href="/listings/new"><i class="fa-solid fa-house-chimney me-2 text-muted"></i>Host your home</a></li>
-						<li><a class="dropdown-item" href="javascript:void(0)" onclick="openWishlistModal()"><i class="fa-regular fa-heart me-2 text-muted"></i>Saved Wishlist</a></li>
+						<li><a class="dropdown-item" href="#wishlist" data-action="openWishlistModal()"><i class="fa-regular fa-heart me-2 text-muted"></i>Saved Wishlist</a></li>
 						<li><hr class="dropdown-divider my-1"></li>
 						<li>
-							<a class="dropdown-item text-danger" href="/logout">
-								<i class="fa-solid fa-arrow-right-from-bracket me-2"></i>Log Out
-							</a>
+							<form action="/logout" method="POST" class="d-inline m-0 p-0 w-100">
+								<input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
+								<button type="submit" class="dropdown-item text-danger w-100 text-start">
+									<i class="fa-solid fa-arrow-right-from-bracket me-2"></i>Log Out
+								</button>
+							</form>
 						</li>
 					<% } else { %>
 						<li><a class="dropdown-item fw-semibold" href="/login"><i class="fa-solid fa-arrow-right-to-bracket me-2 text-primary"></i>Log In</a></li>
 						<li><a class="dropdown-item fw-semibold" href="/signup"><i class="fa-solid fa-user-plus me-2 text-warning"></i>Sign Up</a></li>
 						<li><hr class="dropdown-divider my-1"></li>
 						<li><a class="dropdown-item" href="/listings/new"><i class="fa-solid fa-house-chimney me-2 text-muted"></i>Host your home</a></li>
-						<li><a class="dropdown-item" href="javascript:void(0)" onclick="openWishlistModal()"><i class="fa-regular fa-heart me-2 text-muted"></i>Saved Wishlist</a></li>
+						<li><a class="dropdown-item" href="#wishlist" data-action="openWishlistModal()"><i class="fa-regular fa-heart me-2 text-muted"></i>Saved Wishlist</a></li>
 						<li><a class="dropdown-item" href="/terms"><i class="fa-regular fa-file-lines me-2 text-muted"></i>Terms of Service</a></li>
 						<li><a class="dropdown-item" href="/privacy"><i class="fa-regular fa-shield me-2 text-muted"></i>Privacy Policy</a></li>
 					<% } %>
@@ -216,7 +219,7 @@
 					</li>
 					<% if (!navUser) { %>
 						<li class="nav-item">
-							<a class="nav-link mobile-nav-link" href="javascript:void(0)" onclick="openWishlistModal()">
+							<a class="nav-link mobile-nav-link" href="#wishlist" data-action="openWishlistModal()">
 								<i class="fa-regular fa-heart me-2"></i>Saved Wishlist
 							</a>
 						</li>
@@ -253,14 +256,17 @@
 							</a>
 						</li>
 						<li class="nav-item">
-							<a class="nav-link mobile-nav-link" href="javascript:void(0)" onclick="openWishlistModal()">
+							<a class="nav-link mobile-nav-link" href="#wishlist" data-action="openWishlistModal()">
 								<i class="fa-regular fa-heart me-2"></i>Saved Wishlist
 							</a>
 						</li>
 						<li class="nav-item border-top pt-2 mt-2">
-							<a class="nav-link mobile-nav-link text-danger" href="/logout">
-								<i class="fa-solid fa-arrow-right-from-bracket me-2"></i>Log Out
-							</a>
+							<form action="/logout" method="POST" class="d-inline m-0 p-0 w-100">
+								<input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
+								<button type="submit" class="nav-link mobile-nav-link text-danger bg-transparent border-0 w-100 text-start">
+									<i class="fa-solid fa-arrow-right-from-bracket me-2"></i>Log Out
+								</button>
+							</form>
 						</li>
 					<% } %>
 				</ul>

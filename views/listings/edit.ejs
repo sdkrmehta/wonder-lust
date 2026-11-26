@@ -38,7 +38,7 @@
 									alt="Gallery item <%= idx + 1 %>"
 									class="card-img-top"
 									style="height: 110px; object-fit: cover;"
-									onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';"
+									data-fallback-src="/images/listing-placeholder.jpg"
 								/>
 								<div class="p-2 text-center bg-white border-top">
 									<% if (img.isPrimary) { %>
@@ -54,7 +54,7 @@
 									<% } %>
 
 									<% if (existingGallery.length > 1 && img._id && img._id !== "primary") { %>
-										<form action="/listings/<%= listing._id %>/images/<%= img._id %>?_method=DELETE" method="POST" class="d-inline ms-1" onsubmit="return confirm('Remove this image from the gallery?');">
+										<form action="/listings/<%= listing._id %>/images/<%= img._id %>?_method=DELETE" method="POST" class="d-inline ms-1" data-confirm="Remove this image from the gallery?">
 											<button class="btn btn-sm btn-outline-danger rounded-pill py-0 px-2" style="font-size: 0.72rem;">
 												<i class="fa-regular fa-trash-can"></i>
 											</button>
@@ -77,6 +77,7 @@
 			enctype="multipart/form-data"
 			id="editListingForm"
 		>
+			<input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
 			<!-- 1. Basic Information -->
 			<div class="form-section-card">
 				<div class="d-flex align-items-center mb-3">
@@ -330,62 +331,4 @@
 	</div>
 </div>
 
-<script>
-	const imageEditInput = document.getElementById("imageEditInput");
-	const editPreviewContainer = document.getElementById("editImagePreviewContainer");
-	const editWarningEl = document.getElementById("editFileSizeWarning");
-	const editSubmitBtn = document.getElementById("editSubmitBtn");
-
-	if (imageEditInput) {
-		imageEditInput.addEventListener("change", (e) => {
-			editPreviewContainer.innerHTML = "";
-			editWarningEl.classList.add("d-none");
-			editSubmitBtn.disabled = false;
-
-			const files = Array.from(e.target.files);
-			if (files.length === 0) {
-				editPreviewContainer.classList.add("d-none");
-				return;
-			}
-
-			editPreviewContainer.classList.remove("d-none");
-			let hasOversized = false;
-
-			files.forEach((file) => {
-				const sizeKB = Math.round(file.size / 1024);
-				const isOversized = file.size > 5 * 1024 * 1024;
-				if (isOversized) hasOversized = true;
-
-				const col = document.createElement("div");
-				col.className = "col-6 col-sm-4 col-md-3";
-
-				const card = document.createElement("div");
-				card.className = `card h-100 p-1 position-relative ${isOversized ? 'border-danger' : 'border'}`;
-				card.style.borderRadius = "0.75rem";
-
-				const img = document.createElement("img");
-				img.src = URL.createObjectURL(file);
-				img.className = "card-img-top rounded";
-				img.style.height = "90px";
-				img.style.objectFit = "cover";
-
-				const info = document.createElement("div");
-				info.className = "card-body p-2 text-center";
-				info.innerHTML = `
-					<p class="card-text text-truncate mb-1 small fw-medium" title="${file.name}">${file.name}</p>
-					<span class="badge ${isOversized ? 'bg-danger' : 'bg-light text-dark'} small" style="font-size: 0.7rem;">${sizeKB} KB</span>
-				`;
-
-				card.appendChild(img);
-				card.appendChild(info);
-				col.appendChild(card);
-				editPreviewContainer.appendChild(col);
-			});
-
-			if (hasOversized) {
-				editWarningEl.classList.remove("d-none");
-				editSubmitBtn.disabled = true;
-			}
-		});
-	}
-</script>
+<script nonce="<%= cspNonce || '' %>" src="/js/listing-form.js"></script>

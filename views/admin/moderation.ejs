@@ -87,7 +87,7 @@
 							</button>
 						</form>
 						<form action="/admin/moderation/reviews/<%= r._id %>/delete" method="POST" class="d-inline">
-							<button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3" onclick="return confirm('Permanently remove this review from the platform?');">
+							<button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3" data-confirm="Permanently remove this review from the platform?">
 								<i class="fa-solid fa-trash me-1"></i> Delete Review
 							</button>
 						</form>

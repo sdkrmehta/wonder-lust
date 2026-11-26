@@ -16,12 +16,10 @@ const paymentSchema = new Schema(
 		transactionId: {
 			type: String,
 			required: [true, "Transaction ID is required"],
-			unique: true,
 		},
 		orderId: {
 			type: String,
 			required: [true, "Order ID is required"],
-			unique: true,
 		},
 		receiptNumber: {
 			type: String,
@@ -51,6 +49,18 @@ const paymentSchema = new Schema(
 		gateway: {
 			type: String,
 			default: "wanderlust_pay",
+		},
+		webhookVerified: {
+			type: Boolean,
+			default: false,
+		},
+		webhookEventId: {
+			type: String,
+			default: null,
+		},
+		gatewaySignatureVerifiedAt: {
+			type: Date,
+			default: null,
 		},
 		cardDetails: {
 			brand: { type: String, default: "Visa" },

@@ -8,7 +8,7 @@ services:
     container_name: wanderlust-dev-app
     restart: always
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     environment:
       - NODE_ENV=development
       - PORT=8080
@@ -17,20 +17,20 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
-      - app-dev-uploads:/app/uploads
+      - app-dev-uploads:/app/public/uploads
     depends_on:
       mongo:
         condition: service_healthy
     networks:
       - wanderlust-dev-network
-    command: ["npx", "nodemon", "server.js"]
+    command: ["node", "--watch", "server.js"]
 
   mongo:
     image: mongo:7.0-jammy
     container_name: wanderlust-dev-mongo
     restart: always
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     volumes:
       - mongo-dev-data:/data/db
     networks:

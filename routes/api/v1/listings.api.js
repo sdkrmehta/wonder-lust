@@ -48,7 +48,10 @@ router.post(
 router.get(
 	"/",
 	wrapAsync(async (req, res) => {
-		const result = await ListingService.findListings(req.query);
+		const result = await ListingService.findListings({
+			...req.query,
+			viewer: req.user || null,
+		});
 		return ApiResponse.success(res, {
 			count: result.listings.length,
 			total: result.pagination.totalListings,
@@ -85,6 +88,7 @@ router.get(
 	wrapAsync(async (req, res) => {
 		const listing = await ListingService.getListingById(req.params.id, {
 			incrementView: true,
+			viewer: req.user || null,
 		});
 		return ApiResponse.success(res, listing);
 	}),

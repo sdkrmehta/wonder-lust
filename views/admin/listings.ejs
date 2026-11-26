@@ -107,7 +107,8 @@
 											View
 										</a>
 										<form action="/admin/listings/<%= l._id %>/delete" method="POST" class="d-inline">
-											<button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1" onclick="return confirm('Permanently delete listing: <%= l.title %>?');" title="Delete listing">
+											<input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
+											<button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1" data-confirm="Permanently delete listing: <%= l.title %>?" title="Delete listing">
 												<i class="fa-regular fa-trash-can"></i>
 											</button>
 										</form>

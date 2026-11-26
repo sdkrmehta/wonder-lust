@@ -91,7 +91,7 @@
 								<td class="text-secondary"><%= u.email %></td>
 								<td>
 									<form action="/admin/users/<%= u._id %>/role" method="POST" class="d-inline">
-										<select name="role" class="form-select form-select-sm rounded-pill d-inline-block w-auto border" onchange="this.form.submit()">
+										<select name="role" class="form-select form-select-sm rounded-pill d-inline-block w-auto border" data-auto-submit="true">
 											<option value="traveler" <%= u.role === 'traveler' ? 'selected' : '' %>>Traveler</option>
 											<option value="host" <%= u.role === 'host' ? 'selected' : '' %>>Host</option>
 											<option value="admin" <%= u.role === 'admin' ? 'selected' : '' %>>Admin</option>

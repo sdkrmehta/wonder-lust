@@ -11,9 +11,18 @@ async function connectDB(customUrl) {
 	}
 
 	try {
+		const isSrv = url.startsWith("mongodb+srv://");
+		const hasTlsParam = /[?&](tls|ssl)=true/i.test(url);
+		if (env.MONGO_REQUIRE_TLS && !isSrv && !hasTlsParam) {
+			throw new Error(
+				"[DATABASE FATAL] TLS is required for MongoDB in production (use mongodb+srv:// or ?tls=true).",
+			);
+		}
+
 		await mongoose.connect(url, {
 			serverSelectionTimeoutMS: 5000,
 			maxPoolSize: 10,
+			...(env.MONGO_REQUIRE_TLS ? { tls: true } : {}),
 		});
 
 		isConnected = true;
@@ -49,6 +58,7 @@ async function syncAllIndexes() {
 	const models = [
 		require("../models/listing"),
 		require("../models/booking"),
+		require("../models/bookingNightLock"),
 		require("../models/payment"),
 		require("../models/review"),
 		require("../models/user"),

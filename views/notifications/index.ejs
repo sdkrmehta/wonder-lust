@@ -118,7 +118,7 @@
 								<% } %>
 
 								<form action="/notifications/<%= item._id %>/delete" method="POST" class="d-inline ms-auto">
-									<button type="submit" class="btn btn-sm text-muted rounded-pill px-2 py-1 border-0" title="Delete notification" onclick="return confirm('Delete this notification?');">
+									<button type="submit" class="btn btn-sm text-muted rounded-pill px-2 py-1 border-0" title="Delete notification" data-confirm="Delete this notification?">
 										<i class="fa-regular fa-trash-can"></i>
 									</button>
 								</form>

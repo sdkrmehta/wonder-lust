@@ -10,12 +10,29 @@ class UserService {
 	 * Register a new user account with duplicate email and username validation.
 	 */
 	static async registerUser({ username, email, password }) {
-		if (!username || !email || !password) {
+		if (
+			typeof username !== "string" ||
+			typeof email !== "string" ||
+			typeof password !== "string" ||
+			!username.trim() ||
+			!email.trim() ||
+			!password
+		) {
 			throw AppError.badRequest("Username, email, and password are required");
 		}
 
 		const cleanUsername = username.trim();
 		const cleanEmail = email.trim().toLowerCase();
+
+		if (cleanUsername.length < 3 || cleanUsername.length > 50) {
+			throw AppError.badRequest("Username must be between 3 and 50 characters");
+		}
+		if (!/^\S+@\S+\.\S+$/.test(cleanEmail)) {
+			throw AppError.badRequest("Please provide a valid email address");
+		}
+		if (password.length < 6 || password.length > 128) {
+			throw AppError.badRequest("Password must be between 6 and 128 characters");
+		}
 
 		const existingEmail = await User.findOne({ email: cleanEmail });
 		if (existingEmail) {
@@ -34,25 +51,37 @@ class UserService {
 	}
 
 	/**
-	 * Retrieve comprehensive user profile with activity metrics and history.
+	 * Retrieve user profile with activity metrics and history.
+	 * Restricts private booking history, contact details, and draft listings when viewed publicly.
 	 */
-	static async getUserProfileWithStats(userId) {
-		const user = await User.findById(userId);
+	static async getUserProfileWithStats(userId, options = {}) {
+		const includePrivate = options.includePrivate !== false;
+		const userQuery = User.findById(userId);
+		const user = includePrivate
+			? await userQuery.select("-hash -salt -attempts -last")
+			: await userQuery.select("username fullName avatar bio city country role isSuperhost createdAt");
+
 		if (!user) {
 			throw AppError.notFound("User not found");
 		}
 
+		const listingFilter = includePrivate
+			? { owner: userId }
+			: { owner: userId, status: "published" };
+
 		const [tripsCount, reviewsCount, listingsCount, recentTrips, userListings] =
 			await Promise.all([
-				Booking.countDocuments({ user: userId }),
+				includePrivate ? Booking.countDocuments({ user: userId }) : Promise.resolve(0),
 				Review.countDocuments({ author: userId }),
-				Listing.countDocuments({ owner: userId }),
-				Booking.find({ user: userId })
-					.populate("listing", "title location country image images")
-					.sort({ checkIn: -1 })
-					.limit(5)
-					.lean(),
-				Listing.find({ owner: userId })
+				Listing.countDocuments(listingFilter),
+				includePrivate
+					? Booking.find({ user: userId })
+							.populate("listing", "title location country image images")
+							.sort({ checkIn: -1 })
+							.limit(5)
+							.lean()
+					: Promise.resolve([]),
+				Listing.find(listingFilter)
 					.select("title price location country image avgRating views status")
 					.sort({ createdAt: -1 })
 					.limit(6)
@@ -81,14 +110,17 @@ class UserService {
 			throw AppError.notFound("User not found");
 		}
 
-		const data = profileData.user || profileData;
+		const data =
+			profileData && typeof profileData.user === "object" && profileData.user !== null
+				? profileData.user
+				: profileData || {};
 
-		if (data.fullName !== undefined) user.fullName = data.fullName.trim();
-		if (data.bio !== undefined) user.bio = data.bio.trim();
-		if (data.phone !== undefined) user.phone = data.phone.trim();
-		if (data.address !== undefined) user.address = data.address.trim();
-		if (data.city !== undefined) user.city = data.city.trim();
-		if (data.country !== undefined) user.country = data.country.trim();
+		if (typeof data.fullName === "string") user.fullName = data.fullName.trim();
+		if (typeof data.bio === "string") user.bio = data.bio.trim();
+		if (typeof data.phone === "string") user.phone = data.phone.trim();
+		if (typeof data.address === "string") user.address = data.address.trim();
+		if (typeof data.city === "string") user.city = data.city.trim();
+		if (typeof data.country === "string") user.country = data.country.trim();
 
 		// Handle avatar upload
 		if (avatarFile) {
@@ -116,11 +148,17 @@ class UserService {
 		}
 
 		return new Promise((resolve, reject) => {
-			user.changePassword(currentPassword, newPassword, (err, updatedUser) => {
+			user.changePassword(currentPassword, newPassword, async (err, updatedUser) => {
 				if (err) {
 					return reject(AppError.badRequest(err.message || "Failed to update password"));
 				}
-				resolve(updatedUser);
+				try {
+					updatedUser.sessionVersion = Number(updatedUser.sessionVersion || 1) + 1;
+					await updatedUser.save();
+					resolve(updatedUser);
+				} catch (saveErr) {
+					reject(saveErr);
+				}
 			});
 		});
 	}

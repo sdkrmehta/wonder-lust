@@ -7,14 +7,16 @@ const sendMessageSchema = Joi.object({
 	}),
 	recipientId: Joi.string().optional(),
 	listingId: Joi.string().optional(),
-}).unknown(true);
+});
 
 const inquirySchema = Joi.object({
+	listingId: Joi.string().optional(),
 	message: Joi.string().allow("", null).max(2000),
-	checkIn: Joi.date().iso().optional(),
-	checkOut: Joi.date().iso().optional(),
-	guests: Joi.number().optional(),
-}).unknown(true);
+	body: Joi.string().allow("", null).max(2000),
+	checkIn: Joi.date().iso().allow("", null).optional(),
+	checkOut: Joi.date().iso().allow("", null).optional(),
+	guests: Joi.number().min(1).max(50).optional(),
+});
 
 module.exports = {
 	sendMessageSchema,

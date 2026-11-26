@@ -55,13 +55,13 @@
 		<div class="d-none d-md-block pdp-mosaic-wrapper position-relative mb-4">
 			<div class="pdp-mosaic-grid">
 				<!-- Hero Photo (Left Column) -->
-				<div class="mosaic-hero-tile position-relative overflow-hidden cursor-pointer" onclick="openLightbox(0)">
+				<div class="mosaic-hero-tile position-relative overflow-hidden cursor-pointer" data-lightbox-index="0">
 					<img
 						id="mainHeroImg"
 						src="<%= primaryImg.url %>"
 						class="mosaic-zoom-img"
 						alt="<%= listing.title %>"
-						onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';"
+						data-fallback-src="/images/listing-placeholder.jpg"
 					/>
 					<% if (listing.propertyType) { %>
 						<span class="position-absolute top-0 start-0 m-3 property-badge-glass shadow-sm">
@@ -71,17 +71,17 @@
 				</div>
 
 				<!-- 4 Secondary Photos (Right 2x2 Grid) -->
-				<div class="mosaic-sub-tile position-relative overflow-hidden cursor-pointer" onclick="openLightbox(1)">
-					<img src="<%= mosaicSlots[1].url %>" class="mosaic-zoom-img" alt="Property view 2" onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';">
+				<div class="mosaic-sub-tile position-relative overflow-hidden cursor-pointer" data-lightbox-index="1">
+					<img src="<%= mosaicSlots[1].url %>" class="mosaic-zoom-img" alt="Property view 2" data-fallback-src="/images/listing-placeholder.jpg">
 				</div>
-				<div class="mosaic-sub-tile position-relative overflow-hidden cursor-pointer" onclick="openLightbox(2)">
-					<img src="<%= mosaicSlots[2].url %>" class="mosaic-zoom-img" alt="Property view 3" onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';">
+				<div class="mosaic-sub-tile position-relative overflow-hidden cursor-pointer" data-lightbox-index="2">
+					<img src="<%= mosaicSlots[2].url %>" class="mosaic-zoom-img" alt="Property view 3" data-fallback-src="/images/listing-placeholder.jpg">
 				</div>
-				<div class="mosaic-sub-tile position-relative overflow-hidden cursor-pointer" onclick="openLightbox(3)">
-					<img src="<%= mosaicSlots[3].url %>" class="mosaic-zoom-img" alt="Property view 4" onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';">
+				<div class="mosaic-sub-tile position-relative overflow-hidden cursor-pointer" data-lightbox-index="3">
+					<img src="<%= mosaicSlots[3].url %>" class="mosaic-zoom-img" alt="Property view 4" data-fallback-src="/images/listing-placeholder.jpg">
 				</div>
-				<div class="mosaic-sub-tile position-relative overflow-hidden cursor-pointer" onclick="openLightbox(4)">
-					<img src="<%= mosaicSlots[4].url %>" class="mosaic-zoom-img" alt="Property view 5" onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';">
+				<div class="mosaic-sub-tile position-relative overflow-hidden cursor-pointer" data-lightbox-index="4">
+					<img src="<%= mosaicSlots[4].url %>" class="mosaic-zoom-img" alt="Property view 5" data-fallback-src="/images/listing-placeholder.jpg">
 				</div>
 			</div>
 
@@ -106,7 +106,7 @@
 					src="<%= primaryImg.url %>"
 					class="card-img-top show-hero-img shadow-sm"
 					alt="<%= listing.title %>"
-					onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';"
+					data-fallback-src="/images/listing-placeholder.jpg"
 				/>
 				<button
 					type="button"
@@ -128,8 +128,9 @@
 								class="img-fluid gallery-thumb w-100 shadow-sm <%= img.url === primaryImg.url ? 'active' : '' %>"
 								style="height: 60px; object-fit: cover;"
 								alt="Gallery thumbnail <%= idx + 1 %>"
-								onclick="switchHeroImage(this, '<%= img.url %>')"
-								onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';"
+								data-img-url="<%= img.url %>"
+								data-action="switchHeroImage"
+								data-fallback-src="/images/listing-placeholder.jpg"
 							/>
 						</div>
 					<% }); %>
@@ -222,7 +223,7 @@
 						<form
 							action="/listings/<%= listing._id %>?_method=DELETE"
 							method="POST"
-							onsubmit="return confirm('Are you sure you want to delete this listing? This action cannot be undone.');"
+							data-confirm="Are you sure you want to delete this listing? This action cannot be undone."
 						>
 							<button class="btn btn-destructive px-4 rounded-pill">
 								<i class="fa-regular fa-trash-can me-1"></i> Delete Listing
@@ -466,7 +467,7 @@
 													<form
 														method="POST"
 														action="/listings/<%= listing._id %>/reviews/<%= review._id %>?_method=DELETE"
-														onsubmit="return confirm('Delete this review?');"
+														data-confirm="Delete this review?"
 													>
 														<button class="btn btn-sm btn-outline-danger rounded-pill px-2 py-0" style="font-size: 0.75rem;">
 															Delete
@@ -505,7 +506,7 @@
 
 											<div>
 												<% if (currUser && (!review.author || !currUser._id.equals(review.author._id))) { %>
-													<form method="POST" action="/listings/<%= listing._id %>/reviews/<%= review._id %>/flag" onsubmit="return confirm('Report this review for community moderation?');">
+													<form method="POST" action="/listings/<%= listing._id %>/reviews/<%= review._id %>/flag" data-confirm="Report this review for community moderation?">
 														<input type="hidden" name="reason" value="Inappropriate or abusive content" />
 														<button class="btn btn-link text-muted p-0 text-decoration-none" style="font-size: 0.75rem;">
 															<i class="fa-regular fa-flag me-1"></i> Report
@@ -654,6 +655,7 @@
 						novalidate
 						class="needs-validation"
 					>
+						<input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
 						<div class="border rounded-3 p-2 mb-3" style="background-color: var(--paper-100); border-color: var(--border-color) !important;">
 							<div class="row g-2 mb-2">
 								<div class="col-6">
@@ -761,7 +763,7 @@
 			<%= (listing.avgRating && listing.avgRating > 0) ? Number(listing.avgRating).toFixed(1) : "New" %>
 		</div>
 	</div>
-	<button type="button" class="btn btn-forest rounded-pill px-4 py-2 fw-semibold" onclick="document.querySelector('.booking-card-sticky').scrollIntoView({ behavior: 'smooth' })">
+	<button type="button" class="btn btn-forest rounded-pill px-4 py-2 fw-semibold" data-scroll-target=".booking-card-sticky">
 		Reserve
 	</button>
 </div>
@@ -788,7 +790,8 @@
 							src="<%= img.url %>"
 							class="rounded-2 cursor-pointer border border-2 <%= idx === 0 ? 'border-light' : 'border-transparent' %> lightbox-strip-thumb"
 							style="width: 60px; height: 45px; object-fit: cover; opacity: 0.8;"
-							onclick="setLightboxImg('<%= img.url %>', this)"
+							data-img-url="<%= img.url %>"
+							data-action="setLightboxImg"
 							alt="Thumb <%= idx + 1 %>"
 						/>
 					<% }); %>
@@ -810,6 +813,7 @@
 				<button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
 			<form action="/messages/inquiry/<%= listing._id %>" method="POST">
+				<input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
 				<div class="modal-body py-3">
 					<p class="text-muted small mb-3">Ask about availability, check-in logistics, or property amenities.</p>
 					<div class="mb-3">
@@ -832,586 +836,21 @@
 	<div class="booking-toast-content toast-danger shadow-lg">
 		<i class="fa-solid fa-calendar-xmark fs-5 text-warning"></i>
 		<div id="bookingToastMsg">Hotel is already booked for that date!</div>
-		<button type="button" class="btn-close btn-close-white ms-2" onclick="hideBookingToast()" aria-label="Close"></button>
+		<button type="button" class="btn-close btn-close-white ms-2" data-action="hideBookingToast" aria-label="Close"></button>
 	</div>
 </div>
 
-<script>
-	// 1. Thumbnail click handler for multi-image gallery
-	function switchHeroImage(thumbEl, newUrl) {
-		const heroImg = document.getElementById("mainHeroImg");
-		if (heroImg) {
-			heroImg.style.opacity = "0.4";
-			heroImg.src = newUrl;
-			heroImg.onload = () => {
-				heroImg.style.opacity = "1";
-			};
-		}
-		document.querySelectorAll(".gallery-thumb").forEach(t => t.classList.remove("active"));
-		thumbEl.classList.add("active");
-	}
-
-	// 2. Interactive Leaflet Map Initialization with Dynamic Address Geocoding
-	document.addEventListener("DOMContentLoaded", async () => {
-		const mapEl = document.getElementById("map");
-		if (!mapEl || typeof L === "undefined") return;
-
-		try {
-			const addressLocation = <%- JSON.stringify(listing.location || "") %>;
-			const addressCountry = <%- JSON.stringify(listing.country || "") %>;
-			const fullAddress = [addressLocation, addressCountry].filter(Boolean).join(", ");
-			const isDelhiAddress = addressLocation.toLowerCase().includes("delhi") || addressCountry.toLowerCase().includes("delhi");
-
-			const rawCoords = <%- JSON.stringify((listing.geometry && listing.geometry.coordinates && listing.geometry.coordinates.length >= 2) ? listing.geometry.coordinates : null) %>;
-			
-			// Detect if coordinates are the default New Delhi placeholder [77.209, 28.6139] for a non-Delhi location
-			const isDefaultPlaceholder = rawCoords && 
-				Math.abs(Number(rawCoords[0]) - 77.209) < 0.005 && 
-				Math.abs(Number(rawCoords[1]) - 28.6139) < 0.005 && 
-				!isDelhiAddress;
-
-			let lng = (rawCoords && !isDefaultPlaceholder) ? Number(rawCoords[0]) : 0.0;
-			let lat = (rawCoords && !isDefaultPlaceholder) ? Number(rawCoords[1]) : 20.0;
-			const initialZoom = (lat === 20.0 && lng === 0.0) ? 2 : 13;
-
-			const map = L.map("map", { scrollWheelZoom: false }).setView([lat, lng], initialZoom);
-
-			// Esri World Street Map (High-resolution, 100% Free, No API Key, No Watermark)
-			L.tileLayer(
-				"https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
-				{
-					attribution:
-						'Tiles &copy; <a href="https://www.esri.com/" target="_blank">Esri</a> &mdash; Source: Esri, USGS, TomTom',
-					maxZoom: 19,
-				}
-			).addTo(map);
-
-			// Custom luxury destination marker
-			const customPin = L.divIcon({
-				html: `
-					<div style="
-						background: #1D3557;
-						color: #ffffff;
-						width: 36px;
-						height: 36px;
-						border-radius: 50% 50% 50% 0;
-						transform: rotate(-45deg);
-						display: flex;
-						align-items: center;
-						justify-content: center;
-						box-shadow: 0 4px 12px rgba(16, 42, 67, 0.4);
-						border: 2px solid #ffffff;
-					">
-						<i class="fa-solid fa-hotel" style="transform: rotate(45deg); font-size: 14px;"></i>
-					</div>
-				`,
-				className: "custom-map-pin",
-				iconSize: [36, 36],
-				iconAnchor: [18, 36],
-				popupAnchor: [0, -36],
-			});
-
-			const popupContent = `
-				<div style="min-width: 170px;">
-					<div class="fw-bold mb-1" style="color: #102A43; font-size: 0.95rem;"><%- listing.title.replace(/"/g, '&quot;') %></div>
-					<div class="text-muted small mb-1"><i class="fa-solid fa-location-dot text-danger me-1"></i><%- listing.location %>, <%- listing.country %></div>
-					<div class="mt-1 pt-1 border-top d-flex justify-content-between align-items-center">
-						<span class="fw-bold" style="color: #1D3557;">&#x20B9;<%- (listing.price || 0).toLocaleString("en-IN") %> <span class="fw-normal text-muted small">/ night</span></span>
-					</div>
-				</div>
-			`;
-
-			const marker = L.marker([lat, lng], { icon: customPin }).addTo(map).bindPopup(popupContent);
-
-			// Helper: Dynamic Geocoding function using OpenStreetMap Nominatim & Photon
-			async function geocodeAddressDynamic(query) {
-				if (!query || query.trim().length === 0) return null;
-				// 1. Try OpenStreetMap Nominatim
-				try {
-					const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
-					const nomRes = await fetch(nomUrl, { headers: { "Accept-Language": "en" } });
-					if (nomRes.ok) {
-						const nomData = await nomRes.json();
-						if (nomData && nomData.length > 0) {
-							return { lat: parseFloat(nomData[0].lat), lng: parseFloat(nomData[0].lon) };
-						}
-					}
-				} catch (e) {
-					console.warn("Nominatim dynamic geocode error:", e.message);
-				}
-
-				// 2. Try Photon (Komoot OSM Geocoder)
-				try {
-					const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=1`;
-					const photonRes = await fetch(photonUrl);
-					if (photonRes.ok) {
-						const photonData = await photonRes.json();
-						if (photonData && photonData.features && photonData.features.length > 0) {
-							const pt = photonData.features[0].geometry.coordinates;
-							return { lat: pt[1], lng: pt[0] };
-						}
-					}
-				} catch (e) {
-					console.warn("Photon dynamic geocode error:", e.message);
-				}
-				return null;
-			}
-
-			// If coordinates were default/placeholder or missing, dynamically mark on the basis of address entered
-			if (isDefaultPlaceholder || !rawCoords) {
-				let resolved = await geocodeAddressDynamic(fullAddress);
-				if (!resolved && addressLocation) {
-					resolved = await geocodeAddressDynamic(addressLocation);
-				}
-				if (!resolved && addressCountry) {
-					resolved = await geocodeAddressDynamic(addressCountry);
-				}
-
-				if (resolved) {
-					map.setView([resolved.lat, resolved.lng], 13);
-					marker.setLatLng([resolved.lat, resolved.lng]);
-					marker.openPopup();
-				} else {
-					marker.openPopup();
-				}
-			} else {
-				marker.openPopup();
-			}
-		} catch (err) {
-			console.warn("Map initialization fallback active:", err.message);
-		}
-	});
-
-	// 3. Live Interactive Availability Calendar & Booking Calculator
-	document.addEventListener("DOMContentLoaded", async () => {
-		const checkInInput = document.getElementById("checkInInput");
-		const checkOutInput = document.getElementById("checkOutInput");
-		const priceContainer = document.getElementById("priceCalculationContainer");
-		const conflictAlert = document.getElementById("bookingConflictAlert");
-		const reserveBtn = document.getElementById("reserveSubmitBtn");
-		const gridContainer = document.getElementById("calendarGridContainer");
-		const statusPill = document.getElementById("bookingStatusPill");
-		const instructionText = document.getElementById("calendarInstructionText");
-		const staySummary = document.getElementById("selectedStaySummary");
-		const toastPopup = document.getElementById("bookingToastPopup");
-		const toastMsg = document.getElementById("bookingToastMsg");
-
-		if (!checkInInput || !checkOutInput) return;
-
-		// Date format helpers
-		function formatYMD(d) {
-			const y = d.getFullYear();
-			const m = String(d.getMonth() + 1).padStart(2, "0");
-			const day = String(d.getDate()).padStart(2, "0");
-			return `${y}-${m}-${day}`;
-		}
-
-		function formatDisplayDate(d) {
-			return d.toLocaleDateString("en-IN", {
-				month: "short",
-				day: "numeric",
-				year: "numeric"
-			});
-		}
-
-		// Minimum date is today
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
-		checkInInput.min = formatYMD(today);
-
-		// Fetch existing booked dates
-		let bookedIntervals = [];
-		try {
-			const res = await fetch("/listings/<%= listing._id %>/booked-dates");
-			const json = await res.json();
-			bookedIntervals = (json && json.data) || [];
-		} catch (e) {
-			console.warn("Could not load booked dates:", e.message);
-		}
-
-		let calendarStartMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-		let selectedCheckInDate = null;
-		let selectedCheckOutDate = null;
-		let toastTimer = null;
-
-		function showBookingToast(message) {
-			if (!toastPopup || !toastMsg) return;
-			toastMsg.textContent = message;
-			toastPopup.classList.add("show");
-			if (toastTimer) clearTimeout(toastTimer);
-			toastTimer = setTimeout(() => {
-				toastPopup.classList.remove("show");
-			}, 4500);
-		}
-
-		window.hideBookingToast = function () {
-			if (toastPopup) toastPopup.classList.remove("show");
-		};
-
-		function isDateInPast(d) {
-			const check = new Date(d);
-			check.setHours(0, 0, 0, 0);
-			return check < today;
-		}
-
-		function isDateBooked(d) {
-			const checkMidday = new Date(d);
-			checkMidday.setHours(12, 0, 0, 0);
-			return bookedIntervals.some((b) => {
-				const bStart = new Date(b.checkIn);
-				const bEnd = new Date(b.checkOut);
-				return checkMidday >= bStart && checkMidday < bEnd;
-			});
-		}
-
-		function doesRangeContainBooked(startD, endD) {
-			const cur = new Date(startD);
-			cur.setHours(12, 0, 0, 0);
-			const endCheck = new Date(endD);
-			endCheck.setHours(12, 0, 0, 0);
-
-			while (cur < endCheck) {
-				if (isDateBooked(cur)) return true;
-				cur.setDate(cur.getDate() + 1);
-			}
-			return false;
-		}
-
-		function renderCalendar() {
-			if (!gridContainer) return;
-			gridContainer.innerHTML = "";
-
-			for (let mOffset = 0; mOffset < 2; mOffset++) {
-				const monthDate = new Date(calendarStartMonth.getFullYear(), calendarStartMonth.getMonth() + mOffset, 1);
-				const monthName = monthDate.toLocaleDateString("en-US", { month: "long" });
-				const year = monthDate.getFullYear();
-
-				const monthBlock = document.createElement("div");
-				monthBlock.className = "calendar-month-block";
-
-				const header = document.createElement("div");
-				header.className = "d-flex justify-content-between align-items-center mb-2 px-1";
-				header.innerHTML = `<span class="fw-bold fs-6 text-dark">${monthName} ${year}</span>`;
-				monthBlock.appendChild(header);
-
-				const table = document.createElement("table");
-				table.className = "calendar-month-table";
-				table.innerHTML = `
-					<thead>
-						<tr>
-							<th>Su</th><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th>
-						</tr>
-					</thead>
-				`;
-
-				const tbody = document.createElement("tbody");
-				const firstDayOfWeek = monthDate.getDay();
-				const daysInMonth = new Date(year, monthDate.getMonth() + 1, 0).getDate();
-
-				let dayCounter = 1;
-				for (let row = 0; row < 6; row++) {
-					if (dayCounter > daysInMonth) break;
-					const tr = document.createElement("tr");
-
-					for (let col = 0; col < 7; col++) {
-						const td = document.createElement("td");
-						td.className = "calendar-day-cell";
-
-						if (row === 0 && col < firstDayOfWeek) {
-							td.className += " calendar-day-empty";
-						} else if (dayCounter > daysInMonth) {
-							td.className += " calendar-day-empty";
-						} else {
-							const currentDayNum = dayCounter;
-							const cellDate = new Date(year, monthDate.getMonth(), currentDayNum);
-							const ymd = formatYMD(cellDate);
-
-							const isPast = isDateInPast(cellDate);
-							const isBooked = isDateBooked(cellDate);
-
-							const isStart = selectedCheckInDate && ymd === formatYMD(selectedCheckInDate);
-							const isEnd = selectedCheckOutDate && ymd === formatYMD(selectedCheckOutDate);
-							const isInRange = selectedCheckInDate && selectedCheckOutDate && cellDate > selectedCheckInDate && cellDate < selectedCheckOutDate;
-
-							if (isPast) {
-								td.className += " calendar-day-past";
-								td.innerHTML = `<span class="calendar-day-num">${currentDayNum}</span>`;
-							} else if (isBooked) {
-								td.className += " calendar-day-booked";
-								td.innerHTML = `<span class="calendar-day-num">${currentDayNum}</span><span class="booked-tag">Booked</span>`;
-								td.setAttribute("title", `Hotel is booked on ${formatDisplayDate(cellDate)}`);
-								td.onclick = (e) => {
-									e.preventDefault();
-									e.stopPropagation();
-									td.classList.add("shake-booked");
-									setTimeout(() => td.classList.remove("shake-booked"), 500);
-									showBookingToast(`This hotel is already booked for ${formatDisplayDate(cellDate)}! Please select an available date.`);
-								};
-							} else {
-								td.className += " calendar-day-available";
-								if (isStart) td.className += " calendar-day-selected-start";
-								if (isEnd) td.className += " calendar-day-selected-end";
-								if (isInRange) td.className += " calendar-day-in-range";
-
-								td.innerHTML = `<span class="calendar-day-num">${currentDayNum}</span>`;
-								td.onclick = () => handleAvailableDateClick(cellDate, ymd);
-							}
-
-							dayCounter++;
-						}
-						tr.appendChild(td);
-					}
-					tbody.appendChild(tr);
-				}
-
-				table.appendChild(tbody);
-				monthBlock.appendChild(table);
-				gridContainer.appendChild(monthBlock);
-			}
-		}
-
-		function handleAvailableDateClick(clickedDate, ymd) {
-			if (!selectedCheckInDate || (selectedCheckInDate && selectedCheckOutDate)) {
-				selectedCheckInDate = clickedDate;
-				selectedCheckOutDate = null;
-				checkInInput.value = ymd;
-				checkOutInput.value = "";
-				if (instructionText) {
-					instructionText.innerHTML = `Check-in set to <strong>${formatDisplayDate(clickedDate)}</strong>. Now choose your check-out date.`;
-				}
-				renderCalendar();
-				recalculate();
-				return;
-			}
-
-			if (selectedCheckInDate && !selectedCheckOutDate) {
-				if (clickedDate <= selectedCheckInDate) {
-					selectedCheckInDate = clickedDate;
-					checkInInput.value = ymd;
-					if (instructionText) {
-						instructionText.innerHTML = `Check-in updated to <strong>${formatDisplayDate(clickedDate)}</strong>. Choose your check-out date.`;
-					}
-					renderCalendar();
-					recalculate();
-					return;
-				}
-
-				if (doesRangeContainBooked(selectedCheckInDate, clickedDate)) {
-					showBookingToast("Hotel is booked during those dates! Please select an unbroken available range.");
-					return;
-				}
-
-				selectedCheckOutDate = clickedDate;
-				checkOutInput.value = ymd;
-				if (instructionText) {
-					instructionText.innerHTML = `Selected Stay: <strong>${formatDisplayDate(selectedCheckInDate)}</strong> &ndash; <strong>${formatDisplayDate(clickedDate)}</strong>.`;
-				}
-				renderCalendar();
-				recalculate();
-			}
-		}
-
-		function recalculate() {
-			if (conflictAlert) conflictAlert.classList.add("d-none");
-			if (reserveBtn) reserveBtn.disabled = false;
-
-			const inDate = checkInInput.value ? new Date(checkInInput.value + "T00:00:00") : null;
-			const outDate = checkOutInput.value ? new Date(checkOutInput.value + "T00:00:00") : null;
-
-			if (inDate) {
-				const nextDay = new Date(inDate);
-				nextDay.setDate(nextDay.getDate() + 1);
-				checkOutInput.min = formatYMD(nextDay);
-			}
-
-			if (inDate && outDate) {
-				const nights = Math.max(1, Math.round((outDate - inDate) / (1000 * 60 * 60 * 24)));
-				if (statusPill) {
-					statusPill.className = "badge bg-success-subtle text-success small border border-success-subtle";
-					statusPill.textContent = `${nights} night${nights > 1 ? 's' : ''} selected`;
-				}
-				if (staySummary) {
-					staySummary.innerHTML = `<span class="text-success fw-bold"><i class="fa-solid fa-check me-1"></i>${nights} night${nights > 1 ? 's' : ''} (${formatYMD(inDate)} &rarr; ${formatYMD(outDate)})</span>`;
-				}
-			} else if (inDate) {
-				if (statusPill) {
-					statusPill.className = "badge bg-warning-subtle text-warning-emphasis small border border-warning-subtle";
-					statusPill.textContent = "Select check-out";
-				}
-				if (staySummary) {
-					staySummary.innerHTML = `<span class="text-secondary fw-semibold">Check-in: ${formatYMD(inDate)} (Select checkout)</span>`;
-				}
-			} else {
-				if (statusPill) {
-					statusPill.className = "badge bg-secondary-subtle text-secondary small border";
-					statusPill.textContent = "Select on calendar";
-				}
-				if (staySummary) {
-					staySummary.textContent = "No dates selected";
-				}
-			}
-
-			if (!inDate || !outDate || outDate <= inDate) {
-				if (priceContainer) priceContainer.classList.add("d-none");
-				return;
-			}
-
-			const hasConflict = doesRangeContainBooked(inDate, outDate);
-			if (hasConflict) {
-				if (conflictAlert) conflictAlert.classList.remove("d-none");
-				if (reserveBtn) reserveBtn.disabled = true;
-				if (priceContainer) priceContainer.classList.add("d-none");
-				showBookingToast("Hotel is booked during these dates! Please select another date range.");
-				return;
-			}
-
-			const diffTime = outDate.getTime() - inDate.getTime();
-			const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-			const nightlyRate = <%= listing.price || 0 %>;
-			const basePrice = nights * nightlyRate;
-			const cleaningFee = 500;
-			const taxes = Math.round((basePrice + cleaningFee) * 0.18);
-			const total = basePrice + cleaningFee + taxes;
-
-			const nightlyLabel = document.getElementById("nightlyCalculationLabel");
-			const baseAmt = document.getElementById("baseCalculationAmount");
-			const taxAmt = document.getElementById("taxCalculationAmount");
-			const totalAmt = document.getElementById("totalCalculationAmount");
-
-			if (nightlyLabel) nightlyLabel.innerText = `₹${nightlyRate.toLocaleString("en-IN")} × ${nights} night${nights > 1 ? 's' : ''}`;
-			if (baseAmt) baseAmt.innerText = `₹${basePrice.toLocaleString("en-IN")}`;
-			if (taxAmt) taxAmt.innerText = `₹${taxes.toLocaleString("en-IN")}`;
-			if (totalAmt) totalAmt.innerText = `₹${total.toLocaleString("en-IN")}`;
-
-			if (priceContainer) priceContainer.classList.remove("d-none");
-		}
-
-		checkInInput.addEventListener("change", () => {
-			if (!checkInInput.value) {
-				selectedCheckInDate = null;
-				renderCalendar();
-				recalculate();
-				return;
-			}
-			const inD = new Date(checkInInput.value + "T00:00:00");
-			if (isDateBooked(inD)) {
-				showBookingToast(`This hotel is already booked for ${formatDisplayDate(inD)}! Please select an available date.`);
-				checkInInput.value = "";
-				selectedCheckInDate = null;
-				renderCalendar();
-				recalculate();
-				return;
-			}
-			selectedCheckInDate = inD;
-			renderCalendar();
-			recalculate();
-		});
-
-		checkOutInput.addEventListener("change", () => {
-			if (!checkOutInput.value) {
-				selectedCheckOutDate = null;
-				renderCalendar();
-				recalculate();
-				return;
-			}
-			const outD = new Date(checkOutInput.value + "T00:00:00");
-			if (isDateBooked(outD)) {
-				showBookingToast(`This hotel is already booked for ${formatDisplayDate(outD)}! Please select an available date.`);
-				checkOutInput.value = "";
-				selectedCheckOutDate = null;
-				renderCalendar();
-				recalculate();
-				return;
-			}
-			if (selectedCheckInDate && doesRangeContainBooked(selectedCheckInDate, outD)) {
-				showBookingToast("Selected range includes booked dates! Please select an available date range.");
-				checkOutInput.value = "";
-				selectedCheckOutDate = null;
-				renderCalendar();
-				recalculate();
-				return;
-			}
-			selectedCheckOutDate = outD;
-			renderCalendar();
-			recalculate();
-		});
-
-		const prevBtn = document.getElementById("prevMonthBtn");
-		const nextBtn = document.getElementById("nextMonthBtn");
-		const clearBtn = document.getElementById("clearDatesBtn");
-
-		if (prevBtn) {
-			prevBtn.addEventListener("click", () => {
-				const prevMonth = new Date(calendarStartMonth.getFullYear(), calendarStartMonth.getMonth() - 1, 1);
-				const currentMonthAnchor = new Date(today.getFullYear(), today.getMonth(), 1);
-				if (prevMonth < currentMonthAnchor) return;
-				calendarStartMonth = prevMonth;
-				renderCalendar();
-			});
-		}
-
-		if (nextBtn) {
-			nextBtn.addEventListener("click", () => {
-				calendarStartMonth = new Date(calendarStartMonth.getFullYear(), calendarStartMonth.getMonth() + 1, 1);
-				renderCalendar();
-			});
-		}
-
-		if (clearBtn) {
-			clearBtn.addEventListener("click", () => {
-				selectedCheckInDate = null;
-				selectedCheckOutDate = null;
-				checkInInput.value = "";
-				checkOutInput.value = "";
-				if (instructionText) {
-					instructionText.innerHTML = "Select your check-in and check-out dates. Dates marked <span class='badge bg-danger-subtle text-danger border border-danger-subtle py-0 px-1'>Booked</span> cannot be selected.";
-				}
-				renderCalendar();
-				recalculate();
-			});
-		}
-
-		renderCalendar();
-	});
-
-	// 4. Full Photo Lightbox Modal Handlers
-	function openLightbox(index) {
-		const gallery = <%- JSON.stringify(galleryImages) %>;
-		if (gallery && gallery[index]) {
-			const activeImg = document.getElementById("lightboxActiveImg");
-			if (activeImg) activeImg.src = gallery[index].url;
-			const thumbs = document.querySelectorAll(".lightbox-strip-thumb");
-			thumbs.forEach((t, i) => {
-				if (i === index) {
-					t.classList.add("border-light");
-					t.classList.remove("border-transparent");
-					t.style.opacity = "1";
-				} else {
-					t.classList.remove("border-light");
-					t.classList.add("border-transparent");
-					t.style.opacity = "0.7";
-				}
-			});
-		}
-		const modalEl = document.getElementById("photoLightboxModal");
-		if (modalEl) {
-			const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-			modal.show();
-		}
-	}
-
-	function setLightboxImg(url, thumbEl) {
-		const activeImg = document.getElementById("lightboxActiveImg");
-		if (activeImg) activeImg.src = url;
-		document.querySelectorAll(".lightbox-strip-thumb").forEach(t => {
-			t.classList.remove("border-light");
-			t.classList.add("border-transparent");
-			t.style.opacity = "0.7";
-		});
-		if (thumbEl) {
-			thumbEl.classList.add("border-light");
-			thumbEl.classList.remove("border-transparent");
-			thumbEl.style.opacity = "1";
-		}
-	}
+<script type="application/json" id="listingShowData"><%- safeJson({
+	id: listing._id,
+	title: listing.title || "",
+	location: listing.location || "",
+	country: listing.country || "",
+	price: Number(listing.price) || 0,
+	coords: (listing.geometry && listing.geometry.coordinates && listing.geometry.coordinates.length >= 2) ? listing.geometry.coordinates : null,
+	galleryImages: galleryImages.map((g) => ({ url: g.url })),
+}) %></script>
+<script nonce="<%= cspNonce || '' %>">
+	window.__wanderlustCreateMap = (id, opts) => L.map(id, opts);
+	window.__wanderlustGalleryAction = "switchHeroImage";
 </script>
+<script nonce="<%= cspNonce || '' %>" src="/js/listing-show.js"></script>

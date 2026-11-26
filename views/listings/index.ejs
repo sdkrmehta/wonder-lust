@@ -107,7 +107,7 @@
 				<select
 					id="sortDropdown"
 					class="form-select form-select-sm rounded-pill py-2 shadow-sm serp-sort-select"
-					onchange="window.location.href = this.value"
+					data-navigate-on-change="true"
 				>
 					<option value="<%= buildUrl({ sort: 'recommended', page: 1 }) %>" <%= filters.sort === 'recommended' ? 'selected' : '' %>>Recommended</option>
 					<option value="<%= buildUrl({ sort: 'price_asc', page: 1 }) %>" <%= filters.sort === 'price_asc' ? 'selected' : '' %>>Price: Low to High</option>
@@ -248,7 +248,7 @@
 						class="wishlist-btn"
 						data-listing-id="<%= listing._id %>"
 						aria-label="Save to wishlist"
-						onclick="toggleWishlist(event, '<%= listing._id %>')"
+						data-wishlist-toggle="<%= listing._id %>"
 						title="Save to Wishlist"
 					>
 						<i class="fa-regular fa-heart"></i>
@@ -262,7 +262,7 @@
 								class="card-img-top property-thumb-img"
 								alt="<%= listing.title %>"
 								loading="lazy"
-								onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';"
+								data-fallback-src="/images/listing-placeholder.jpg"
 							/>
 							
 							<!-- Top-Left Trust Badges Stack -->
@@ -625,119 +625,14 @@
 </div>
 
 <!-- GST Tax Toggle & Map Script -->
-<script>
-	const taxSwitch = document.getElementById("taxSwitch");
-	if (taxSwitch) {
-		taxSwitch.addEventListener("change", () => {
-			const basePrices = document.querySelectorAll(".base-price-container");
-			const taxPrices = document.querySelectorAll(".tax-price-container");
-
-			if (taxSwitch.checked) {
-				basePrices.forEach((el) => el.classList.add("d-none"));
-				taxPrices.forEach((el) => el.classList.remove("d-none"));
-			} else {
-				basePrices.forEach((el) => el.classList.remove("d-none"));
-				taxPrices.forEach((el) => el.classList.add("d-none"));
-			}
-		});
-	}
-
-	// Sort Dropdown Navigation Listener
-	const sortDropdown = document.getElementById("sortDropdown");
-	if (sortDropdown) {
-		sortDropdown.addEventListener("change", function () {
-			if (this.value) {
-				window.location.href = this.value;
-			}
-		});
-	}
-
-	// Interactive Map Initialization when Modal Opens
-	let allListingsMapInstance = null;
-	const listingsMapModalEl = document.getElementById("listingsMapModal");
-
-	if (listingsMapModalEl) {
-		listingsMapModalEl.addEventListener("shown.bs.modal", () => {
-			const mapContainer = document.getElementById("allListingsMap");
-			if (!mapContainer || typeof L === "undefined") return;
-
-			if (!allListingsMapInstance) {
-				allListingsMapInstance = L.map("allListingsMap", { scrollWheelZoom: true });
-				L.tileLayer(
-					"https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
-					{
-						attribution:
-							'Tiles &copy; <a href="https://www.esri.com/" target="_blank">Esri</a> &mdash; Source: Esri, USGS, TomTom',
-						maxZoom: 19,
-					}
-				).addTo(allListingsMapInstance);
-
-				const rawListings = <%- JSON.stringify(allListings.map(l => ({
-					id: l._id,
-					title: l.title,
-					location: l.location,
-					country: l.country,
-					price: l.price,
-					rating: l.avgRating || 4.9,
-					image: (l.image && l.image.url) ? l.image.url : '/images/listing-placeholder.jpg',
-					coords: (l.geometry && l.geometry.coordinates && l.geometry.coordinates.length >= 2) ? l.geometry.coordinates : null
-				}))) %>;
-
-				const bounds = [];
-				rawListings.forEach((item) => {
-					let lat = 28.6139;
-					let lng = 77.209;
-					const isDelhi = (item.location || "").toLowerCase().includes("delhi") || (item.country || "").toLowerCase().includes("delhi");
-					const isPlaceholder = item.coords && 
-						Math.abs(Number(item.coords[0]) - 77.209) < 0.005 && 
-						Math.abs(Number(item.coords[1]) - 28.6139) < 0.005 && 
-						!isDelhi;
-
-					if (item.coords && item.coords.length >= 2 && !isPlaceholder) {
-						lng = Number(item.coords[0]) || lng;
-						lat = Number(item.coords[1]) || lat;
-					} else {
-						lat += (Math.random() - 0.5) * 0.15;
-						lng += (Math.random() - 0.5) * 0.15;
-					}
-
-					bounds.push([lat, lng]);
-
-					const priceTagHtml = `<div class="map-price-pill shadow-sm">&#x20B9;${(item.price || 0).toLocaleString("en-IN")}</div>`;
-					const customIcon = L.divIcon({
-						html: priceTagHtml,
-						className: "map-price-marker-wrapper",
-						iconSize: [68, 28],
-						iconAnchor: [34, 14]
-					});
-
-					const popupContent = `
-						<div class="map-popup-card" style="min-width: 180px;">
-							<a href="/listings/${item.id}" class="text-decoration-none text-dark">
-								<img src="${item.image}" alt="${item.title}" class="w-100 rounded-3 mb-2" style="height: 105px; object-fit: cover;" onerror="this.onerror=null;this.src='/images/listing-placeholder.jpg';">
-								<div class="fw-bold small text-truncate mb-1">${item.title}</div>
-								<div class="text-muted small mb-1">${item.location}, ${item.country}</div>
-								<div class="mt-1 d-flex justify-content-between align-items-center">
-									<span class="fw-bold" style="color: var(--navy-900);">&#x20B9;${(item.price || 0).toLocaleString("en-IN")} <span class="fw-normal text-muted small">/ night</span></span>
-									<span class="small fw-semibold"><i class="fa-solid fa-star text-warning"></i> ${Number(item.rating).toFixed(1)}</span>
-								</div>
-							</a>
-						</div>
-					`;
-
-					L.marker([lat, lng], { icon: customIcon })
-						.addTo(allListingsMapInstance)
-						.bindPopup(popupContent, { maxWidth: 220 });
-				});
-
-				if (bounds.length > 0) {
-					allListingsMapInstance.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
-				} else {
-					allListingsMapInstance.setView([20.5937, 78.9629], 5);
-				}
-			} else {
-				allListingsMapInstance.invalidateSize();
-			}
-		});
-	}
-</script>
+<script type="application/json" id="listingsMapData"><%- safeJson(allListings.map((l) => ({
+	id: l._id,
+	title: l.title,
+	location: l.location,
+	country: l.country,
+	price: l.price,
+	rating: l.avgRating || 4.9,
+	image: (l.image && l.image.url) ? l.image.url : '/images/listing-placeholder.jpg',
+	coords: (l.geometry && l.geometry.coordinates && l.geometry.coordinates.length >= 2) ? l.geometry.coordinates : null
+}))) %></script>
+<script nonce="<%= cspNonce || '' %>" src="/js/listings-index.js"></script>

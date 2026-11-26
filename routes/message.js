@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const wrapAsync = require("../utils/wrapAsync");
-const { isLoggedIn, validateSendMessage } = require("../middleware");
+const { isLoggedIn, validateSendMessage, validateInquiry } = require("../middleware");
 const messagesController = require("../controllers/messages");
 
 // GET /messages - Messaging Inbox
@@ -22,6 +22,7 @@ router.post(
 router.post(
 	"/inquiry/:listingId",
 	isLoggedIn,
+	validateInquiry,
 	wrapAsync(messagesController.startInquiry),
 );
 

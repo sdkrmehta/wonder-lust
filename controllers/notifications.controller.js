@@ -1,5 +1,6 @@
 const NotificationService = require("../services/notification.service");
 const ApiResponse = require("../utils/apiResponse");
+const { sanitizeInternalRedirect } = require("../middleware/auth.middleware");
 
 class NotificationsController {
 	/**
@@ -44,7 +45,7 @@ class NotificationsController {
 		}
 
 		if (notification && notification.link) {
-			return res.redirect(notification.link);
+			return res.redirect(sanitizeInternalRedirect(notification.link, "/notifications"));
 		}
 
 		res.redirect("/notifications");

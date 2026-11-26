@@ -190,6 +190,7 @@
 							id="chatComposerForm"
 							class="d-flex align-items-center gap-2"
 						>
+							<input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
 							<input
 								type="text"
 								name="body"
@@ -219,16 +220,4 @@
 	</div>
 </div>
 
-<script>
-	// Auto-scroll message stream to the bottom
-	const stream = document.getElementById("chatMessageStream");
-	if (stream) {
-		stream.scrollTop = stream.scrollHeight;
-	}
-
-	// Focus input
-	const input = document.getElementById("chatMessageInput");
-	if (input) {
-		input.focus();
-	}
-</script>
+<script nonce="<%= cspNonce || '' %>" src="/js/inbox.js"></script>

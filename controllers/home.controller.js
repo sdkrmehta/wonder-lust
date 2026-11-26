@@ -485,7 +485,7 @@ module.exports.handleNewsletter = (req, res) => {
 	const { email } = req.body;
 	const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-	if (!email || !emailRegex.test(email.trim())) {
+	if (typeof email !== "string" || !emailRegex.test(email.trim())) {
 		return res.status(400).json({
 			status: "error",
 			message: "Please provide a valid email address.",

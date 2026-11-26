@@ -224,11 +224,15 @@ class MessagingService {
 		}
 
 		const listing = await Listing.findById(listingId);
-		if (!listing) {
+		if (!listing || listing.status === "archived" || listing.status === "draft") {
 			throw AppError.notFound("Listing not found");
 		}
 
-		if (listing.owner && String(listing.owner) === String(guestUser._id)) {
+		if (!listing.owner) {
+			throw AppError.badRequest("This listing currently has no host assigned");
+		}
+
+		if (String(listing.owner) === String(guestUser._id)) {
 			throw AppError.badRequest("You cannot message yourself about your own listing");
 		}
 
@@ -238,7 +242,7 @@ class MessagingService {
 			listing._id,
 		);
 
-		if (initialMessage && initialMessage.trim()) {
+		if (typeof initialMessage === "string" && initialMessage.trim()) {
 			await this.sendMessage({
 				senderId: guestUser._id,
 				recipientId: listing.owner,
