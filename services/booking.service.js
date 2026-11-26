@@ -89,12 +89,78 @@ class BookingService {
 	}
 
 	/**
+	 * Atomically expire abandoned unpaid pending bookings whose hold window has elapsed.
+	 */
+	static async expireAbandonedPendingBookings({ listingId = null, limit = 100 } = {}) {
+		const Payment = require("../models/payment");
+		let expiredCount = 0;
+		const bookingIds = [];
+
+		for (let i = 0; i < limit; i++) {
+			const now = new Date();
+			const filter = {
+				status: "pending",
+				paymentStatus: "unpaid",
+				expiresAt: { $ne: null, $lte: now },
+			};
+			if (listingId) {
+				filter.listing = listingId;
+			}
+
+			const expired = await Booking.findOneAndUpdate(
+				filter,
+				{
+					$set: {
+						status: "cancelled",
+						expiresAt: null,
+						cancellationReason: "Pending reservation hold expired due to incomplete payment",
+					},
+				},
+				{ new: true },
+			).populate("listing", "title");
+
+			if (!expired) {
+				break;
+			}
+
+			expiredCount += 1;
+			bookingIds.push(expired._id);
+
+			await BookingNightLock.deleteMany({ booking: expired._id });
+			await Payment.updateMany(
+				{ booking: expired._id, status: "pending" },
+				{ $set: { status: "failed" } },
+			);
+
+			try {
+				const NotificationService = require("./notification.service");
+				await NotificationService.createNotification({
+					recipient: expired.user,
+					sender: null,
+					type: "booking_cancelled",
+					title: "Pending Reservation Expired",
+					message: `Your unpaid reservation hold for ${expired.listing ? expired.listing.title : "your selected stay"} expired and the dates were released.`,
+					link: `/bookings/${expired._id}`,
+					metadata: { bookingId: expired._id },
+				});
+			} catch (err) {
+				console.error("[Notification Error - Booking Expired]:", err.message);
+			}
+		}
+
+		return { expiredCount, bookingIds };
+	}
+
+	/**
 	 * Create and persist a new reservation atomically to prevent concurrent double-booking.
 	 */
 	static async createBooking(listingId, bookingData, user) {
 		if (!mongoose.Types.ObjectId.isValid(listingId)) {
 			throw AppError.notFound("Invalid listing ID format");
 		}
+
+		// Clean up any expired pending holds on this listing before checking availability
+		await this.expireAbandonedPendingBookings({ listingId, limit: 25 });
 
 		const listing = await Listing.findById(listingId);
 		if (!listing) {
@@ -143,6 +209,10 @@ class BookingService {
 			env.isProduction || env.PAYMENT_GATEWAY_MODE === "strict"
 				? "pending"
 				: "confirmed";
+		const pendingExpiresAt =
+			initialStatus === "pending"
+				? new Date(Date.now() + env.PENDING_BOOKING_TTL_MS)
+				: null;
 
 		const bookingId = new mongoose.Types.ObjectId();
 		const lockDocs = nights.map((night) => ({
@@ -165,6 +235,7 @@ class BookingService {
 				taxAmount: pricing.taxAmount,
 				totalPrice: pricing.totalPrice,
 				status: initialStatus,
+				expiresAt: pendingExpiresAt,
 			});
 
 		let savedBooking;
@@ -254,10 +325,17 @@ class BookingService {
 		const today = new Date();
 		today.setHours(0, 0, 0, 0);
 
+		const now = new Date();
 		const bookings = await Booking.find({
 			listing: listingId,
-			status: { $in: ["confirmed", "pending"] },
 			checkOut: { $gte: today },
+			$or: [
+				{ status: "confirmed" },
+				{
+					status: "pending",
+					$or: [{ expiresAt: null }, { expiresAt: { $gt: now } }],
+				},
+			],
 		})
 			.select("checkIn checkOut -_id")
 			.lean()
@@ -339,17 +417,14 @@ class BookingService {
 		}
 
 		booking.status = "cancelled";
+		booking.expiresAt = null;
 		await BookingNightLock.deleteMany({ booking: booking._id });
 
 		// Trigger automatic refund if paid
-		try {
-			const PaymentService = require("./payment.service");
-			const refund = await PaymentService.processRefund(bookingId, user);
-			if (refund) {
-				booking.paymentStatus = "refunded";
-			}
-		} catch (e) {
-			console.error("[Booking Cancellation Refund]", e.message);
+		const PaymentService = require("./payment.service");
+		const refund = await PaymentService.processRefund(bookingId, user);
+		if (refund) {
+			booking.paymentStatus = "refunded";
 		}
 
 		await booking.save();

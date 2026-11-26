@@ -64,6 +64,15 @@ const bookingSchema = new Schema(
 			type: Schema.Types.ObjectId,
 			ref: "Payment",
 		},
+		expiresAt: {
+			type: Date,
+			default: null,
+		},
+		cancellationReason: {
+			type: String,
+			trim: true,
+			default: "",
+		},
 	},
 	{ timestamps: true },
 );
@@ -73,6 +82,7 @@ bookingSchema.index({ listing: 1, checkIn: 1, checkOut: 1, status: 1 });
 bookingSchema.index({ listing: 1, status: 1 });
 bookingSchema.index({ user: 1, createdAt: -1 });
 bookingSchema.index({ status: 1, createdAt: -1 });
+bookingSchema.index({ status: 1, paymentStatus: 1, expiresAt: 1 });
 
 const Booking = mongoose.model("Booking", bookingSchema);
 module.exports = Booking;

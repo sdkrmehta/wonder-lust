@@ -13,7 +13,7 @@
 					<p class="text-muted small mb-3">Your booking reference ID: <span class="font-monospace fw-bold text-dark"><%= booking._id %></span></p>
 					
 					<div class="d-flex justify-content-center gap-2 flex-wrap">
-						<% if (booking.payment) { %>
+						<% if (booking.payment && booking.payment.status === 'succeeded') { %>
 							<a href="/payments/receipt/<%= booking.payment._id || booking.payment %>" class="btn btn-sm btn-forest rounded-pill px-3 py-1">
 								<i class="fa-solid fa-file-invoice me-1"></i> Paid &bull; View Tax Invoice &rarr;
 							</a>
@@ -23,12 +23,31 @@
 							</a>
 						<% } %>
 					</div>
+				<% } else if (booking.status === 'pending') { %>
+					<div class="status-icon-circle" style="background-color: #fff3cd; color: #997404;">
+						<i class="fa-solid fa-hourglass-half fa-3x"></i>
+					</div>
+					<h2 class="editorial-title mb-1" style="color: #997404;">Reservation Awaiting Payment</h2>
+					<p class="text-muted small mb-2">Your booking reference ID: <span class="font-monospace fw-bold text-dark"><%= booking._id %></span></p>
+					<% if (booking.expiresAt) { %>
+						<p class="text-muted small mb-3">
+							Dates held until <strong class="text-dark"><%= new Date(booking.expiresAt).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit' }) %> UTC/Local</strong> &mdash; complete payment to confirm your stay.
+						</p>
+					<% } %>
+					<div class="d-flex justify-content-center gap-2 flex-wrap">
+						<a href="/payments/checkout/<%= booking._id %>" class="btn btn-sm btn-forest rounded-pill px-3 py-1 fw-semibold">
+							<i class="fa-solid fa-credit-card me-1"></i> Complete Payment &rarr;
+						</a>
+					</div>
 				<% } else if (booking.status === 'cancelled') { %>
 					<div class="status-icon-circle" style="background-color: var(--color-danger-bg); color: var(--color-danger);">
 						<i class="fa-solid fa-ban fa-3x"></i>
 					</div>
 					<h2 class="editorial-title text-danger mb-1">Reservation Cancelled</h2>
 					<p class="text-muted small mb-3">Reference ID: <span class="font-monospace fw-bold text-dark"><%= booking._id %></span></p>
+					<% if (booking.cancellationReason) { %>
+						<p class="text-muted small mb-2"><%= booking.cancellationReason %></p>
+					<% } %>
 					<% if (booking.paymentStatus === 'refunded') { %>
 						<span class="stamp stamp-cancelled">
 							<i class="fa-solid fa-rotate-left me-1"></i> Payment Refunded
@@ -123,11 +142,11 @@
 						<i class="fa-solid fa-arrow-left me-1"></i> Back to My Trips
 					</a>
 					<div class="d-flex flex-wrap gap-2 w-100 w-sm-auto justify-content-center justify-content-sm-end">
-						<% if (booking.payment) { %>
+						<% if (booking.payment && (booking.payment.status === 'succeeded' || booking.payment.status === 'refunded')) { %>
 							<a href="/payments/receipt/<%= booking.payment._id || booking.payment %>" class="btn btn-forest-outline rounded-pill px-3">
 								<i class="fa-solid fa-file-invoice me-1"></i> Invoice
 							</a>
-						<% } else if (booking.status === 'confirmed' && booking.paymentStatus === 'unpaid') { %>
+						<% } else if ((booking.status === 'confirmed' || booking.status === 'pending') && booking.paymentStatus === 'unpaid') { %>
 							<a href="/payments/checkout/<%= booking._id %>" class="btn btn-forest rounded-pill px-3">
 								<i class="fa-solid fa-credit-card me-1"></i> Pay Now
 							</a>
@@ -135,13 +154,14 @@
 						<button type="button" data-action="print" class="btn btn-outline-secondary rounded-pill px-3">
 							<i class="fa-solid fa-print me-1"></i> Print
 						</button>
-						<% if (booking.status === 'confirmed') { %>
+						<% if (booking.status === 'confirmed' || booking.status === 'pending') { %>
 							<form
 								action="/bookings/<%= booking._id %>/cancel"
 								method="POST"
 								data-confirm="Are you sure you want to cancel this reservation?"
 								class="d-inline"
 							>
+								<input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
 								<button class="btn btn-destructive rounded-pill px-3">
 									Cancel
 								</button>
