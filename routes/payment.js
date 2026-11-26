@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const wrapAsync = require("../utils/wrapAsync");
-const { isLoggedIn, validatePayment } = require("../middleware");
+const { isLoggedIn, validatePayment, validateRazorpayVerify } = require("../middleware");
 const paymentsController = require("../controllers/payments");
 
 // GET /payments/checkout/:bookingId - Render checkout payment form
@@ -13,6 +13,14 @@ router.post(
 	isLoggedIn,
 	validatePayment,
 	wrapAsync(paymentsController.processPayment),
+);
+
+// POST /payments/verify/:bookingId - Verify Razorpay Checkout signature
+router.post(
+	"/verify/:bookingId",
+	isLoggedIn,
+	validateRazorpayVerify,
+	wrapAsync(paymentsController.verifyRazorpay),
 );
 
 // GET /payments/receipt/:id - Render printable invoice & payment receipt

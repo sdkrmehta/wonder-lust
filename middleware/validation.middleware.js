@@ -5,6 +5,7 @@ const {
 	flagReviewSchema,
 	bookingSchema,
 	paymentSchema,
+	razorpayVerifySchema,
 	signupSchema,
 	profileUpdateSchema,
 	passwordChangeSchema,
@@ -71,6 +72,15 @@ module.exports.validateBooking = (req, res, next) => {
 
 module.exports.validatePayment = (req, res, next) => {
 	const { error } = paymentSchema.validate(req.body);
+	if (error) {
+		const errMsg = error.details.map((el) => el.message).join(", ");
+		throw new ExpressError(400, errMsg);
+	}
+	next();
+};
+
+module.exports.validateRazorpayVerify = (req, res, next) => {
+	const { error } = razorpayVerifySchema.validate(req.body);
 	if (error) {
 		const errMsg = error.details.map((el) => el.message).join(", ");
 		throw new ExpressError(400, errMsg);

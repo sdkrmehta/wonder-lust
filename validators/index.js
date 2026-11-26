@@ -5,7 +5,10 @@ const {
 	flagReviewSchema,
 } = require("./review.validator");
 const { bookingSchema } = require("./booking.validator");
-const { paymentSchema } = require("./payment.validator");
+const {
+	paymentSchema,
+	razorpayVerifySchema,
+} = require("./payment.validator");
 const {
 	signupSchema,
 	profileUpdateSchema,
@@ -24,6 +27,7 @@ module.exports = {
 	flagReviewSchema,
 	bookingSchema,
 	paymentSchema,
+	razorpayVerifySchema,
 	signupSchema,
 	profileUpdateSchema,
 	passwordChangeSchema,

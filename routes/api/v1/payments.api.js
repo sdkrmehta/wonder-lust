@@ -3,25 +3,54 @@ const router = express.Router();
 const wrapAsync = require("../../../utils/wrapAsync");
 const ApiResponse = require("../../../utils/apiResponse");
 const PaymentService = require("../../../services/payment.service");
-const { isLoggedIn, validatePayment } = require("../../../middleware");
+const {
+	isLoggedIn,
+	validatePayment,
+	validateRazorpayVerify,
+} = require("../../../middleware");
 
-// POST /api/v1/payments/webhook - Cryptographically signed payment gateway webhook
+// POST /api/v1/payments/webhook - Cryptographically signed payment gateway webhook (Razorpay / Internal)
 router.post(
 	"/webhook",
 	wrapAsync(async (req, res) => {
-		const sig = req.get("x-payment-signature") || req.get("stripe-signature") || "";
+		const sigHeaders = {
+			paymentSignature: req.get("x-payment-signature") || req.get("stripe-signature") || "",
+			razorpaySignature: req.get("x-razorpay-signature") || "",
+			razorpayEventId: req.get("x-razorpay-event-id") || "",
+		};
 		const rawBody = req.rawBody !== undefined ? req.rawBody : JSON.stringify(req.body || {});
-		const result = await PaymentService.processWebhookEvent(rawBody, sig, req.body);
+		const result = await PaymentService.processWebhookEvent(rawBody, sigHeaders, req.body);
 		return ApiResponse.success(
 			res,
 			{
 				paymentId: result.payment._id,
 				orderId: result.payment.orderId,
+				gateway: result.payment.gateway,
 				status: result.payment.status,
 				webhookVerified: result.payment.webhookVerified,
 				idempotent: result.idempotent,
 			},
 			result.idempotent ? "Webhook event already processed" : "Webhook verified and processed",
+		);
+	}),
+);
+
+// POST /api/v1/payments/razorpay/verify - Verify Razorpay Checkout callback signature
+router.post(
+	"/razorpay/verify",
+	isLoggedIn,
+	validateRazorpayVerify,
+	wrapAsync(async (req, res) => {
+		const result = await PaymentService.verifyRazorpayPayment(req.body, req.user);
+		return ApiResponse.success(
+			res,
+			{
+				payment: result.payment,
+				bookingId: result.booking._id,
+				idempotent: result.idempotent,
+				redirectUrl: `/payments/receipt/${result.payment._id}`,
+			},
+			"Razorpay payment verified and confirmed",
 		);
 	}),
 );

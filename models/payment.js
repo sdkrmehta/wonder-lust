@@ -50,6 +50,14 @@ const paymentSchema = new Schema(
 			type: String,
 			default: "wanderlust_pay",
 		},
+		gatewayOrderId: {
+			type: String,
+			default: null,
+		},
+		gatewayPaymentId: {
+			type: String,
+			default: null,
+		},
 		webhookVerified: {
 			type: Boolean,
 			default: false,
@@ -103,6 +111,8 @@ const paymentSchema = new Schema(
 // Indexes for rapid lookups and reporting
 paymentSchema.index({ transactionId: 1 }, { unique: true });
 paymentSchema.index({ orderId: 1 }, { unique: true });
+paymentSchema.index({ gatewayOrderId: 1 }, { sparse: true });
+paymentSchema.index({ gatewayPaymentId: 1 }, { sparse: true });
 paymentSchema.index({ booking: 1 });
 paymentSchema.index({ booking: 1, status: 1 });
 paymentSchema.index({ user: 1, createdAt: -1 });

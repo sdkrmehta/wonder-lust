@@ -34,7 +34,9 @@
 				<div class="checkout-section-card">
 					<div class="d-flex align-items-center justify-content-between mb-3">
 						<h5 class="fw-bold mb-0" style="color: var(--ink-900);">1. Select Payment Method</h5>
-						<span class="stamp stamp-info" style="font-size: 0.7rem;">Simulated Gateway</span>
+						<span class="stamp stamp-info" style="font-size: 0.7rem;">
+							<%= (typeof paymentProvider !== 'undefined' && paymentProvider === 'razorpay') ? 'Razorpay Checkout' : ((typeof paymentGatewayMode !== 'undefined' && paymentGatewayMode === 'strict') ? 'Webhook Gateway' : 'Simulated Gateway') %>
+						</span>
 					</div>
 
 					<div class="method-pill-group d-flex gap-1 mb-4" role="tablist">
@@ -268,6 +270,9 @@
 					</div>
 				</div>
 
+				<!-- Async Payment Status Banner (used during Razorpay Checkout & confirmation polling) -->
+				<div id="paymentStatusAlert" class="alert alert-info d-none mb-3 small" role="status"></div>
+
 				<!-- CTA Pay Button -->
 				<button
 					type="submit"
@@ -357,4 +362,21 @@
 	</div>
 </div>
 
+<script id="checkoutConfigData" type="application/json"><%- safeJson({
+	provider: typeof paymentProvider !== "undefined" ? paymentProvider : "sandbox",
+	gatewayMode: typeof paymentGatewayMode !== "undefined" ? paymentGatewayMode : "sandbox",
+	bookingId: String(booking._id),
+	amount: booking.totalPrice,
+	listingTitle: listing && listing.title ? listing.title : "Wander-Lust Reservation",
+	bookingUrl: `/bookings/${booking._id}`,
+	csrfToken: csrfToken || "",
+	prefill: {
+		name: currUser && currUser.username ? currUser.username : "",
+		email: currUser && currUser.email ? currUser.email : "",
+		contact: currUser && currUser.phone ? currUser.phone : "",
+	},
+}) %></script>
+<% if (typeof paymentProvider !== "undefined" && paymentProvider === "razorpay") { %>
+	<script nonce="<%= cspNonce || '' %>" src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<% } %>
 <script nonce="<%= cspNonce || '' %>" src="/js/checkout.js"></script>

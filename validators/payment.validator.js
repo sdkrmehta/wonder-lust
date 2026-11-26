@@ -37,6 +37,17 @@ const paymentSchema = Joi.object({
 	}).optional(),
 });
 
+const razorpayVerifySchema = Joi.object({
+	bookingId: Joi.string().optional(),
+	razorpay_order_id: Joi.string().trim().min(5).max(120).required(),
+	razorpay_payment_id: Joi.string().trim().min(5).max(120).required(),
+	razorpay_signature: Joi.string()
+		.trim()
+		.pattern(/^[a-f0-9]{64}$/i)
+		.required(),
+});
+
 module.exports = {
 	paymentSchema,
+	razorpayVerifySchema,
 };

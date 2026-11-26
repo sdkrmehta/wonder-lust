@@ -1,5 +1,10 @@
 const crypto = require("crypto");
 const mongoose = require("mongoose");
+const Razorpay = require("razorpay");
+const {
+	validatePaymentVerification,
+	validateWebhookSignature,
+} = require("razorpay/dist/utils/razorpay-utils");
 const Payment = require("../models/payment");
 const Booking = require("../models/booking");
 const BookingNightLock = require("../models/bookingNightLock");
@@ -8,6 +13,37 @@ const AppError = require("../utils/AppError");
 const env = require("../config/env");
 
 class PaymentService {
+	static _getRazorpayClient() {
+		if (!env.RAZORPAY_KEY_ID || !env.RAZORPAY_KEY_SECRET) {
+			throw new AppError(503, "Razorpay gateway credentials are not configured.");
+		}
+		const client = new Razorpay({
+			key_id: env.RAZORPAY_KEY_ID,
+			key_secret: env.RAZORPAY_KEY_SECRET,
+		});
+		if (client.api && client.api.rq && client.api.rq.defaults) {
+			client.api.rq.defaults.timeout = 10000;
+			if (env.RAZORPAY_API_BASE && env.RAZORPAY_API_BASE !== "https://api.razorpay.com") {
+				client.api.rq.defaults.baseURL = env.RAZORPAY_API_BASE;
+			}
+		}
+		return client;
+	}
+
+	static _verifyTimingSafeHex(expectedHex, providedHex) {
+		if (typeof expectedHex !== "string" || typeof providedHex !== "string") {
+			return false;
+		}
+		if (!/^[a-f0-9]+$/i.test(expectedHex) || !/^[a-f0-9]+$/i.test(providedHex)) {
+			return false;
+		}
+		const expectedBuf = Buffer.from(expectedHex.toLowerCase(), "hex");
+		const providedBuf = Buffer.from(providedHex.toLowerCase(), "hex");
+		if (expectedBuf.length === 0 || expectedBuf.length !== providedBuf.length) {
+			return false;
+		}
+		return crypto.timingSafeEqual(providedBuf, expectedBuf);
+	}
 	/**
 	 * Detect card brand from card number digits.
 	 */
@@ -41,6 +77,21 @@ class PaymentService {
 
 		if (booking.status === "cancelled") {
 			throw AppError.badRequest("Cannot process payment for a cancelled booking");
+		}
+
+		// Reject expired unpaid pending holds and clean up their locks immediately
+		if (
+			booking.status === "pending" &&
+			booking.paymentStatus === "unpaid" &&
+			booking.expiresAt &&
+			booking.expiresAt <= new Date()
+		) {
+			const BookingService = require("./booking.service");
+			await BookingService.expireAbandonedPendingBookings({
+				listingId: booking.listing?._id || booking.listing,
+				limit: 10,
+			});
+			throw AppError.badRequest("This pending reservation hold has expired. Please book again.");
 		}
 
 		// Check if already paid
@@ -106,10 +157,93 @@ class PaymentService {
 			country: rawBilling.country || "India",
 		};
 
+		const provider = env.PAYMENT_PROVIDER;
 		const requireGatewayConfirmation =
 			env.isProduction ||
 			env.PAYMENT_GATEWAY_MODE === "strict" ||
+			provider === "razorpay" ||
 			paymentData.requireWebhookConfirmation === true;
+
+		if (provider === "razorpay") {
+			if (!env.RAZORPAY_KEY_ID || !env.RAZORPAY_KEY_SECRET) {
+				throw new AppError(503, "Razorpay gateway credentials are not configured.");
+			}
+			if (requireGatewayConfirmation && !env.RAZORPAY_WEBHOOK_SECRET) {
+				throw new AppError(503, "Razorpay webhook secret is not configured.");
+			}
+
+			const rpClient = this._getRazorpayClient();
+			const amountPaise = Math.round(booking.totalPrice * 100);
+			let rpOrder;
+			try {
+				rpOrder = await rpClient.orders.create({
+					amount: amountPaise,
+					currency: "INR",
+					receipt: receiptNumber,
+					notes: {
+						bookingId: String(booking._id),
+						listingId: String(booking.listing?._id || booking.listing),
+						userId: String(user._id),
+						preferredMethod: paymentMethod,
+					},
+				});
+			} catch (err) {
+				const gatewayMsg =
+					err?.error?.description || err?.message || "Failed to initialize Razorpay order";
+				throw new AppError(502, `Payment gateway error: ${gatewayMsg}`);
+			}
+
+			if (!rpOrder || !rpOrder.id) {
+				throw new AppError(502, "Payment gateway returned an invalid order response");
+			}
+
+			await Payment.updateMany(
+				{ booking: booking._id, status: "pending" },
+				{ status: "failed" },
+			);
+
+			const payment = new Payment({
+				booking: booking._id,
+				user: user._id,
+				transactionId,
+				orderId: rpOrder.id,
+				gatewayOrderId: rpOrder.id,
+				receiptNumber,
+				amount: booking.totalPrice,
+				currency: rpOrder.currency || "INR",
+				paymentMethod,
+				status: "pending",
+				gateway: "razorpay",
+				webhookVerified: false,
+				cardDetails,
+				upiDetails,
+				netbankingDetails,
+				billingDetails,
+			});
+			await payment.save();
+
+			booking.payment = payment._id;
+			booking.paymentStatus = "unpaid";
+			booking.status = "pending";
+			await booking.save();
+
+			const populated = await Payment.findById(payment._id)
+				.populate({
+					path: "booking",
+					populate: { path: "listing" },
+				})
+				.populate("user", "username email");
+
+			const responseObj = populated.toObject();
+			responseObj.razorpayOrder = {
+				keyId: env.RAZORPAY_KEY_ID,
+				orderId: rpOrder.id,
+				amountPaise: rpOrder.amount,
+				currency: rpOrder.currency || "INR",
+				receipt: receiptNumber,
+			};
+			return responseObj;
+		}
 
 		if (
 			requireGatewayConfirmation &&
@@ -168,6 +302,7 @@ class PaymentService {
 		booking.payment = payment._id;
 		booking.paymentStatus = "paid";
 		booking.status = "confirmed";
+		booking.expiresAt = null;
 		await booking.save();
 
 		await this._sendPaymentSuccessNotifications(booking, payment, user._id, receiptNumber);
@@ -216,6 +351,118 @@ class PaymentService {
 		} catch (err) {
 			console.error("[Notification Error - Payment Created]:", err.message);
 		}
+	}
+
+	/**
+	 * Verify frontend Razorpay Checkout signature (`HMAC-SHA256(order_id + "|" + payment_id, key_secret)`).
+	 */
+	static async verifyRazorpayPayment(verificationData = {}, user) {
+		if (!env.RAZORPAY_KEY_SECRET) {
+			throw new AppError(503, "Razorpay secret key is not configured.");
+		}
+
+		const { bookingId, razorpay_order_id, razorpay_payment_id, razorpay_signature } =
+			verificationData;
+		if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+			throw AppError.badRequest("Missing Razorpay payment verification parameters");
+		}
+
+		const payment = await Payment.findOne({
+			$or: [{ gatewayOrderId: razorpay_order_id }, { orderId: razorpay_order_id }],
+		});
+		if (!payment) {
+			throw AppError.notFound("Referenced Razorpay payment order not found");
+		}
+
+		if (user && String(payment.user) !== String(user._id)) {
+			throw AppError.forbidden("You are not authorized to verify this payment");
+		}
+		if (bookingId && String(payment.booking) !== String(bookingId)) {
+			throw AppError.badRequest("Payment order does not belong to the requested booking");
+		}
+
+		const expectedSig = crypto
+			.createHmac("sha256", env.RAZORPAY_KEY_SECRET)
+			.update(`${razorpay_order_id}|${razorpay_payment_id}`)
+			.digest("hex");
+		const sdkValid = validatePaymentVerification(
+			{ order_id: razorpay_order_id, payment_id: razorpay_payment_id },
+			razorpay_signature,
+			env.RAZORPAY_KEY_SECRET,
+		);
+		if (!sdkValid || !this._verifyTimingSafeHex(expectedSig, razorpay_signature)) {
+			throw new AppError(401, "Invalid Razorpay payment signature");
+		}
+
+		const booking = await Booking.findById(payment.booking).populate("listing");
+		if (!booking) {
+			throw AppError.notFound("Associated booking not found");
+		}
+
+		if (payment.status === "succeeded") {
+			const populatedAlready = await this.getPaymentById(payment._id, user);
+			return { payment: populatedAlready, booking, idempotent: true };
+		}
+		if (payment.status !== "pending") {
+			throw AppError.badRequest(`Cannot confirm payment in state '${payment.status}'`);
+		}
+		if (booking.status === "cancelled") {
+			throw AppError.badRequest("Booking has already been cancelled");
+		}
+		if (booking.paymentStatus === "paid" && String(booking.payment) !== String(payment._id)) {
+			payment.status = "failed";
+			await payment.save();
+			throw AppError.badRequest("Booking has already been paid by a newer order");
+		}
+
+		payment.status = "succeeded";
+		payment.gatewayPaymentId = razorpay_payment_id;
+		payment.transactionId = razorpay_payment_id;
+		payment.gatewaySignatureVerifiedAt = new Date();
+		await payment.save();
+
+		booking.payment = payment._id;
+		booking.paymentStatus = "paid";
+		booking.status = "confirmed";
+		booking.expiresAt = null;
+		await booking.save();
+
+		await this._sendPaymentSuccessNotifications(
+			booking,
+			payment,
+			payment.user,
+			payment.receiptNumber,
+		);
+
+		const populated = await this.getPaymentById(payment._id, user);
+		return { payment: populated, booking, idempotent: false };
+	}
+
+	/**
+	 * Verify incoming Razorpay webhook signature (`X-Razorpay-Signature`) over raw request body.
+	 */
+	static verifyRazorpayWebhookSignature(rawBody, signatureHeader) {
+		const secret = env.RAZORPAY_WEBHOOK_SECRET;
+		if (!secret) {
+			throw new AppError(503, "Razorpay webhook secret is not configured");
+		}
+		if (!signatureHeader || typeof signatureHeader !== "string") {
+			throw new AppError(401, "Missing Razorpay webhook signature header");
+		}
+		const rawStr = Buffer.isBuffer(rawBody)
+			? rawBody.toString("utf8")
+			: typeof rawBody === "string"
+				? rawBody
+				: JSON.stringify(rawBody || {});
+		const expectedHex = crypto
+			.createHmac("sha256", secret)
+			.update(rawStr)
+			.digest("hex");
+		const sdkValid = validateWebhookSignature(rawStr, signatureHeader, secret);
+		if (!sdkValid || !this._verifyTimingSafeHex(expectedHex, signatureHeader.trim())) {
+			throw new AppError(401, "Invalid Razorpay webhook signature");
+		}
+		return true;
 	}
 
 	/**
@@ -286,10 +533,42 @@ class PaymentService {
 	}
 
 	/**
-	 * Authenticate and process payment gateway webhook events idempotently.
+	 * Authenticate and process payment gateway webhook events idempotently
+	 * (supports Razorpay X-Razorpay-Signature events and internal X-Payment-Signature events).
 	 */
-	static async processWebhookEvent(rawBody, signatureHeader, parsedBody = null) {
-		this.verifyWebhookSignature(rawBody, signatureHeader);
+	static async processWebhookEvent(rawBody, signatureOrHeaders, parsedBody = null) {
+		const headersObj =
+			typeof signatureOrHeaders === "object" && signatureOrHeaders !== null
+				? signatureOrHeaders
+				: { paymentSignature: signatureOrHeaders };
+
+		if (headersObj.razorpaySignature !== undefined && headersObj.razorpaySignature !== "") {
+			return await this._processRazorpayWebhookEvent(
+				rawBody,
+				headersObj.razorpaySignature,
+				headersObj.razorpayEventId || null,
+				parsedBody,
+			);
+		}
+
+		// If caller sent Razorpay payload shape (`event` + `payload`) without X-Razorpay-Signature
+		// while Razorpay is active and no internal signature provided, enforce Razorpay verification
+		if (
+			!headersObj.paymentSignature &&
+			parsedBody &&
+			typeof parsedBody === "object" &&
+			typeof parsedBody.event === "string" &&
+			env.PAYMENT_PROVIDER === "razorpay"
+		) {
+			return await this._processRazorpayWebhookEvent(
+				rawBody,
+				"",
+				headersObj.razorpayEventId || null,
+				parsedBody,
+			);
+		}
+
+		this.verifyWebhookSignature(rawBody, headersObj.paymentSignature || "");
 
 		let event = parsedBody;
 		if (!event || typeof event !== "object") {
@@ -346,6 +625,7 @@ class PaymentService {
 			booking.payment = payment._id;
 			booking.paymentStatus = "paid";
 			booking.status = "confirmed";
+			booking.expiresAt = null;
 			await booking.save();
 
 			await this._sendPaymentSuccessNotifications(
@@ -372,6 +652,7 @@ class PaymentService {
 
 			booking.status = "cancelled";
 			booking.paymentStatus = "unpaid";
+			booking.expiresAt = null;
 			await booking.save();
 			await BookingNightLock.deleteMany({ booking: booking._id });
 			return { payment, idempotent: false };
@@ -396,12 +677,163 @@ class PaymentService {
 
 			booking.status = "cancelled";
 			booking.paymentStatus = "refunded";
+			booking.expiresAt = null;
 			await booking.save();
 			await BookingNightLock.deleteMany({ booking: booking._id });
 			return { payment, idempotent: false };
 		}
 
 		throw AppError.badRequest(`Unsupported webhook eventType: ${eventType}`);
+	}
+
+	static async _processRazorpayWebhookEvent(rawBody, signatureHeader, headerEventId, parsedBody = null) {
+		this.verifyRazorpayWebhookSignature(rawBody, signatureHeader);
+
+		let body = parsedBody;
+		if (!body || typeof body !== "object") {
+			try {
+				const str = Buffer.isBuffer(rawBody) ? rawBody.toString("utf8") : String(rawBody || "{}");
+				body = JSON.parse(str);
+			} catch {
+				throw AppError.badRequest("Invalid Razorpay webhook JSON payload");
+			}
+		}
+
+		const eventName = body.event;
+		const rpPayment = body.payload?.payment?.entity;
+		const rpOrder = body.payload?.order?.entity;
+		const rpRefund = body.payload?.refund?.entity;
+
+		const gatewayOrderId =
+			rpPayment?.order_id || rpOrder?.id || rpRefund?.payment_id || null;
+		const gatewayPaymentId = rpPayment?.id || rpRefund?.payment_id || null;
+		const eventId =
+			headerEventId ||
+			(eventName
+				? `${eventName}:${rpRefund?.id || rpPayment?.id || rpOrder?.id || "evt"}:${body.created_at || ""}`
+				: null);
+
+		if (!eventName || (!gatewayOrderId && !gatewayPaymentId)) {
+			throw AppError.badRequest("Razorpay webhook missing event or order/payment identifier");
+		}
+
+		const payment = await Payment.findOne({
+			$or: [
+				...(gatewayOrderId ? [{ gatewayOrderId }, { orderId: gatewayOrderId }] : []),
+				...(gatewayPaymentId ? [{ gatewayPaymentId }, { transactionId: gatewayPaymentId }] : []),
+			],
+		});
+		if (!payment) {
+			throw AppError.notFound("Referenced payment order not found");
+		}
+
+		if (eventId && payment.webhookEventId === String(eventId)) {
+			return { payment, idempotent: true };
+		}
+
+		const booking = await Booking.findById(payment.booking).populate("listing");
+		if (!booking) {
+			throw AppError.notFound("Associated booking not found");
+		}
+
+		if (eventName === "payment.captured" || eventName === "order.paid") {
+			if (payment.status === "succeeded") {
+				payment.webhookVerified = true;
+				payment.webhookEventId = eventId || payment.webhookEventId;
+				await payment.save();
+				return { payment, idempotent: true };
+			}
+			if (payment.status !== "pending") {
+				throw AppError.badRequest(`Cannot confirm payment in state '${payment.status}'`);
+			}
+			if (booking.paymentStatus === "paid" && String(booking.payment) !== String(payment._id)) {
+				payment.status = "failed";
+				await payment.save();
+				throw AppError.badRequest("Booking has already been paid by a newer order");
+			}
+			const entityAmountPaise = rpPayment?.amount ?? rpOrder?.amount_paid ?? rpOrder?.amount;
+			const expectedPaise = Math.round(payment.amount * 100);
+			if (entityAmountPaise !== undefined && Number(entityAmountPaise) !== expectedPaise) {
+				throw AppError.badRequest("Razorpay webhook amount mismatch");
+			}
+
+			payment.status = "succeeded";
+			if (gatewayPaymentId) {
+				payment.gatewayPaymentId = gatewayPaymentId;
+				payment.transactionId = gatewayPaymentId;
+			}
+			payment.webhookVerified = true;
+			payment.webhookEventId = eventId;
+			payment.gatewaySignatureVerifiedAt = new Date();
+			await payment.save();
+
+			booking.payment = payment._id;
+			booking.paymentStatus = "paid";
+			booking.status = "confirmed";
+			booking.expiresAt = null;
+			await booking.save();
+
+			await this._sendPaymentSuccessNotifications(
+				booking,
+				payment,
+				payment.user,
+				payment.receiptNumber,
+			);
+			return { payment, idempotent: false };
+		}
+
+		if (eventName === "payment.failed") {
+			if (payment.status === "failed") {
+				return { payment, idempotent: true };
+			}
+			if (payment.status === "succeeded") {
+				throw AppError.badRequest("Cannot fail an already succeeded payment");
+			}
+			payment.status = "failed";
+			if (gatewayPaymentId) {
+				payment.gatewayPaymentId = gatewayPaymentId;
+			}
+			payment.webhookVerified = true;
+			payment.webhookEventId = eventId;
+			payment.gatewaySignatureVerifiedAt = new Date();
+			await payment.save();
+
+			booking.status = "cancelled";
+			booking.paymentStatus = "unpaid";
+			booking.expiresAt = null;
+			booking.cancellationReason = rpPayment?.error_description || "Payment failed at Razorpay gateway";
+			await booking.save();
+			await BookingNightLock.deleteMany({ booking: booking._id });
+			return { payment, idempotent: false };
+		}
+
+		if (eventName === "refund.processed" || eventName === "refund.created") {
+			if (payment.status === "refunded") {
+				return { payment, idempotent: true };
+			}
+			if (payment.status !== "succeeded") {
+				throw AppError.badRequest("Only succeeded payments can be refunded");
+			}
+			payment.status = "refunded";
+			payment.webhookVerified = true;
+			payment.webhookEventId = eventId;
+			payment.gatewaySignatureVerifiedAt = new Date();
+			payment.refundId = rpRefund?.id || payment.refundId || `rfnd_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
+			payment.refundAmount =
+				rpRefund?.amount !== undefined ? Math.round(rpRefund.amount / 100) : payment.amount;
+			payment.refundReason = rpRefund?.notes?.reason || "Refunded via Razorpay webhook";
+			payment.refundedAt = new Date();
+			await payment.save();
+
+			booking.status = "cancelled";
+			booking.paymentStatus = "refunded";
+			booking.expiresAt = null;
+			await booking.save();
+			await BookingNightLock.deleteMany({ booking: booking._id });
+			return { payment, idempotent: false };
+		}
+
+		throw AppError.badRequest(`Unsupported Razorpay webhook event: ${eventName}`);
 	}
 
 	/**
@@ -438,8 +870,37 @@ class PaymentService {
 			return null; // No succeeded payment to refund
 		}
 
+		let gatewayRefundId = null;
+		if (payment.gateway === "razorpay") {
+			if (!payment.gatewayPaymentId) {
+				throw AppError.badRequest(
+					"Razorpay payment ID is missing on payment record; cannot execute gateway refund",
+				);
+			}
+			const rpClient = this._getRazorpayClient();
+			let rpRefund;
+			try {
+				rpRefund = await rpClient.payments.refund(payment.gatewayPaymentId, {
+					amount: Math.round(payment.amount * 100),
+					notes: {
+						bookingId: String(booking._id),
+						reason,
+					},
+				});
+			} catch (err) {
+				const gatewayMsg =
+					err?.error?.description || err?.message || "Razorpay refund API request failed";
+				throw new AppError(502, `Payment gateway refund failed: ${gatewayMsg}`);
+			}
+			gatewayRefundId = rpRefund?.id;
+			if (!gatewayRefundId) {
+				throw new AppError(502, "Razorpay refund API did not return a refund ID");
+			}
+		}
+
 		payment.status = "refunded";
-		payment.refundId = `rfnd_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
+		payment.refundId =
+			gatewayRefundId || `rfnd_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
 		payment.refundAmount = payment.amount;
 		payment.refundReason = reason;
 		payment.refundedAt = new Date();
@@ -448,6 +909,7 @@ class PaymentService {
 		await Booking.findByIdAndUpdate(bookingId, {
 			status: "cancelled",
 			paymentStatus: "refunded",
+			expiresAt: null,
 		});
 		await BookingNightLock.deleteMany({ booking: booking._id });
 
@@ -520,6 +982,7 @@ class PaymentService {
 		}
 
 		const payment = await Payment.findOne({ booking: bookingId })
+			.sort({ createdAt: -1 })
 			.populate({
 				path: "booking",
 				populate: { path: "listing" },
