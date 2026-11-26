@@ -121,7 +121,7 @@ const paymentGatewayMode =
 const requestedProvider = String(process.env.PAYMENT_PROVIDER || "").trim().toLowerCase();
 const paymentProvider = requestedProvider
 	? requestedProvider
-	: razorpayKeyId && razorpayKeySecret
+	: (isProduction || paymentGatewayMode === "strict") && razorpayKeyId && razorpayKeySecret
 		? "razorpay"
 		: isProduction || paymentGatewayMode === "strict"
 			? "internal"

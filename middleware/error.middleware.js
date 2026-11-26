@@ -22,7 +22,7 @@ function errorHandler(err, req, res, next) {
 	}
 
 	const safeMessage =
-		statusCode >= 500 && env.isProduction
+		statusCode >= 500 && env.isProduction && !(statusCode === 503 && err.isOperational)
 			? "Internal server error. Please try again later."
 			: message;
 	const safeErrors = statusCode >= 500 && env.isProduction ? null : err.errors || null;

@@ -32,11 +32,21 @@ module.exports.renderCheckout = async (req, res) => {
 			return res.redirect(`/payments/receipt/${paymentId}`);
 		}
 
+		const gatewayConfigured =
+			env.PAYMENT_PROVIDER === "razorpay"
+				? Boolean(env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET)
+				: env.PAYMENT_PROVIDER === "internal" ||
+						env.isProduction ||
+						env.PAYMENT_GATEWAY_MODE === "strict"
+					? env.PAYMENT_WEBHOOK_SECRET.length >= 32
+					: true;
+
 		res.render("payments/checkout.ejs", {
 			booking,
 			listing: booking.listing,
 			paymentProvider: env.PAYMENT_PROVIDER,
 			paymentGatewayMode: env.PAYMENT_GATEWAY_MODE,
+			gatewayConfigured,
 		});
 	} catch (err) {
 		req.flash("error", err.message || "Unable to load checkout page.");

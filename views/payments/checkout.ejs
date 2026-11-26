@@ -270,16 +270,26 @@
 					</div>
 				</div>
 
+				<% const isGatewayReady = (typeof gatewayConfigured === 'undefined') ? true : Boolean(gatewayConfigured); %>
 				<!-- Async Payment Status Banner (used during Razorpay Checkout & confirmation polling) -->
-				<div id="paymentStatusAlert" class="alert alert-info d-none mb-3 small" role="status"></div>
+				<div
+					id="paymentStatusAlert"
+					class="alert <%= isGatewayReady ? 'alert-info d-none' : 'alert-warning' %> mb-3 small"
+					role="status"
+				><% if (!isGatewayReady) { %><% if (typeof paymentProvider !== 'undefined' && paymentProvider === 'razorpay') { %>Razorpay checkout is currently disabled because <code>RAZORPAY_KEY_ID</code> or <code>RAZORPAY_KEY_SECRET</code> is missing in the server environment.<% } else { %>Payment checkout is currently disabled because webhook verification credentials are not configured in the server environment.<% } %><% } %></div>
 
 				<!-- CTA Pay Button -->
 				<button
 					type="submit"
 					class="btn btn-forest w-100 rounded-pill py-3 fw-bold fs-5 shadow-sm"
 					id="submitPaymentBtn"
+					<%= isGatewayReady ? '' : 'disabled' %>
 				>
-					<i class="fa-solid fa-lock me-2"></i>Pay &#x20B9;<%= booking.totalPrice.toLocaleString("en-IN") %>
+					<% if (isGatewayReady) { %>
+						<i class="fa-solid fa-lock me-2"></i>Pay &#x20B9;<%= booking.totalPrice.toLocaleString("en-IN") %>
+					<% } else { %>
+						<i class="fa-solid fa-triangle-exclamation me-2"></i>Payment Gateway Not Configured
+					<% } %>
 				</button>
 				<p class="text-center text-muted small mt-2">
 					By clicking Pay, you agree to the Wander-Lust Guest Refund Policy and Terms of Service.

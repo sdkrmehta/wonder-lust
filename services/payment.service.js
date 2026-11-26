@@ -168,9 +168,6 @@ class PaymentService {
 			if (!env.RAZORPAY_KEY_ID || !env.RAZORPAY_KEY_SECRET) {
 				throw new AppError(503, "Razorpay gateway credentials are not configured.");
 			}
-			if (requireGatewayConfirmation && !env.RAZORPAY_WEBHOOK_SECRET) {
-				throw new AppError(503, "Razorpay webhook secret is not configured.");
-			}
 
 			const rpClient = this._getRazorpayClient();
 			const amountPaise = Math.round(booking.totalPrice * 100);
