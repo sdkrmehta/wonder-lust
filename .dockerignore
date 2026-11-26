@@ -24,6 +24,9 @@ coverage
 .gemini
 scratch
 
+# TLS Private Keys & Certificates (mounted at runtime, never baked into image)
+nginx/certs
+
 # Local Media Temp Files
 uploads/tmp
 uploads/*.tmp
