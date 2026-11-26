@@ -81,8 +81,8 @@ if (isProduction) {
 		);
 	}
 	if (paymentGatewayMode === "strict" && paymentWebhookSecret.length < 32) {
-		throw new Error(
-			"[CONFIG FATAL] PAYMENT_WEBHOOK_SECRET (>= 32 chars) must be configured when PAYMENT_GATEWAY_MODE=strict in production.",
+		console.warn(
+			"[CONFIG WARNING] PAYMENT_WEBHOOK_SECRET (< 32 chars or unset) in production strict mode: server will boot, while payment checkout and webhooks remain disabled (HTTP 503) until configured.",
 		);
 	}
 }
