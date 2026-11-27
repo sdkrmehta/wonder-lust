@@ -382,29 +382,36 @@
 		let lastScrollY = window.scrollY || window.pageYOffset;
 		let ticking = false;
 
-		function handleScrollTransition() {
+		function getHeaderHeight() {
+			return header ? Math.ceil(header.getBoundingClientRect().height) : 76;
+		}
+
+		function handleScrollTransition(isInitial = false) {
 			const scrollY = window.scrollY || window.pageYOffset;
 			const isHomeNav = header && header.classList.contains("navbar-home-transparent");
 			const primaryExpanded = document.querySelector(".expanded-search-container");
+			const headerBottom = getHeaderHeight();
 			const scrollDiff = scrollY - lastScrollY;
-			const isScrollingDown = scrollDiff > 2;
+			const isScrollingDown = isInitial === true ? scrollY > 0 : scrollDiff > 2;
 			const isScrollingUp = scrollDiff < -2;
 
-			// Check if user has scrolled past the expanded search bar or header threshold
+			// Dock right as expanded search reaches the header bottom on all pages (/home, /listings)
 			let isPastSearch = false;
 			if (primaryExpanded) {
 				const rect = primaryExpanded.getBoundingClientRect();
-				isPastSearch = rect.top <= 75;
+				isPastSearch = rect.top <= headerBottom;
 			} else {
-				isPastSearch = scrollY > 75;
+				isPastSearch = scrollY > headerBottom;
 			}
 
-			// State A: Near or at the top of the page (within top 80px)
-			if (scrollY <= 80) {
+			const isAtExpandedRest = primaryExpanded ? !isPastSearch : scrollY <= 80;
+
+			// State A: Expanded search is visibly below header -> nav links visible, expanded bar active
+			if (isAtExpandedRest) {
 				if (header) {
 					// Make navigation options (Home, Explore Destinations, Hotels, Experiences, About Us, Contact) visible
 					header.classList.remove("search-docked");
-					if (isHomeNav) {
+					if (isHomeNav && scrollY <= 30) {
 						header.classList.remove("navbar-scrolled");
 					}
 				}
@@ -413,7 +420,7 @@
 				}
 				closeSearchOverlay();
 			}
-			// State B: Scrolled down past search bar AND scrolling DOWN
+			// State B: Scrolled down past search bar AND scrolling DOWN -> dock compact search pill
 			else if (isPastSearch && isScrollingDown) {
 				if (header) {
 					header.classList.add("search-docked");
@@ -459,7 +466,7 @@
 			"scroll",
 			() => {
 				if (!ticking) {
-					window.requestAnimationFrame(handleScrollTransition);
+					window.requestAnimationFrame(() => handleScrollTransition(false));
 					ticking = true;
 				}
 			},
@@ -471,9 +478,10 @@
 			expandedContainers.forEach((container) => {
 				const observer = new IntersectionObserver(
 					(entries) => {
+						const headerBottom = getHeaderHeight();
 						entries.forEach((entry) => {
-							if (entry.isIntersecting && entry.boundingClientRect.top >= 50) {
-								if (header && window.scrollY <= 100) {
+							if (entry.isIntersecting && entry.boundingClientRect.top > headerBottom) {
+								if (header) {
 									header.classList.remove("search-docked");
 								}
 								container.classList.remove("search-bar-scrolled-out");
@@ -482,7 +490,7 @@
 					},
 					{
 						threshold: [0, 0.2, 0.8],
-						rootMargin: "-60px 0px 0px 0px",
+						rootMargin: "-76px 0px 0px 0px",
 					},
 				);
 				observer.observe(container);
@@ -490,7 +498,7 @@
 		}
 
 		// Initial evaluation on DOM load
-		handleScrollTransition();
+		handleScrollTransition(true);
 
 		// ----------------------------------------------------------------------
 		// 7. Compact Search Pill Click Interaction (Reopens Expanded Overlay)
@@ -500,10 +508,10 @@
 			searchOverlay.classList.add("active");
 			if (searchBackdrop) searchBackdrop.classList.remove("d-none");
 
-			// Focus the destination input in the dropdown form
+			// Focus the destination input in the dropdown form without jumping scroll position
 			const overlayInput = searchOverlay.querySelector(".destination-input");
 			if (overlayInput) {
-				setTimeout(() => overlayInput.focus(), 150);
+				setTimeout(() => overlayInput.focus({ preventScroll: true }), 150);
 			}
 		}
 

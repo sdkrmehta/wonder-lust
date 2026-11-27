@@ -104,7 +104,7 @@
 html {
 	font-size: 16px;
 	scroll-behavior: smooth;
-	overflow-x: hidden;
+	overflow-x: clip;
 	max-width: 100%;
 	-webkit-text-size-adjust: 100%;
 	text-size-adjust: 100%;
@@ -117,7 +117,7 @@ body {
 	display: flex;
 	flex-direction: column;
 	min-height: 100vh;
-	overflow-x: hidden;
+	overflow-x: clip;
 	max-width: 100%;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
@@ -676,6 +676,10 @@ main.container {
 	background-color: rgba(16, 42, 67, 0.97) !important;
 	border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
 	box-shadow: 0 4px 24px rgba(16, 42, 67, 0.22) !important;
+}
+
+.site-header.fixed-top:not(.navbar-home-transparent) ~ #mainContent {
+	padding-top: 4.75rem;
 }
 
 /* Homepage Initial Transparent Header */

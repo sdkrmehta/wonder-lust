@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const fs = require("fs");
 const express = require("express");
 const path = require("path");
 const compression = require("compression");
@@ -143,6 +144,13 @@ app.locals.searchQuery = "";
 app.locals.filters = {};
 app.locals.csrfToken = "";
 app.locals.cspNonce = "";
+const assetHash = crypto.createHash("sha256");
+for (const assetRel of ["public/css/style.css", "public/css/rating.css", "public/js/script.js", "public/js/search.js"]) {
+	try {
+		assetHash.update(fs.readFileSync(path.join(__dirname, assetRel)));
+	} catch {}
+}
+app.locals.assetVersion = assetHash.digest("hex").slice(0, 10);
 app.locals.escapeHtml = function escapeHtml(val) {
 	return String(val ?? "")
 		.replace(/&/g, "&amp;")
