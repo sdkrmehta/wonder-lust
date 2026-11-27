@@ -28,7 +28,7 @@ const homeController = require("./controllers/home.controller");
 const { createHelmetConfig, createCorsConfig, apiLimiter, newsletterLimiter } = require("./config/security");
 const { sanitizeInput } = require("./middleware/sanitize.middleware");
 const { csrfProtection } = require("./middleware/csrf.middleware");
-const { isAuthorizedHealthCaller } = require("./middleware/auth.middleware");
+const { isAuthorizedHealthCaller, isJsonOrBackgroundRequest } = require("./middleware/auth.middleware");
 const { notFoundHandler, errorHandler } = require("./middleware/error.middleware");
 const { getConnectionState } = require("./config/database");
 const { getRateLimitStoreInfo } = require("./config/rateLimitStore");
@@ -120,7 +120,7 @@ app.use((req, res, next) => {
 		return req.logout((err) => {
 			if (err) return next(err);
 			delete req.session.userSessionVersion;
-			if (req.originalUrl.startsWith("/api/") || req.xhr) {
+			if (isJsonOrBackgroundRequest(req)) {
 				return res.status(401).json({ status: "fail", message: "Session expired due to password change" });
 			}
 			req.flash("error", "Your session expired after a password change. Please log in again.");
@@ -162,9 +162,18 @@ app.locals.safeJson = function safeJson(val) {
 
 // Template Locals Middleware
 app.use((req, res, next) => {
+	if (
+		req.path === "/health" ||
+		req.path === "/ready" ||
+		req.path === "/notifications/unread-count" ||
+		req.path.startsWith("/api/")
+	) {
+		return next();
+	}
 	const safeStr = (v) => (typeof v === "string" ? v : "");
-	res.locals.success = req.flash("success") || [];
-	res.locals.error = req.flash("error") || [];
+	const hasFlash = Boolean(req.session && req.session.flash);
+	res.locals.success = (hasFlash ? req.flash("success") : []) || [];
+	res.locals.error = (hasFlash ? req.flash("error") : []) || [];
 	res.locals.currUser = req.user || null;
 	res.locals.currentPath = req.path || "";
 	res.locals.searchQuery = safeStr(req.query.q);

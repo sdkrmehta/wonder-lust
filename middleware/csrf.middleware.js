@@ -129,7 +129,8 @@ function csrfProtection(req, res, next) {
 		const isStatelessEndpoint =
 			req.path.startsWith("/api/") ||
 			req.path === "/health" ||
-			req.path === "/ready";
+			req.path === "/ready" ||
+			req.path === "/notifications/unread-count";
 
 		if (req.session && !isStatelessEndpoint && !req.session.csrfToken) {
 			req.session.csrfToken = generateCsrfToken();

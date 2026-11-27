@@ -37,7 +37,7 @@
 			<!-- Mobile Notification Icon -->
 			<a class="nav-icon-link position-relative p-2 rounded-circle" href="/notifications" title="Notifications" aria-label="Notifications">
 				<i class="fa-regular fa-bell"></i>
-				<span id="navUnreadBadgeMobile" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" style="font-size: 0.6rem;">0</span>
+				<span id="navUnreadBadgeMobile" data-authenticated="<%= navUser ? 'true' : 'false' %>" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" style="font-size: 0.6rem;">0</span>
 			</a>
 
 			<!-- Mobile Navbar Hamburger Toggler -->
@@ -117,7 +117,7 @@
 			<!-- Notification Bell Icon -->
 			<a class="nav-icon-link position-relative p-2 rounded-circle" href="/notifications" title="Notifications" aria-label="Notifications">
 				<i class="fa-regular fa-bell fa-lg"></i>
-				<span id="navUnreadBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" style="font-size: 0.65rem;">
+				<span id="navUnreadBadge" data-authenticated="<%= navUser ? 'true' : 'false' %>" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" style="font-size: 0.65rem;">
 					0
 				</span>
 			</a>

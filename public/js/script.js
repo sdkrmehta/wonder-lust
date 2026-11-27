@@ -201,8 +201,14 @@ function updateNotificationBadge() {
 		document.getElementById("navUnreadBadgeMobile"),
 	].filter(Boolean);
 	if (badges.length === 0) return;
+	if (!badges.some((badge) => badge.dataset.authenticated === "true")) return;
 
-	fetch("/notifications/unread-count")
+	fetch("/notifications/unread-count", {
+		headers: {
+			Accept: "application/json",
+			"X-Requested-With": "XMLHttpRequest",
+		},
+	})
 		.then((res) => {
 			if (!res.ok) return null;
 			return res.json();

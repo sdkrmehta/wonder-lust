@@ -1,5 +1,5 @@
 const UserService = require("../services/user.service");
-const { sanitizeInternalRedirect } = require("../middleware/auth.middleware");
+const { sanitizeLoginRedirect } = require("../middleware/auth.middleware");
 const { generateCsrfToken } = require("../middleware/csrf.middleware");
 
 module.exports.renderSignupForm = (req, res) => {
@@ -45,7 +45,7 @@ module.exports.login = async (req, res) => {
 		req.session.userSessionVersion = Number((req.user && req.user.sessionVersion) || 1);
 	}
 	req.flash("success", "Welcome back to Wonder-Lust!");
-	const redirectUrl = sanitizeInternalRedirect(res.locals.redirectUrl, "/listings");
+	const redirectUrl = sanitizeLoginRedirect(res.locals.redirectUrl, "/listings");
 	if (req.session && req.session.redirectUrl) {
 		delete req.session.redirectUrl;
 	}
