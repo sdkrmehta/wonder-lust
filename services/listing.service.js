@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const Listing = require("../models/listing");
-const { cleanupLocalFile } = require("../config/storage");
+const { cleanupLocalFile, MAX_LISTING_IMAGES } = require("../config/storage");
 const { geocodeLocation, geocodeAddress } = require("../utils/geocoder");
 const AppError = require("../utils/AppError");
 
@@ -417,6 +417,15 @@ class ListingService {
 				? [filesOrFile]
 				: [];
 
+		if (files.length > MAX_LISTING_IMAGES) {
+			for (const file of files) {
+				if (file && file.filename) cleanupLocalFile(file.filename);
+			}
+			throw AppError.badRequest(
+				`Maximum ${MAX_LISTING_IMAGES} photos are allowed per listing.`,
+			);
+		}
+
 		if (files.length > 0) {
 			payload.images = files.map((file, idx) => ({
 				url: `/uploads/${file.filename}`,
@@ -493,6 +502,16 @@ class ListingService {
 				: [];
 
 		if (newFiles.length > 0) {
+			const existingCount = Array.isArray(listing.images) ? listing.images.length : 0;
+			if (existingCount + newFiles.length > MAX_LISTING_IMAGES) {
+				for (const file of newFiles) {
+					if (file && file.filename) cleanupLocalFile(file.filename);
+				}
+				throw AppError.badRequest(
+					`Gallery can contain at most ${MAX_LISTING_IMAGES} photos (currently ${existingCount}).`,
+				);
+			}
+
 			const newImages = newFiles.map((file, idx) => ({
 				url: `/uploads/${file.filename}`,
 				filename: file.filename,

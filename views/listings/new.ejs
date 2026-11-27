@@ -188,25 +188,43 @@
 				</div>
 
 				<div class="mb-3">
-					<label for="imageInput" class="form-label fw-semibold">Upload Property Photos</label>
+					<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1">
+						<label for="imageInput" class="form-label fw-semibold mb-0">Upload Property Photos (5 to 10 required)</label>
+						<span id="imageCountBadge" class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">0 / 5–10 selected</span>
+					</div>
 					<input
 						name="listing[image]"
 						id="imageInput"
 						type="file"
 						class="form-control"
 						accept="image/jpeg,image/png,image/webp,image/gif"
+						data-min-files="5"
+						data-max-files="10"
 						multiple
 						required
 					/>
-					<div class="form-text">
-						Upload high-resolution photography (JPEG, PNG, WebP &bull; Max 5MB per photo). The first photo will be used as the primary cover.
+					<input
+						id="imageAppendInput"
+						type="file"
+						class="d-none"
+						accept="image/jpeg,image/png,image/webp,image/gif"
+						multiple
+					/>
+					<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-2">
+						<div class="form-text m-0">
+							Upload 5 to 10 photos (JPEG, PNG, WebP, GIF &bull; Max 5MB per photo). The first photo becomes the primary cover.
+						</div>
+						<button type="button" id="addMoreImagesBtn" class="btn btn-sm btn-outline-secondary rounded-pill d-none">
+							<i class="fa-solid fa-plus me-1"></i>Add More Photos
+						</button>
 					</div>
-					<div class="invalid-feedback">
-						*Please upload at least one property photo.
+					<div class="invalid-feedback" id="imageInputFeedback">
+						*Please upload at least 5 property photos (maximum 10).
 					</div>
 
 					<!-- Client-side Preview Container -->
 					<div id="imagePreviewContainer" class="row g-2 mt-3 d-none"></div>
+					<div id="fileCountWarning" class="alert alert-warning py-2 mt-2 d-none small"></div>
 					<div id="fileSizeWarning" class="alert alert-danger py-2 mt-2 d-none small">
 						<i class="fa-solid fa-triangle-exclamation me-1"></i> One or more selected images exceed the 5MB file limit. Please choose smaller images.
 					</div>
@@ -291,4 +309,4 @@
 </div>
 
 <!-- Image Preview & File Size Validation Script -->
-<script nonce="<%= cspNonce || '' %>" src="/js/listing-form.js"></script>
+<script nonce="<%= cspNonce || '' %>" src="/js/listing-form.js?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : '1' %>"></script>

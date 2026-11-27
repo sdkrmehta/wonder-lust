@@ -1,5 +1,10 @@
 const ListingService = require("../services/listing.service");
 const ApiResponse = require("../utils/apiResponse");
+const {
+	MIN_LISTING_IMAGES,
+	MAX_LISTING_IMAGES,
+	cleanupRequestUploads,
+} = require("../config/storage");
 
 module.exports.index = async (req, res) => {
 	const criteria = {
@@ -80,7 +85,18 @@ module.exports.createListing = async (req, res) => {
 	const files =
 		req.listingImages && req.listingImages.length > 0
 			? req.listingImages
-			: req.file;
+			: req.file
+				? [req.file]
+				: [];
+
+	if (files.length < MIN_LISTING_IMAGES || files.length > MAX_LISTING_IMAGES) {
+		cleanupRequestUploads(req);
+		req.flash(
+			"error",
+			`Please upload between ${MIN_LISTING_IMAGES} and ${MAX_LISTING_IMAGES} property photos.`,
+		);
+		return res.redirect("/listings/new");
+	}
 
 	const newListing = await ListingService.createListing(
 		req.body.listing,
@@ -127,8 +143,9 @@ module.exports.updateListing = async (req, res) => {
 		req.flash("success", "Listing Updated Successfully!");
 		res.redirect(`/listings/${id}`);
 	} catch (err) {
+		cleanupRequestUploads(req);
 		req.flash("error", err.message || "Failed to update listing.");
-		return res.redirect("/listings");
+		return res.redirect(`/listings/${id}/edit`);
 	}
 };
 

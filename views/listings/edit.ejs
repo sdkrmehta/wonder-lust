@@ -232,20 +232,45 @@
 					</div>
 				</div>
 
+				<% const remainingImageSlots = Math.max(0, 10 - existingGallery.length); %>
 				<div class="mb-3">
-					<label for="imageEditInput" class="form-label fw-semibold">Upload Additional Photos</label>
+					<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1">
+						<label for="imageEditInput" class="form-label fw-semibold mb-0">Upload Additional Photos</label>
+						<span id="editImageCountBadge" class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis"><%= existingGallery.length %> / 10 total in gallery</span>
+					</div>
 					<input
 						name="listing[image]"
 						id="imageEditInput"
 						type="file"
 						class="form-control"
 						accept="image/jpeg,image/png,image/webp,image/gif"
+						data-min-files="0"
+						data-max-files="<%= remainingImageSlots %>"
+						data-existing-count="<%= existingGallery.length %>"
+						<%= remainingImageSlots === 0 ? 'disabled' : '' %>
 						multiple
 					/>
-					<div class="form-text">
-						Upload additional photos to add to the gallery (JPEG, PNG, WebP &bull; Max 5MB per file).
+					<input
+						id="imageEditAppendInput"
+						type="file"
+						class="d-none"
+						accept="image/jpeg,image/png,image/webp,image/gif"
+						multiple
+					/>
+					<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-2">
+						<div class="form-text m-0">
+							<% if (remainingImageSlots > 0) { %>
+								Add up to <%= remainingImageSlots %> more photo<%= remainingImageSlots === 1 ? '' : 's' %> (10 maximum in gallery; JPEG, PNG, WebP, GIF &bull; Max 5MB per file).
+							<% } else { %>
+								Gallery limit of 10 photos reached. Delete a photo above to upload a replacement.
+							<% } %>
+						</div>
+						<button type="button" id="addMoreEditImagesBtn" class="btn btn-sm btn-outline-secondary rounded-pill d-none">
+							<i class="fa-solid fa-plus me-1"></i>Add More Photos
+						</button>
 					</div>
 					<div id="editImagePreviewContainer" class="row g-2 mt-3 d-none"></div>
+					<div id="editFileCountWarning" class="alert alert-warning py-2 mt-2 d-none small"></div>
 					<div id="editFileSizeWarning" class="alert alert-danger py-2 mt-2 d-none small">
 						<i class="fa-solid fa-triangle-exclamation me-1"></i> One or more selected images exceed the 5MB file limit.
 					</div>
@@ -331,4 +356,4 @@
 	</div>
 </div>
 
-<script nonce="<%= cspNonce || '' %>" src="/js/listing-form.js"></script>
+<script nonce="<%= cspNonce || '' %>" src="/js/listing-form.js?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : '1' %>"></script>

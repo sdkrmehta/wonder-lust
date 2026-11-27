@@ -7,6 +7,8 @@ const { cleanNoSql, cleanXss } = require("../middleware/sanitize.middleware");
 const { verifyMultipartCsrf } = require("../middleware/csrf.middleware");
 
 const uploadDir = path.join(__dirname, "..", "public", "uploads");
+const MIN_LISTING_IMAGES = 5;
+const MAX_LISTING_IMAGES = 10;
 
 const ALLOWED_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif"]);
 const ALLOWED_MIMETYPES = new Set([
@@ -156,15 +158,15 @@ const upload = multer({
 	fileFilter,
 	limits: {
 		fileSize: env.MAX_FILE_SIZE_MB * 1024 * 1024,
-		files: 11,
+		files: MAX_LISTING_IMAGES,
 	},
 });
 
 const uploadListingFields = upload.fields([
-	{ name: "listing[image]", maxCount: 1 },
-	{ name: "listing[images]", maxCount: 10 },
-	{ name: "image", maxCount: 1 },
-	{ name: "images", maxCount: 10 },
+	{ name: "listing[image]", maxCount: MAX_LISTING_IMAGES },
+	{ name: "listing[images]", maxCount: MAX_LISTING_IMAGES },
+	{ name: "image", maxCount: MAX_LISTING_IMAGES },
+	{ name: "images", maxCount: MAX_LISTING_IMAGES },
 ]);
 
 /**
@@ -183,6 +185,8 @@ function handleListingUpload(req, res, next) {
 			let msg = err.message || "Failed to upload image.";
 			if (err.code === "LIMIT_FILE_SIZE") {
 				msg = `Image size exceeds ${env.MAX_FILE_SIZE_MB}MB limit. Please upload a smaller photo.`;
+			} else if (err.code === "LIMIT_FILE_COUNT" || err.code === "LIMIT_UNEXPECTED_FILE") {
+				msg = `You can upload a maximum of ${MAX_LISTING_IMAGES} photos per listing.`;
 			}
 			if (isApi) {
 				return res.status(400).json({ status: "error", message: msg });
@@ -218,23 +222,26 @@ function handleListingUpload(req, res, next) {
 			return res.redirect(getSafeBackUrl(req, "/listings"));
 		}
 
-		// Normalize single and multiple files into req.file and req.listingImages
+		// Normalize uploaded files across all accepted field names into req.file and req.listingImages
 		if (req.files) {
-			const single =
-				(req.files["listing[image]"] && req.files["listing[image]"][0]) ||
-				(req.files["image"] && req.files["image"][0]);
-			const multi =
-				req.files["listing[images]"] ||
-				req.files["images"] ||
-				[];
+			const all = [
+				...(req.files["listing[image]"] || []),
+				...(req.files["image"] || []),
+				...(req.files["listing[images]"] || []),
+				...(req.files["images"] || []),
+			];
 
-			if (single) {
-				req.file = single;
-			} else if (multi.length > 0) {
-				req.file = multi[0];
+			if (all.length > MAX_LISTING_IMAGES) {
+				cleanupRequestUploads(req);
+				const maxMsg = `You can upload a maximum of ${MAX_LISTING_IMAGES} photos per listing.`;
+				if (isApi) {
+					return res.status(400).json({ status: "error", message: maxMsg });
+				}
+				req.flash("error", maxMsg);
+				return res.redirect(getSafeBackUrl(req, "/listings"));
 			}
 
-			const all = single ? [single, ...multi.filter((f) => f !== single)] : multi;
+			req.file = all[0] || undefined;
 			req.listingImages = all;
 		} else if (req.file) {
 			req.listingImages = [req.file];
@@ -315,6 +322,8 @@ module.exports = {
 	upload,
 	storage,
 	uploadDir,
+	MIN_LISTING_IMAGES,
+	MAX_LISTING_IMAGES,
 	cleanupLocalFile,
 	cleanupRequestUploads,
 	handleListingUpload,

@@ -184,6 +184,17 @@ async function runTests() {
 		0x42, 0x60, 0x82,
 	]);
 
+	const imageParts = [];
+	for (let i = 1; i <= 5; i++) {
+		imageParts.push(
+			Buffer.from(
+				`--${boundary}\r\nContent-Disposition: form-data; name="listing[image]"; filename="sunset_cliff_${i}.png"\r\nContent-Type: image/png\r\n\r\n`,
+			),
+			dummyPng,
+			Buffer.from("\r\n"),
+		);
+	}
+
 	const multipartPayload = Buffer.concat([
 		Buffer.from(
 			`--${boundary}\r\nContent-Disposition: form-data; name="listing[title]"\r\n\r\nSunset Cliff Villa\r\n` +
@@ -191,11 +202,10 @@ async function runTests() {
 			`--${boundary}\r\nContent-Disposition: form-data; name="listing[price]"\r\n\r\n4500\r\n` +
 			`--${boundary}\r\nContent-Disposition: form-data; name="listing[location]"\r\n\r\nGoa\r\n` +
 			`--${boundary}\r\nContent-Disposition: form-data; name="listing[country]"\r\n\r\nIndia\r\n` +
-			`--${boundary}\r\nContent-Disposition: form-data; name="listing[category]"\r\n\r\nTrending\r\n` +
-			`--${boundary}\r\nContent-Disposition: form-data; name="listing[image]"; filename="sunset_cliff.png"\r\nContent-Type: image/png\r\n\r\n`
+			`--${boundary}\r\nContent-Disposition: form-data; name="listing[category]"\r\n\r\nTrending\r\n`
 		),
-		dummyPng,
-		Buffer.from(`\r\n--${boundary}--\r\n`),
+		...imageParts,
+		Buffer.from(`--${boundary}--\r\n`),
 	]);
 
 	const createRes = await clientA("/listings", {

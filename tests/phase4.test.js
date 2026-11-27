@@ -160,12 +160,16 @@ async function runTests() {
 			`--${boundary}\r\nContent-Disposition: form-data; name="listing[country]"\r\n\r\nIndia\r\n` +
 			`--${boundary}\r\nContent-Disposition: form-data; name="listing[propertyType]"\r\n\r\nVilla\r\n` +
 			`--${boundary}\r\nContent-Disposition: form-data; name="listing[status]"\r\n\r\npublished\r\n` +
-			`--${boundary}\r\nContent-Disposition: form-data; name="listing[image]"; filename="haveli_front.png"\r\nContent-Type: image/png\r\n\r\n`
+			`--${boundary}\r\nContent-Disposition: form-data; name="listing[image]"; filename="haveli_1.png"\r\nContent-Type: image/png\r\n\r\n`
 		),
 		dummyPng1,
-		Buffer.from(
-			`\r\n--${boundary}\r\nContent-Disposition: form-data; name="listing[images]"; filename="haveli_courtyard.png"\r\nContent-Type: image/png\r\n\r\n`
-		),
+		Buffer.from(`\r\n--${boundary}\r\nContent-Disposition: form-data; name="listing[image]"; filename="haveli_2.png"\r\nContent-Type: image/png\r\n\r\n`),
+		dummyPng2,
+		Buffer.from(`\r\n--${boundary}\r\nContent-Disposition: form-data; name="listing[image]"; filename="haveli_3.png"\r\nContent-Type: image/png\r\n\r\n`),
+		dummyPng2,
+		Buffer.from(`\r\n--${boundary}\r\nContent-Disposition: form-data; name="listing[image]"; filename="haveli_4.png"\r\nContent-Type: image/png\r\n\r\n`),
+		dummyPng2,
+		Buffer.from(`\r\n--${boundary}\r\nContent-Disposition: form-data; name="listing[images]"; filename="haveli_courtyard.png"\r\nContent-Type: image/png\r\n\r\n`),
 		dummyPng2,
 		Buffer.from(`\r\n--${boundary}--\r\n`),
 	]);
@@ -182,7 +186,7 @@ async function runTests() {
 	// Verify listing in API v1
 	const fetchApi = await client(`/api/v1/listings/${listingId}`);
 	const apiListing = fetchApi.json().data;
-	assert(apiListing.images && apiListing.images.length === 2, "Listing must have 2 gallery images");
+	assert(apiListing.images && apiListing.images.length === 5, "Listing must have 5 gallery images");
 	assert(apiListing.images[0].isPrimary === true, "First image must be primary");
 	assert(apiListing.geometry && apiListing.geometry.type === "Point", "Geometry must be Point");
 	assert(
@@ -193,7 +197,7 @@ async function runTests() {
 		Math.abs(apiListing.geometry.coordinates[1] - 26.9124) < 0.1,
 		"Jaipur latitude should be ~26.91",
 	);
-	console.log(`   [PASS] Multi-image gallery (2 photos) & Jaipur geocoding verified for listing ${listingId}.\n`);
+	console.log(`   [PASS] Multi-image gallery (5 photos) & Jaipur geocoding verified for listing ${listingId}.\n`);
 
 	// 4. Test View Counter Increment
 	console.log("4. Testing Listing View Counter Increment...");
@@ -227,13 +231,23 @@ async function runTests() {
 	});
 	assert(deleteImgRes.status === 200, "Deleting image should return 200");
 	const afterDeleteListing = deleteImgRes.json().data;
-	assert(afterDeleteListing.images.length === 1, "Gallery should now contain 1 image");
+	assert(afterDeleteListing.images.length === 4, "Gallery should now contain 4 images");
 	assert(!fs.existsSync(uploadFilePath), "Orphaned image file must be deleted from disk");
 	console.log("   [PASS] Image removed from gallery and physical file deleted from uploads folder.\n");
 
 	// 7. Test Draft vs Published Status
 	console.log("7. Testing Draft vs. Published Visibility Filter...");
 	const draftBoundary = `----WebKitFormBoundaryDraft${Date.now()}`;
+	const draftImageParts = [];
+	for (let i = 1; i <= 5; i++) {
+		draftImageParts.push(
+			Buffer.from(
+				`--${draftBoundary}\r\nContent-Disposition: form-data; name="listing[image]"; filename="draft_${i}.png"\r\nContent-Type: image/png\r\n\r\n`,
+			),
+			dummyPng1,
+			Buffer.from("\r\n"),
+		);
+	}
 	const draftPayload = Buffer.concat([
 		Buffer.from(
 			`--${draftBoundary}\r\nContent-Disposition: form-data; name="listing[title]"\r\n\r\nUnpublished Secret Cabin\r\n` +
@@ -241,11 +255,10 @@ async function runTests() {
 			`--${draftBoundary}\r\nContent-Disposition: form-data; name="listing[price]"\r\n\r\n3000\r\n` +
 			`--${draftBoundary}\r\nContent-Disposition: form-data; name="listing[location]"\r\n\r\nAspen\r\n` +
 			`--${draftBoundary}\r\nContent-Disposition: form-data; name="listing[country]"\r\n\r\nUnited States\r\n` +
-			`--${draftBoundary}\r\nContent-Disposition: form-data; name="listing[status]"\r\n\r\ndraft\r\n` +
-			`--${draftBoundary}\r\nContent-Disposition: form-data; name="listing[image]"; filename="draft.png"\r\nContent-Type: image/png\r\n\r\n`
+			`--${draftBoundary}\r\nContent-Disposition: form-data; name="listing[status]"\r\n\r\ndraft\r\n`
 		),
-		dummyPng1,
-		Buffer.from(`\r\n--${draftBoundary}--\r\n`),
+		...draftImageParts,
+		Buffer.from(`--${draftBoundary}--\r\n`),
 	]);
 
 	const createDraftRes = await client("/listings", {
@@ -290,6 +303,62 @@ async function runTests() {
 	});
 	assert(badUploadRes.status === 400, "Invalid mime type should be rejected with HTTP 400");
 	console.log("   [PASS] Invalid file format rejected cleanly.\n");
+
+	// 8b. Test Minimum 5 & Maximum 10 Photos Enforcement on Web Form
+	console.log("8b. Testing Minimum 5 and Maximum 10 Photos Validation...");
+	const tooFewBoundary = `----WebKitFormBoundaryFew${Date.now()}`;
+	const tooFewPayload = Buffer.concat([
+		Buffer.from(
+			`--${tooFewBoundary}\r\nContent-Disposition: form-data; name="listing[title]"\r\n\r\nToo Few Photos Villa\r\n` +
+			`--${tooFewBoundary}\r\nContent-Disposition: form-data; name="listing[description]"\r\n\r\nOnly two images provided.\r\n` +
+			`--${tooFewBoundary}\r\nContent-Disposition: form-data; name="listing[price]"\r\n\r\n3000\r\n` +
+			`--${tooFewBoundary}\r\nContent-Disposition: form-data; name="listing[location]"\r\n\r\nGoa\r\n` +
+			`--${tooFewBoundary}\r\nContent-Disposition: form-data; name="listing[country]"\r\n\r\nIndia\r\n` +
+			`--${tooFewBoundary}\r\nContent-Disposition: form-data; name="listing[image]"; filename="few_1.png"\r\nContent-Type: image/png\r\n\r\n`
+		),
+		dummyPng1,
+		Buffer.from(`\r\n--${tooFewBoundary}\r\nContent-Disposition: form-data; name="listing[image]"; filename="few_2.png"\r\nContent-Type: image/png\r\n\r\n`),
+		dummyPng2,
+		Buffer.from(`\r\n--${tooFewBoundary}--\r\n`),
+	]);
+	const tooFewRes = await client("/listings", {
+		method: "POST",
+		headers: { "Content-Type": `multipart/form-data; boundary=${tooFewBoundary}` },
+		body: tooFewPayload,
+	});
+	assert(tooFewRes.status === 302 && tooFewRes.headers.location === "/listings/new", "Fewer than 5 photos must redirect back to /listings/new");
+
+	const tooManyBoundary = `----WebKitFormBoundaryMany${Date.now()}`;
+	const tooManyParts = [];
+	for (let i = 1; i <= 11; i++) {
+		tooManyParts.push(
+			Buffer.from(`--${tooManyBoundary}\r\nContent-Disposition: form-data; name="listing[image]"; filename="many_${i}.png"\r\nContent-Type: image/png\r\n\r\n`),
+			dummyPng1,
+			Buffer.from("\r\n"),
+		);
+	}
+	const tooManyPayload = Buffer.concat([
+		Buffer.from(
+			`--${tooManyBoundary}\r\nContent-Disposition: form-data; name="listing[title]"\r\n\r\nToo Many Photos Villa\r\n` +
+			`--${tooManyBoundary}\r\nContent-Disposition: form-data; name="listing[description]"\r\n\r\nEleven images provided.\r\n` +
+			`--${tooManyBoundary}\r\nContent-Disposition: form-data; name="listing[price]"\r\n\r\n3000\r\n` +
+			`--${tooManyBoundary}\r\nContent-Disposition: form-data; name="listing[location]"\r\n\r\nGoa\r\n` +
+			`--${tooManyBoundary}\r\nContent-Disposition: form-data; name="listing[country]"\r\n\r\nIndia\r\n`
+		),
+		...tooManyParts,
+		Buffer.from(`--${tooManyBoundary}--\r\n`),
+	]);
+	const tooManyRes = await client("/listings", {
+		method: "POST",
+		headers: { "Content-Type": `multipart/form-data; boundary=${tooManyBoundary}` },
+		body: tooManyPayload,
+	});
+	assert(tooManyRes.status === 302, "More than 10 photos must fail and redirect cleanly");
+	const checkTooMany = await client("/api/v1/listings?q=Too+Many+Photos+Villa");
+	assert(checkTooMany.json().data.listings.length === 0, "Listing with > 10 photos must not be created");
+	const checkTooFew = await client("/api/v1/listings?q=Too+Few+Photos+Villa");
+	assert(checkTooFew.json().data.listings.length === 0, "Listing with < 5 photos must not be created");
+	console.log("   [PASS] Web form rejects < 5 and > 10 photos cleanly.\n");
 
 	// 9. Test Web UI Leaflet Map & Multi-Image Gallery Rendering
 	console.log("9. Testing Web UI Show Page Map & Gallery Rendering...");
