@@ -79,7 +79,12 @@ function createHelmetConfig() {
 				],
 				objectSrc: ["'none'"],
 				baseUri: ["'self'"],
-				formAction: ["'self'"],
+				formAction: [
+					"'self'",
+					"https://api.razorpay.com",
+					"https://checkout.razorpay.com",
+					"https://*.razorpay.com",
+				],
 				frameAncestors: ["'self'"],
 				upgradeInsecureRequests: env.isProduction ? [] : null,
 			},
@@ -89,6 +94,7 @@ function createHelmetConfig() {
 			? { maxAge: 31536000, includeSubDomains: true, preload: true }
 			: false,
 		crossOriginEmbedderPolicy: false,
+		crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
 		crossOriginResourcePolicy: { policy: "cross-origin" },
 	});
 }
