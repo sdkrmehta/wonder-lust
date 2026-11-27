@@ -99,13 +99,14 @@
 		</div>
 
 		<!-- Mobile Photo Slider / Hero (Phones Only) -->
-		<div class="d-md-none card show-card listing-card mb-4 border-0 bg-transparent shadow-none">
-			<div class="position-relative overflow-hidden rounded-4">
+		<div class="d-md-none pdp-mobile-gallery mb-4">
+			<div class="position-relative overflow-hidden rounded-4 shadow-sm bg-light">
 				<img
 					id="mobileHeroImg"
 					src="<%= primaryImg.url %>"
-					class="card-img-top show-hero-img shadow-sm"
+					class="show-hero-img cursor-pointer"
 					alt="<%= listing.title %>"
+					data-lightbox-index="0"
 					data-fallback-src="/images/listing-placeholder.jpg"
 				/>
 				<button
@@ -114,21 +115,21 @@
 					data-bs-toggle="modal"
 					data-bs-target="#photoLightboxModal"
 				>
-					<i class="fa-solid fa-images me-1"></i> 1 / <%= galleryImages.length %>
+					<i class="fa-solid fa-images me-1"></i> <span id="mobileHeroIndex">1</span> / <%= galleryImages.length %>
 				</button>
 			</div>
 
 			<!-- Mobile Thumbnails (Horizontal Scrollable Strip) -->
 			<% if (galleryImages.length > 1) { %>
-				<div class="d-flex gap-2 mt-2 overflow-auto py-1" style="-webkit-overflow-scrolling: touch; scrollbar-width: thin;">
+				<div class="d-flex gap-2 mt-2 overflow-auto py-1 pdp-mobile-thumbs" style="-webkit-overflow-scrolling: touch; scrollbar-width: thin;">
 					<% galleryImages.forEach((img, idx) => { %>
-						<div style="flex: 0 0 72px; width: 72px;">
+						<div class="pdp-mobile-thumb-item">
 							<img
 								src="<%= img.url %>"
-								class="img-fluid gallery-thumb w-100 shadow-sm <%= img.url === primaryImg.url ? 'active' : '' %>"
-								style="height: 60px; object-fit: cover;"
+								class="gallery-thumb shadow-sm <%= img.url === primaryImg.url ? 'active' : '' %>"
 								alt="Gallery thumbnail <%= idx + 1 %>"
 								data-img-url="<%= img.url %>"
+								data-img-index="<%= idx %>"
 								data-action="switchHeroImage"
 								data-fallback-src="/images/listing-placeholder.jpg"
 							/>
@@ -853,4 +854,4 @@
 	window.__wonderlustCreateMap = (id, opts) => L.map(id, opts);
 	window.__wonderlustGalleryAction = "switchHeroImage";
 </script>
-<script nonce="<%= cspNonce || '' %>" src="/js/listing-show.js"></script>
+<script nonce="<%= cspNonce || '' %>" src="/js/listing-show.js?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : '1' %>"></script>

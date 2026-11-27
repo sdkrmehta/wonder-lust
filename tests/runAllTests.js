@@ -109,7 +109,10 @@ function runSuite(suite) {
 
 		const proc = spawn(process.execPath, [filePath], {
 			cwd: path.join(__dirname, ".."),
-			env: { ...process.env },
+			env: {
+				...process.env,
+				UPLOAD_STORAGE: process.env.TEST_UPLOAD_STORAGE || "local",
+			},
 			stdio: "pipe",
 		});
 

@@ -102,7 +102,11 @@ async function runTests() {
 	const { spawn } = require("child_process");
 	serverProc = spawn("node", ["server.js"], {
 		cwd: path.join(__dirname, ".."),
-		env: { ...process.env, PORT: String(PORT) },
+		env: {
+			...process.env,
+			PORT: String(PORT),
+			UPLOAD_STORAGE: process.env.TEST_UPLOAD_STORAGE || "local",
+		},
 		stdio: ["ignore", "pipe", "pipe"],
 	});
 

@@ -3,7 +3,7 @@ const Booking = require("../models/booking");
 const Review = require("../models/review");
 const Listing = require("../models/listing");
 const AppError = require("../utils/AppError");
-const { cleanupLocalFile } = require("../config/storage");
+const { persistUploadedFile, deleteStoredAsset } = require("../config/storage");
 
 class UserService {
 	/**
@@ -124,13 +124,13 @@ class UserService {
 
 		// Handle avatar upload
 		if (avatarFile) {
-			// Remove old avatar if exists
+			const storedAvatar = await persistUploadedFile(avatarFile, { folder: "wonderlust/avatars" });
 			if (user.avatar && user.avatar.filename) {
-				cleanupLocalFile(user.avatar.filename);
+				await deleteStoredAsset(user.avatar);
 			}
 			user.avatar = {
-				url: `/uploads/${avatarFile.filename}`,
-				filename: avatarFile.filename,
+				url: storedAvatar.url,
+				filename: storedAvatar.filename,
 			};
 		}
 

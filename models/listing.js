@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const Review = require("./review.js");
-const { cleanupLocalFile } = require("../config/storage");
+const { deleteStoredAsset } = require("../config/storage");
 
 const listingSchema = new Schema(
 	{
@@ -196,21 +196,24 @@ listingSchema.index({ owner: 1 });
 listingSchema.index({ owner: 1, createdAt: -1 });
 listingSchema.index({ geometry: "2dsphere" });
 
-// Cascade delete reviews & local images when a listing is deleted
+// Cascade delete reviews & stored images when a listing is deleted
 listingSchema.post("findOneAndDelete", async (listing) => {
 	if (listing) {
-		// Clean up primary image file
+		const seenFilenames = new Set();
+		const assets = [];
 		if (listing.image && listing.image.filename) {
-			cleanupLocalFile(listing.image.filename);
+			seenFilenames.add(listing.image.filename);
+			assets.push(listing.image);
 		}
-		// Clean up gallery images
 		if (listing.images && listing.images.length) {
 			for (const img of listing.images) {
-				if (img.filename) {
-					cleanupLocalFile(img.filename);
+				if (img.filename && !seenFilenames.has(img.filename)) {
+					seenFilenames.add(img.filename);
+					assets.push(img);
 				}
 			}
 		}
+		await Promise.all(assets.map((asset) => deleteStoredAsset(asset)));
 		// Clean up reviews
 		if (listing.reviews && listing.reviews.length) {
 			await Review.deleteMany({ _id: { $in: listing.reviews } });

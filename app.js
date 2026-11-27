@@ -145,7 +145,7 @@ app.locals.filters = {};
 app.locals.csrfToken = "";
 app.locals.cspNonce = "";
 const assetHash = crypto.createHash("sha256");
-for (const assetRel of ["public/css/style.css", "public/css/rating.css", "public/js/script.js", "public/js/search.js", "public/js/listing-form.js"]) {
+for (const assetRel of ["public/css/style.css", "public/css/rating.css", "public/js/script.js", "public/js/search.js", "public/js/listing-form.js", "public/js/listing-show.js"]) {
 	try {
 		assetHash.update(fs.readFileSync(path.join(__dirname, assetRel)));
 	} catch {}

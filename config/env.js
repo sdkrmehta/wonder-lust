@@ -171,6 +171,44 @@ if (isProduction) {
 	}
 }
 
+const cloudinaryCloudName =
+	resolveEnvSecret("CLOUD_NAME") || resolveEnvSecret("CLOUDINARY_CLOUD_NAME");
+const cloudinaryApiKey =
+	resolveEnvSecret("CLOUD_API") ||
+	resolveEnvSecret("CLOUD_API_KEY") ||
+	resolveEnvSecret("CLOUDINARY_API_KEY");
+const cloudinaryApiSecret =
+	resolveEnvSecret("CLOUD_API_SECRET") || resolveEnvSecret("CLOUDINARY_API_SECRET");
+
+function isRealCloudCredential(val) {
+	if (typeof val !== "string") return false;
+	const t = val.trim();
+	return Boolean(t && !/^your_cloudinary_/i.test(t) && !/^replace_with_/i.test(t));
+}
+
+const isCloudinaryConfigured =
+	isRealCloudCredential(cloudinaryCloudName) &&
+	isRealCloudCredential(cloudinaryApiKey) &&
+	isRealCloudCredential(cloudinaryApiSecret);
+
+const requestedUploadStorage = String(process.env.UPLOAD_STORAGE || "auto").trim().toLowerCase();
+if (!["auto", "local", "cloudinary"].includes(requestedUploadStorage)) {
+	throw new Error(
+		`[CONFIG FATAL] Invalid UPLOAD_STORAGE '${requestedUploadStorage}'. Allowed: auto, local, cloudinary.`,
+	);
+}
+if (requestedUploadStorage === "cloudinary" && !isCloudinaryConfigured) {
+	console.warn(
+		"[CONFIG WARNING] UPLOAD_STORAGE=cloudinary requested without complete CLOUD_NAME / CLOUD_API_KEY / CLOUD_API_SECRET credentials; falling back to local disk storage.",
+	);
+}
+const effectiveUploadStorage =
+	requestedUploadStorage === "local"
+		? "local"
+		: isCloudinaryConfigured
+			? "cloudinary"
+			: "local";
+
 const env = {
 	NODE_ENV: process.env.NODE_ENV || "development",
 	PORT: parseInt(process.env.PORT, 10) || 8080,
@@ -206,6 +244,11 @@ const env = {
 		20,
 		Math.max(1, parseInt(process.env.MAX_FILE_SIZE_MB, 10) || 5),
 	),
+	UPLOAD_STORAGE: effectiveUploadStorage,
+	isCloudinaryConfigured,
+	CLOUDINARY_API_BASE: String(process.env.CLOUDINARY_API_BASE || "https://api.cloudinary.com")
+		.trim()
+		.replace(/\/+$/, ""),
 	PAYMENT_GATEWAY_MODE: paymentGatewayMode,
 	PAYMENT_PROVIDER: paymentProvider,
 	PAYMENT_WEBHOOK_SECRET: paymentWebhookSecret,
@@ -236,9 +279,9 @@ const env = {
 
 	// Cloudinary (optional / pluggable)
 	cloudinary: {
-		cloudName: resolveEnvSecret("CLOUD_NAME"),
-		apiKey: resolveEnvSecret("CLOUD_API") || resolveEnvSecret("CLOUD_API_KEY"),
-		apiSecret: resolveEnvSecret("CLOUD_API_SECRET"),
+		cloudName: cloudinaryCloudName,
+		apiKey: cloudinaryApiKey,
+		apiSecret: cloudinaryApiSecret,
 	},
 };
 

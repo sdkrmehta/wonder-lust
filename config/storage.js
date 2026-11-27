@@ -3,6 +3,7 @@ const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
 const env = require("./env");
+const AppError = require("../utils/AppError");
 const { cleanNoSql, cleanXss } = require("../middleware/sanitize.middleware");
 const { verifyMultipartCsrf } = require("../middleware/csrf.middleware");
 
@@ -306,7 +307,8 @@ function handleAvatarUpload(req, res, next) {
 // Cleanup helper to delete orphaned files from local disk
 function cleanupLocalFile(filename) {
 	if (!filename) return;
-	const cleanName = path.basename(filename);
+	const cleanName = path.basename(String(filename));
+	if (!cleanName || cleanName === "." || cleanName === "..") return;
 	const targetPath = path.join(uploadDir, cleanName);
 
 	if (fs.existsSync(targetPath)) {
@@ -315,6 +317,167 @@ function cleanupLocalFile(filename) {
 		} catch (err) {
 			console.error("[STORAGE] Error deleting local file:", err.message);
 		}
+	}
+}
+
+function buildCloudinarySignature(params, apiSecret) {
+	const canonical = Object.keys(params)
+		.filter((k) => params[k] !== undefined && params[k] !== null && String(params[k]) !== "")
+		.sort()
+		.map((k) => `${k}=${params[k]}`)
+		.join("&");
+	return crypto.createHash("sha1").update(`${canonical}${apiSecret}`).digest("hex");
+}
+
+function isCloudinaryAsset(assetOrFilename) {
+	if (!assetOrFilename) return false;
+	if (typeof assetOrFilename === "string") {
+		return assetOrFilename.includes("/") && !assetOrFilename.startsWith("/uploads/");
+	}
+	const url = typeof assetOrFilename.url === "string" ? assetOrFilename.url : "";
+	const filename = typeof assetOrFilename.filename === "string" ? assetOrFilename.filename : "";
+	return (
+		url.includes("res.cloudinary.com") ||
+		(filename.includes("/") && !filename.startsWith("/uploads/"))
+	);
+}
+
+async function uploadLocalFileToCloudinary(file, folder = "wonderlust/listings") {
+	if (!env.isCloudinaryConfigured) {
+		throw new AppError(500, "Cloud media storage is not configured.");
+	}
+	const diskPath = file.path || path.join(uploadDir, path.basename(file.filename));
+	const fileBuffer = await fs.promises.readFile(diskPath);
+	const timestamp = Math.floor(Date.now() / 1000);
+	const signParams = { folder, timestamp };
+	const signature = buildCloudinarySignature(signParams, env.cloudinary.apiSecret);
+
+	const form = new FormData();
+	form.append(
+		"file",
+		new Blob([fileBuffer], { type: file.mimetype || "application/octet-stream" }),
+		file.filename || file.originalname || "upload.jpg",
+	);
+	form.append("api_key", env.cloudinary.apiKey);
+	form.append("timestamp", String(timestamp));
+	form.append("folder", folder);
+	form.append("signature", signature);
+
+	const endpoint = `${env.CLOUDINARY_API_BASE}/v1_1/${encodeURIComponent(env.cloudinary.cloudName)}/image/upload`;
+	let res;
+	try {
+		res = await fetch(endpoint, {
+			method: "POST",
+			body: form,
+			signal: AbortSignal.timeout(30000),
+		});
+	} catch (err) {
+		throw new AppError(
+			502,
+			`Cloud image upload network error (${err.message || "fetch failed"}). Please try again.`,
+		);
+	}
+
+	let data = null;
+	try {
+		data = await res.json();
+	} catch {
+		data = null;
+	}
+
+	if (!res.ok || !data || (!data.secure_url && !data.url)) {
+		const detail =
+			(data && data.error && data.error.message) ||
+			`HTTP ${res.status}`;
+		throw new AppError(502, `Cloud image upload failed (${detail}). Please try again.`);
+	}
+
+	const secureUrl =
+		typeof data.secure_url === "string" && data.secure_url
+			? data.secure_url
+			: String(data.url).replace(/^http:\/\//i, "https://");
+
+	return {
+		url: secureUrl,
+		filename: data.public_id || file.filename,
+	};
+}
+
+async function destroyCloudinaryAsset(publicId) {
+	if (!publicId || !env.isCloudinaryConfigured) return;
+	const timestamp = Math.floor(Date.now() / 1000);
+	const signature = buildCloudinarySignature(
+		{ public_id: publicId, timestamp },
+		env.cloudinary.apiSecret,
+	);
+	const form = new FormData();
+	form.append("public_id", publicId);
+	form.append("api_key", env.cloudinary.apiKey);
+	form.append("timestamp", String(timestamp));
+	form.append("signature", signature);
+
+	const endpoint = `${env.CLOUDINARY_API_BASE}/v1_1/${encodeURIComponent(env.cloudinary.cloudName)}/image/destroy`;
+	try {
+		await fetch(endpoint, {
+			method: "POST",
+			body: form,
+			signal: AbortSignal.timeout(10000),
+		});
+	} catch (err) {
+		console.warn("[STORAGE] Cloudinary cleanup skipped:", err.message);
+	}
+}
+
+async function persistUploadedFiles(files = [], { folder = "wonderlust/listings" } = {}) {
+	if (!Array.isArray(files) || files.length === 0) {
+		return [];
+	}
+
+	if (env.UPLOAD_STORAGE === "cloudinary" && env.isCloudinaryConfigured) {
+		const settled = await Promise.allSettled(
+			files.map((file) => uploadLocalFileToCloudinary(file, folder)),
+		);
+		for (const file of files) {
+			if (file && file.filename) {
+				cleanupLocalFile(file.filename);
+			}
+		}
+		const failed = settled.find((r) => r.status === "rejected");
+		if (failed) {
+			const uploadedIds = settled
+				.filter((r) => r.status === "fulfilled" && r.value && r.value.filename)
+				.map((r) => r.value.filename);
+			await Promise.all(uploadedIds.map((pubId) => destroyCloudinaryAsset(pubId)));
+			throw failed.reason;
+		}
+		return settled.map((r) => r.value);
+	}
+
+	return files.map((file) => ({
+		url: `/uploads/${file.filename}`,
+		filename: file.filename,
+	}));
+}
+
+async function persistUploadedFile(file, options = {}) {
+	if (!file) return null;
+	const [stored] = await persistUploadedFiles([file], options);
+	return stored || null;
+}
+
+async function deleteStoredAsset(assetOrFilename) {
+	if (!assetOrFilename) return;
+	const filename =
+		typeof assetOrFilename === "string"
+			? assetOrFilename
+			: assetOrFilename.filename || "";
+
+	if (isCloudinaryAsset(assetOrFilename)) {
+		await destroyCloudinaryAsset(filename);
+		return;
+	}
+	if (filename) {
+		cleanupLocalFile(filename);
 	}
 }
 
@@ -328,4 +491,7 @@ module.exports = {
 	cleanupRequestUploads,
 	handleListingUpload,
 	handleAvatarUpload,
+	persistUploadedFiles,
+	persistUploadedFile,
+	deleteStoredAsset,
 };

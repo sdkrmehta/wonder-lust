@@ -1,6 +1,11 @@
 const mongoose = require("mongoose");
 const Listing = require("../models/listing");
-const { cleanupLocalFile, MAX_LISTING_IMAGES } = require("../config/storage");
+const {
+	cleanupLocalFile,
+	persistUploadedFiles,
+	deleteStoredAsset,
+	MAX_LISTING_IMAGES,
+} = require("../config/storage");
 const { geocodeLocation, geocodeAddress } = require("../utils/geocoder");
 const AppError = require("../utils/AppError");
 
@@ -426,15 +431,17 @@ class ListingService {
 			);
 		}
 
+		let storedImages = [];
 		if (files.length > 0) {
-			payload.images = files.map((file, idx) => ({
-				url: `/uploads/${file.filename}`,
-				filename: file.filename,
+			storedImages = await persistUploadedFiles(files, { folder: "wonderlust/listings" });
+			payload.images = storedImages.map((img, idx) => ({
+				url: img.url,
+				filename: img.filename,
 				isPrimary: idx === 0,
 			}));
 			payload.image = {
-				url: `/uploads/${files[0].filename}`,
-				filename: files[0].filename,
+				url: storedImages[0].url,
+				filename: storedImages[0].filename,
 			};
 		} else if (!payload.image || !payload.image.url) {
 			const defaultImg = {
@@ -457,7 +464,12 @@ class ListingService {
 		const listing = new Listing(payload);
 		listing.owner = user._id;
 
-		return await listing.save();
+		try {
+			return await listing.save();
+		} catch (err) {
+			await Promise.all(storedImages.map((img) => deleteStoredAsset(img)));
+			throw err;
+		}
 	}
 
 	/**
@@ -501,6 +513,7 @@ class ListingService {
 				? [filesOrFile]
 				: [];
 
+		let newlyStored = [];
 		if (newFiles.length > 0) {
 			const existingCount = Array.isArray(listing.images) ? listing.images.length : 0;
 			if (existingCount + newFiles.length > MAX_LISTING_IMAGES) {
@@ -512,9 +525,10 @@ class ListingService {
 				);
 			}
 
-			const newImages = newFiles.map((file, idx) => ({
-				url: `/uploads/${file.filename}`,
-				filename: file.filename,
+			newlyStored = await persistUploadedFiles(newFiles, { folder: "wonderlust/listings" });
+			const newImages = newlyStored.map((img, idx) => ({
+				url: img.url,
+				filename: img.filename,
 				isPrimary: (!listing.images || listing.images.length === 0) && idx === 0,
 			}));
 
@@ -528,8 +542,8 @@ class ListingService {
 				listing.image.filename === "default-listing"
 			) {
 				listing.image = {
-					url: `/uploads/${newFiles[0].filename}`,
-					filename: newFiles[0].filename,
+					url: newlyStored[0].url,
+					filename: newlyStored[0].filename,
 				};
 			}
 		}
@@ -537,7 +551,12 @@ class ListingService {
 		// Apply remaining updates
 		Object.assign(listing, payload);
 
-		return await listing.save();
+		try {
+			return await listing.save();
+		} catch (err) {
+			await Promise.all(newlyStored.map((img) => deleteStoredAsset(img)));
+			throw err;
+		}
 	}
 
 	/**
@@ -563,7 +582,7 @@ class ListingService {
 		if (imgIndex !== -1) {
 			const [removed] = listing.images.splice(imgIndex, 1);
 			if (removed.filename) {
-				cleanupLocalFile(removed.filename);
+				await deleteStoredAsset(removed);
 			}
 
 			// If removed image was primary, assign first remaining image as primary

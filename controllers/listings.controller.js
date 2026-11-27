@@ -119,8 +119,8 @@ module.exports.renderEditForm = async (req, res) => {
 		let originalImageUrl = listing.image ? listing.image.url : "";
 		if (originalImageUrl && originalImageUrl.includes("res.cloudinary.com")) {
 			originalImageUrl = originalImageUrl.replace(
-				"/upload",
-				"/upload/h_200,w_250",
+				"/upload/",
+				"/upload/c_fill,h_200,w_250,q_auto,f_auto/",
 			);
 		}
 
