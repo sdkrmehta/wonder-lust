@@ -26,8 +26,8 @@ async function main() {
 	if (!defaultUser) {
 		console.log("Creating default host user for seeded listings...");
 		defaultUser = new User({
-			email: "host@wanderlust.local",
-			username: "wanderlust_host",
+			email: "host@wonderlust.local",
+			username: "wonderlust_host",
 		});
 		await User.register(defaultUser, "Password123!");
 	}

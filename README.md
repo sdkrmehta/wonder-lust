@@ -1,4 +1,4 @@
-# Wander-Lust — Enterprise Vacation Rental Marketplace
+# Wonder-Lust — Enterprise Vacation Rental Marketplace
 
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D20.0.0-339933.svg?style=flat-square&logo=node.js)](https://nodejs.org/)
 [![Express.js](https://img.shields.io/badge/Express.js-4.21.1-000000.svg?style=flat-square&logo=express)](https://expressjs.com/)
@@ -9,7 +9,7 @@
 [![Security: Helmet & CSP](https://img.shields.io/badge/Security-Helmet%20%2B%20CSP%20%2B%20Sanitization-blueviolet.svg?style=flat-square)](https://helmetjs.github.io/)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg?style=flat-square)](https://opensource.org/licenses/ISC)
 
-> **Wander-Lust** is a commercial, production-ready full-stack vacation rental marketplace built with **Node.js, Express, MongoDB, and modern EJS**. Engineered with high-throughput layered service architecture, multi-role RBAC governance, real-time messaging, payment gateway processing with GST-compliant tax invoicing, asynchronous event notifications, 6-dimensional reputation analytics, and containerized Docker deployment.
+> **Wonder-Lust** is a commercial, production-ready full-stack vacation rental marketplace built with **Node.js, Express, MongoDB, and modern EJS**. Engineered with high-throughput layered service architecture, multi-role RBAC governance, real-time messaging, payment gateway processing with GST-compliant tax invoicing, asynchronous event notifications, 6-dimensional reputation analytics, and containerized Docker deployment.
 
 ---
 
@@ -32,7 +32,7 @@
 
 ## Architectural Overview & System Design
 
-Wander-Lust follows a strict **Layered Service-Oriented Architecture (SoA)** decoupling HTTP transport, validation, business domain logic, data persistence, and security middleware:
+Wonder-Lust follows a strict **Layered Service-Oriented Architecture (SoA)** decoupling HTTP transport, validation, business domain logic, data persistence, and security middleware:
 
 ```mermaid
 flowchart TD
@@ -217,8 +217,8 @@ All API endpoints are mounted under `/api/v1` and return structured JSON respons
 Clone the repository and install dependencies:
 
 ```bash
-git clone https://github.com/sdkrmehta/Wander-Lust.git
-cd Wander-Lust
+git clone https://github.com/sdkrmehta/wonder-lust.git
+cd wonder-lust
 npm install
 ```
 
@@ -265,7 +265,7 @@ Access the application in your browser at:
 
 ## Production Containerization (Docker)
 
-Wander-Lust includes a **multi-stage, security-hardened Dockerfile** and production `docker-compose.yml`:
+Wonder-Lust includes a **multi-stage, security-hardened Dockerfile** and production `docker-compose.yml`:
 
 ### Run via Docker Compose
 
@@ -287,39 +287,39 @@ docker-compose down
 
 ```bash
 # Build production image
-docker build -t wander-lust:latest .
+docker build -t wonder-lust:latest .
 
 # Run container with external MongoDB
 docker run -d \
-  --name wander-lust \
+  --name wonder-lust \
   -p 8080:8080 \
   -e NODE_ENV=production \
   -e DB_URL="mongodb://host.docker.internal:27017/wonderlust" \
   -e SESSION_SECRET="production_random_64_char_secret" \
-  wander-lust:latest
+  wonder-lust:latest
 ```
 
 ---
 
 ## Process Management (PM2 Cluster)
 
-For high-availability, zero-downtime deployments on multi-core VPS or bare-metal servers, run Wander-Lust using the bundled `ecosystem.config.js`:
+For high-availability, zero-downtime deployments on multi-core VPS or bare-metal servers, run Wonder-Lust using the bundled `ecosystem.config.js`:
 
 ```bash
 # Install PM2 globally (if not installed)
 npm install -g pm2
 
-# Start Wander-Lust in cluster mode across all CPU cores
+# Start Wonder-Lust in cluster mode across all CPU cores
 pm2 start ecosystem.config.js --env production
 
 # View real-time cluster monitoring
 pm2 monit
 
 # Zero-downtime graceful reload
-pm2 reload wanderlust-api
+pm2 reload wonderlust-api
 
 # Inspect logs
-pm2 logs wanderlust-api
+pm2 logs wonderlust-api
 ```
 
 ## Operational Runbook & Security Posture
@@ -354,7 +354,7 @@ mongorestore --uri="mongodb://localhost:27017/wonderlust" --drop /backups/<backu
 This project is licensed under the **ISC License**.
 
 - Built with dedication for the global traveler and vacation rental host community.
-- Repository: [https://github.com/sdkrmehta/Wander-Lust](https://github.com/sdkrmehta/Wander-Lust)
+- Repository: [https://github.com/sdkrmehta/Wonder-Lust](https://github.com/sdkrmehta/wonder-lust)
 
 ## Author
 Suraj Deep Kumar Mehta

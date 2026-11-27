@@ -1,4 +1,4 @@
-// Wander-Lust Frontend Client Script & Design System Enhancements
+// Wonder-Lust Frontend Client Script & Design System Enhancements
 (() => {
 	"use strict";
 
@@ -34,7 +34,7 @@
 })();
 
 // 3. Wishlist / Favorites Client-Side Engine
-const WISHLIST_STORAGE_KEY = "wanderlust_saved_wishlist";
+const WISHLIST_STORAGE_KEY = "wonderlust_saved_wishlist";
 
 function getWishlist() {
 	try {

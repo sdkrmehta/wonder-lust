@@ -1,5 +1,5 @@
 /* ==========================================================================
-   WANDER-LUST DESIGN SYSTEM & PRODUCTION STYLESHEET
+   WONDER-LUST DESIGN SYSTEM & PRODUCTION STYLESHEET
    Coastal Navy, Warm Ivory Paper & Amber Editorial Travel Aesthetic
    ========================================================================== */
 
@@ -2449,14 +2449,14 @@ body.has-pdp-bar .mobile-bottom-nav,
    15. Editorial Footer Architecture
    -------------------------------------------------------------------------- */
 footer,
-.footer-wanderlust {
+.footer-wonderlust {
 	margin-top: auto;
 	background-color: var(--navy-900);
 	color: #ffffff;
 	border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.footer-wanderlust {
+.footer-wonderlust {
 	padding: 0;
 }
 
@@ -2465,7 +2465,7 @@ footer,
 }
 
 .footer-brand,
-.footer-wanderlust .footer-brand {
+.footer-wonderlust .footer-brand {
 	font-family: var(--font-display);
 	font-size: 1.42rem;
 	font-weight: 700;
@@ -2501,7 +2501,7 @@ footer,
 }
 
 .footer-links-list a,
-.footer-wanderlust .footer-link {
+.footer-wonderlust .footer-link {
 	color: rgba(255, 255, 255, 0.72);
 	text-decoration: none;
 	font-size: 0.9rem;
@@ -2509,7 +2509,7 @@ footer,
 }
 
 .footer-links-list a:hover,
-.footer-wanderlust .footer-link:hover {
+.footer-wonderlust .footer-link:hover {
 	color: var(--orange-primary);
 }
 
@@ -2519,7 +2519,7 @@ footer,
 }
 
 .f-info-social a,
-.footer-wanderlust .f-info-social a {
+.footer-wonderlust .f-info-social a {
 	width: 38px;
 	height: 38px;
 	border-radius: 50%;
@@ -2534,7 +2534,7 @@ footer,
 }
 
 .f-info-social a:hover,
-.footer-wanderlust .f-info-social a:hover {
+.footer-wonderlust .f-info-social a:hover {
 	background: var(--orange-primary);
 	color: #ffffff;
 	transform: translateY(-2px);
@@ -2834,7 +2834,7 @@ footer,
 	.navbar,
 	.mobile-bottom-nav,
 	.mobile-pdp-sticky-bar,
-	.footer-wanderlust,
+	.footer-wonderlust,
 	footer,
 	.no-print,
 	.btn,

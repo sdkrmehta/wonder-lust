@@ -70,11 +70,11 @@ function assert(condition, message) {
 
 async function runTests() {
 	console.log("================================================================================");
-	console.log("   WANDER-LUST PHASE 16 PRODUCTION READINESS & DEPLOYMENT TEST SUITE            ");
+	console.log("   WONDER-LUST PHASE 16 PRODUCTION READINESS & DEPLOYMENT TEST SUITE            ");
 	console.log("================================================================================\n");
 
-	// 1. Spawning Wander-Lust server on port 8096
-	console.log(`1. Starting Wander-Lust production verification server on port ${PORT}...`);
+	// 1. Spawning Wonder-Lust server on port 8096
+	console.log(`1. Starting Wonder-Lust production verification server on port ${PORT}...`);
 	serverProc = fork(path.join(__dirname, "../server.js"), [], {
 		env: { ...process.env, PORT: String(PORT) },
 		stdio: "pipe",
@@ -188,8 +188,8 @@ async function runTests() {
 	const composePath = path.join(__dirname, "../docker-compose.yml");
 	assert(fs.existsSync(composePath), "docker-compose.yml must exist");
 	const composeContent = fs.readFileSync(composePath, "utf8");
-	assert(composeContent.includes("wanderlust-app"), "docker-compose.yml must declare app service");
-	assert(composeContent.includes("wanderlust-mongo"), "docker-compose.yml must declare mongo service");
+	assert(composeContent.includes("wonderlust-app"), "docker-compose.yml must declare app service");
+	assert(composeContent.includes("wonderlust-mongo"), "docker-compose.yml must declare mongo service");
 	assert(composeContent.includes("mongo-data:"), "docker-compose.yml must declare persistent volume");
 
 	const composeDevPath = path.join(__dirname, "../docker-compose.dev.yml");
@@ -203,7 +203,7 @@ async function runTests() {
 	const pm2Config = require(pm2Path);
 	assert(Array.isArray(pm2Config.apps) && pm2Config.apps.length > 0, "PM2 config must define apps");
 	const mainApp = pm2Config.apps[0];
-	assert(mainApp.name === "wanderlust-api", "App name must be wanderlust-api");
+	assert(mainApp.name === "wonderlust-api", "App name must be wonderlust-api");
 	assert(mainApp.script === "server.js", "Script entrypoint must be server.js");
 	assert(mainApp.exec_mode === "cluster", "Exec mode must be cluster");
 	assert(mainApp.max_memory_restart === "500M", "Max memory restart must be 500M");
@@ -225,7 +225,7 @@ async function runTests() {
 	const readmePath = path.join(__dirname, "../README.md");
 	assert(fs.existsSync(readmePath), "README.md must exist");
 	const readmeContent = fs.readFileSync(readmePath, "utf8");
-	assert(readmeContent.includes("Wander-Lust"), "README must document Wander-Lust");
+	assert(readmeContent.includes("Wonder-Lust"), "README must document Wonder-Lust");
 	assert(readmeContent.includes("REST API v1"), "README must document REST API v1");
 	assert(readmeContent.includes("Docker"), "README must include Docker instructions");
 	assert(readmeContent.includes("Test"), "README must document testing and regression harness");

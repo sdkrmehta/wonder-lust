@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: wanderlust-dev-app
+    container_name: wonderlust-dev-app
     restart: always
     ports:
       - "127.0.0.1:8080:8080"
@@ -22,19 +22,19 @@ services:
       mongo:
         condition: service_healthy
     networks:
-      - wanderlust-dev-network
+      - wonderlust-dev-network
     command: ["node", "--watch", "server.js"]
 
   mongo:
     image: mongo:7.0-jammy
-    container_name: wanderlust-dev-mongo
+    container_name: wonderlust-dev-mongo
     restart: always
     ports:
       - "127.0.0.1:27017:27017"
     volumes:
       - mongo-dev-data:/data/db
     networks:
-      - wanderlust-dev-network
+      - wonderlust-dev-network
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
@@ -43,7 +43,7 @@ services:
       start_period: 10s
 
 networks:
-  wanderlust-dev-network:
+  wonderlust-dev-network:
     driver: bridge
 
 volumes:

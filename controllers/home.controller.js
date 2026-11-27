@@ -297,7 +297,7 @@ const TESTIMONIALS = [
 		destination: "Bali, Indonesia",
 		avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
 		rating: 5,
-		review: "Wanderlust made our anniversary trip to Bali completely stress-free. The private villa exceeded every expectation, and the verified host was incredibly helpful.",
+		review: "Wonderlust made our anniversary trip to Bali completely stress-free. The private villa exceeded every expectation, and the verified host was incredibly helpful.",
 	},
 	{
 		id: 2,
@@ -315,7 +315,7 @@ const TESTIMONIALS = [
 		destination: "Swiss Alps, Switzerland",
 		avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
 		rating: 5,
-		review: "The mountain chalet had jaw-dropping views of the peaks. Finding a verified retreat with fast WiFi and ski access was effortless on Wanderlust.",
+		review: "The mountain chalet had jaw-dropping views of the peaks. Finding a verified retreat with fast WiFi and ski access was effortless on Wonderlust.",
 	},
 ];
 
@@ -410,7 +410,7 @@ const CURATED_FALLBACK_STAYS = [
 ];
 
 /**
- * Controller to render the redesigned Wanderlust Homepage
+ * Controller to render the redesigned Wonderlust Homepage
  */
 module.exports.renderHome = async (req, res) => {
 	let featuredListings = [];
@@ -495,6 +495,6 @@ module.exports.handleNewsletter = (req, res) => {
 	// In a real application, persist to database or email marketing tool
 	return res.status(200).json({
 		status: "success",
-		message: "Thank you for subscribing! Check your inbox for exclusive Wanderlust travel inspiration.",
+		message: "Thank you for subscribing! Check your inbox for exclusive Wonderlust travel inspiration.",
 	});
 };

@@ -181,7 +181,7 @@ function runSuite(suite) {
 
 async function main() {
 	console.log("\x1b[1m\x1b[34m========================================================================================\x1b[0m");
-	console.log("\x1b[1m\x1b[34m       WANDER-LUST MASTER AUTOMATED TEST HARNESS & REGRESSION SUITE                    \x1b[0m");
+	console.log("\x1b[1m\x1b[34m       WONDER-LUST MASTER AUTOMATED TEST HARNESS & REGRESSION SUITE                    \x1b[0m");
 	console.log("\x1b[1m\x1b[34m========================================================================================\x1b[0m\n");
 	console.log(`Starting sequential execution of all ${SUITES.length} architectural test suites...\n`);
 

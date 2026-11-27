@@ -1,5 +1,5 @@
 /**
- * Wander-Lust Security Sanitization Middleware
+ * Wonder-Lust Security Sanitization Middleware
  * Defense against NoSQL query operator injection and stored XSS vectors.
  */
 

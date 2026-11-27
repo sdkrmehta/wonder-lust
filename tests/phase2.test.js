@@ -84,7 +84,7 @@ function createClient() {
 
 async function runTests() {
 	console.log("==========================================================");
-	console.log("   WANDER-LUST PHASE 2 BACKEND ARCHITECTURE TEST SUITE   ");
+	console.log("   WONDER-LUST PHASE 2 BACKEND ARCHITECTURE TEST SUITE   ");
 	console.log("==========================================================\n");
 
 	// 1. Test App Decoupling & Config Unit Verification

@@ -1,5 +1,5 @@
 # ==============================================================================
-# WANDER-LUST PRODUCTION DOCKERFILE (MULTI-STAGE, SECURITY HARDENED)
+# WONDER-LUST PRODUCTION DOCKERFILE (MULTI-STAGE, SECURITY HARDENED)
 # ==============================================================================
 
 # --- Stage 1: Dependencies Builder ---

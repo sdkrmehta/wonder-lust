@@ -48,7 +48,7 @@ const paymentSchema = new Schema(
 		},
 		gateway: {
 			type: String,
-			default: "wanderlust_pay",
+			default: "wonderlust_pay",
 		},
 		gatewayOrderId: {
 			type: String,

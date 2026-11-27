@@ -151,7 +151,7 @@
 				key: rpOrder.keyId,
 				amount: rpOrder.amountPaise,
 				currency: rpOrder.currency || "INR",
-				name: "Wander-Lust",
+				name: "Wonder-Lust",
 				description: cfg.listingTitle || "Reservation Payment",
 				order_id: rpOrder.orderId,
 				prefill: {

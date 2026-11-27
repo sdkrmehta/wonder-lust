@@ -25,7 +25,7 @@ module.exports.signup = async (req, res, next) => {
 			}
 			req.flash(
 				"success",
-				"Welcome to Wander-Lust! Your account has been created.",
+				"Welcome to Wonder-Lust! Your account has been created.",
 			);
 			res.redirect("/listings");
 		});
@@ -44,7 +44,7 @@ module.exports.login = async (req, res) => {
 		req.session.csrfToken = generateCsrfToken();
 		req.session.userSessionVersion = Number((req.user && req.user.sessionVersion) || 1);
 	}
-	req.flash("success", "Welcome back to Wander-Lust!");
+	req.flash("success", "Welcome back to Wonder-Lust!");
 	const redirectUrl = sanitizeInternalRedirect(res.locals.redirectUrl, "/listings");
 	if (req.session && req.session.redirectUrl) {
 		delete req.session.redirectUrl;

@@ -114,11 +114,11 @@ function assert(condition, message) {
 
 async function runTests() {
 	console.log("==========================================================");
-	console.log("   WANDER-LUST PHASE 14 OPTIMIZATION & INDEXING TESTS     ");
+	console.log("   WONDER-LUST PHASE 14 OPTIMIZATION & INDEXING TESTS     ");
 	console.log("==========================================================\n");
 
-	// 1. Spawning Wander-Lust server on port 8094
-	console.log(`1. Starting Wander-Lust test server on port ${PORT}...`);
+	// 1. Spawning Wonder-Lust server on port 8094
+	console.log(`1. Starting Wonder-Lust test server on port ${PORT}...`);
 	serverProc = fork(path.join(__dirname, "../server.js"), [], {
 		env: { ...process.env, PORT: String(PORT) },
 		stdio: "pipe",
@@ -220,7 +220,7 @@ async function runTests() {
 		gzipRes.headers["content-encoding"] === "gzip",
 		"Response must be compressed with Content-Encoding: gzip",
 	);
-	assert(gzipRes.body.includes("Wander-Lust"), "Decompressed payload must render valid HTML");
+	assert(gzipRes.body.includes("Wonder-Lust"), "Decompressed payload must render valid HTML");
 	console.log(`   [PASS] Gzip compression active (Payload size: ${gzipRes.rawBody.length} bytes compressed).\n`);
 
 	// 8. Testing HTTP Deflate Compression on REST API

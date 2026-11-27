@@ -84,7 +84,7 @@ function createClient() {
 
 async function runTests() {
 	console.log("==================================================");
-	console.log("   WANDER-LUST PHASE 1 STABILIZATION TEST SUITE   ");
+	console.log("   WONDER-LUST PHASE 1 STABILIZATION TEST SUITE   ");
 	console.log("==================================================\n");
 
 	// 1. Start App on test port

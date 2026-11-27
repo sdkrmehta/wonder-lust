@@ -1,4 +1,4 @@
-// Wander-Lust Airbnb-Style Unified Search Engine & Scroll Animation Controller
+// Wonder-Lust Airbnb-Style Unified Search Engine & Scroll Animation Controller
 (() => {
 	"use strict";
 
@@ -33,7 +33,7 @@
 		const searchOverlay = document.getElementById("headerSearchOverlay");
 		const searchBackdrop = document.getElementById("headerSearchBackdrop");
 		const closeOverlayBtn = document.getElementById("closeHeaderSearchBtn");
-		const allSearchForms = document.querySelectorAll(".wanderlust-search-form");
+		const allSearchForms = document.querySelectorAll(".wonderlust-search-form");
 
 		// ----------------------------------------------------------------------
 		// 1. Initial State from Form Inputs / URL Parameters
@@ -44,7 +44,7 @@
 				document.getElementById("heroSearchForm") ||
 				document.getElementById("listingsSearchForm") ||
 				document.getElementById("headerExpandedSearchForm") ||
-				document.querySelector(".wanderlust-search-form");
+				document.querySelector(".wonderlust-search-form");
 
 			if (!refForm) {
 				return { q: "", checkIn: "", checkOut: "", bedrooms: "1", guests: "2" };

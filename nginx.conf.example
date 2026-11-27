@@ -1,4 +1,4 @@
-# Reference Nginx Reverse Proxy Configuration for Wanderlust (Production HTTPS)
+# Reference Nginx Reverse Proxy Configuration for Wonderlust (Production HTTPS)
 # Copy and adapt for your domain and TLS certificate paths before deploying.
 
 server {

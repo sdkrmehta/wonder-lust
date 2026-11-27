@@ -182,7 +182,7 @@ const env = {
 			? process.env.MONGO_REQUIRE_TLS === "true"
 			: isProduction,
 	SESSION_SECRET: sessionSecret,
-	SESSION_NAME: process.env.SESSION_NAME || "wanderlust.sid",
+	SESSION_NAME: process.env.SESSION_NAME || "wonderlust.sid",
 	SESSION_MAX_AGE_DAYS: Math.max(
 		1,
 		parseInt(process.env.SESSION_MAX_AGE_DAYS, 10) || 7,

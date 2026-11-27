@@ -1,5 +1,5 @@
 /**
- * Wanderlust Production ETL Ingestion Pipeline
+ * Wonderlust Production ETL Ingestion Pipeline
  * Parses Inside Airbnb Seattle dataset (listings.csv & reviews.csv),
  * cleanses and transforms attributes, clears existing sample hotels,
  * and loads 3,800+ real-world properties into MongoDB.
@@ -181,7 +181,7 @@ function mapCategory(title, desc, propType, amenities, rawRating) {
 
 async function runETL() {
 	console.log("\n=======================================================");
-	console.log("   WANDERLUST PRODUCTION DATASET ETL INGESTION");
+	console.log("   WONDERLUST PRODUCTION DATASET ETL INGESTION");
 	console.log("=======================================================\n");
 
 	const startTime = Date.now();
@@ -202,15 +202,15 @@ async function runETL() {
 
 	// Step 3: Ensure Default Host User & Reviewer Users
 	console.log("\n[3/5] Setting up host and traveler accounts...");
-	let hostUser = await User.findOne({ username: "wanderlust_host" });
+	let hostUser = await User.findOne({ username: "wonderlust_host" });
 	if (!hostUser) {
 		hostUser = new User({
-			email: "host@wanderlust.local",
-			username: "wanderlust_host",
+			email: "host@wonderlust.local",
+			username: "wonderlust_host",
 			role: "host",
 		});
 		await User.register(hostUser, "Password123!");
-		console.log("Created default host account: wanderlust_host");
+		console.log("Created default host account: wonderlust_host");
 	}
 
 	const reviewerUsernames = ["traveler_elena", "traveler_marcus", "traveler_chloe", "traveler_sam"];
@@ -218,7 +218,7 @@ async function runETL() {
 	for (const uname of reviewerUsernames) {
 		let u = await User.findOne({ username: uname });
 		if (!u) {
-			u = new User({ email: `${uname}@wanderlust.local`, username: uname });
+			u = new User({ email: `${uname}@wonderlust.local`, username: uname });
 			await User.register(u, "Password123!");
 		}
 		reviewerUsers.push(u);

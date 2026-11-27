@@ -292,7 +292,7 @@
 					<% } %>
 				</button>
 				<p class="text-center text-muted small mt-2">
-					By clicking Pay, you agree to the Wander-Lust Guest Refund Policy and Terms of Service.
+					By clicking Pay, you agree to the Wonder-Lust Guest Refund Policy and Terms of Service.
 				</p>
 			</form>
 		</div>
@@ -377,7 +377,7 @@
 	gatewayMode: typeof paymentGatewayMode !== "undefined" ? paymentGatewayMode : "sandbox",
 	bookingId: String(booking._id),
 	amount: booking.totalPrice,
-	listingTitle: listing && listing.title ? listing.title : "Wander-Lust Reservation",
+	listingTitle: listing && listing.title ? listing.title : "Wonder-Lust Reservation",
 	bookingUrl: `/bookings/${booking._id}`,
 	csrfToken: csrfToken || "",
 	prefill: {

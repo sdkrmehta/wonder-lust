@@ -88,11 +88,11 @@ function assert(condition, message) {
 
 async function runTests() {
 	console.log("==========================================================");
-	console.log("   WANDER-LUST PHASE 3 SEARCH & DISCOVERY TEST SUITE      ");
+	console.log("   WONDER-LUST PHASE 3 SEARCH & DISCOVERY TEST SUITE      ");
 	console.log("==========================================================\n");
 
 	// 1. Start Server on port 8083
-	console.log("1. Starting Wander-Lust test server on port 8083...");
+	console.log("1. Starting Wonder-Lust test server on port 8083...");
 	serverProc = fork(path.join(__dirname, "../server.js"), [], {
 		env: { ...process.env, PORT: String(PORT) },
 		stdio: "pipe",

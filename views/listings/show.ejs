@@ -150,7 +150,7 @@
 						</div>
 						<div>
 							<span class="text-muted small d-block">Hosted with Care by</span>
-							<h6 class="fw-bold text-dark mb-0"><%= listing.owner ? listing.owner.username : "Wander-Lust Host" %></h6>
+							<h6 class="fw-bold text-dark mb-0"><%= listing.owner ? listing.owner.username : "Wonder-Lust Host" %></h6>
 						</div>
 					</div>
 					<% if (currUser && listing.owner && !currUser._id.equals(listing.owner._id)) { %>
@@ -742,7 +742,7 @@
 						<!-- Security & Protection Callout -->
 						<div class="d-flex align-items-center gap-2 text-muted small mt-3 pt-2 border-top" style="border-color: var(--border-color) !important;">
 							<i class="fa-solid fa-shield-halved text-success"></i>
-							<span style="font-size: 0.76rem;">Wander-Lust Protection Guarantee &bull; 256-bit Secure</span>
+							<span style="font-size: 0.76rem;">Wonder-Lust Protection Guarantee &bull; 256-bit Secure</span>
 						</div>
 					</form>
 				</div>
@@ -850,7 +850,7 @@
 	galleryImages: galleryImages.map((g) => ({ url: g.url })),
 }) %></script>
 <script nonce="<%= cspNonce || '' %>">
-	window.__wanderlustCreateMap = (id, opts) => L.map(id, opts);
-	window.__wanderlustGalleryAction = "switchHeroImage";
+	window.__wonderlustCreateMap = (id, opts) => L.map(id, opts);
+	window.__wonderlustGalleryAction = "switchHeroImage";
 </script>
 <script nonce="<%= cspNonce || '' %>" src="/js/listing-show.js"></script>

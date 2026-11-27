@@ -148,8 +148,8 @@
 			const initialZoom = lat === 20.0 && lng === 0.0 ? 2 : 13;
 
 			const createMap =
-				typeof window.__wanderlustCreateMap === "function"
-					? window.__wanderlustCreateMap
+				typeof window.__wonderlustCreateMap === "function"
+					? window.__wonderlustCreateMap
 					: (id, opts) => L.map(id, opts);
 			const map = createMap("map", { scrollWheelZoom: false }).setView([lat, lng], initialZoom);
 			L.tileLayer(

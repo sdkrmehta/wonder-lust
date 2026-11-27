@@ -1,11 +1,11 @@
 // ==============================================================================
-// WANDER-LUST PM2 ENTERPRISE CLUSTER CONFIGURATION (PRODUCTION)
+// WONDER-LUST PM2 ENTERPRISE CLUSTER CONFIGURATION (PRODUCTION)
 // ==============================================================================
 
 module.exports = {
 	apps: [
 		{
-			name: "wanderlust-api",
+			name: "wonderlust-api",
 			script: "server.js",
 			instances: process.env.PM2_INSTANCES || "max",
 			exec_mode: "cluster",

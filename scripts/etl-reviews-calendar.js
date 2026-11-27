@@ -61,7 +61,7 @@ function parseCSV(text) {
 
 async function runETL() {
 	console.log("=================================================");
-	console.log("  Wander-Lust: Ingesting Reviews & Calendar Data ");
+	console.log("  Wonder-Lust: Ingesting Reviews & Calendar Data ");
 	console.log("=================================================");
 
 	console.log("\n[1/4] Connecting to MongoDB database...");

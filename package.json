@@ -2,7 +2,7 @@
 	"engines": {
 		"node": ">=20.0.0"
 	},
-	"name": "wander-lust",
+	"name": "wonder-lust",
 	"version": "1.0.0",
 	"main": "server.js",
 	"scripts": {
@@ -12,7 +12,7 @@
 		"seed": "node init/index.js",
 		"etl": "node scripts/etl-dataset.js",
 		"etl:full": "node scripts/etl-reviews-calendar.js",
-		"docker:build": "docker build -t wander-lust .",
+		"docker:build": "docker build -t wonder-lust .",
 		"docker:up": "docker-compose up -d",
 		"docker:up:proxy": "docker-compose --profile proxy up -d",
 		"docker:down": "docker-compose --profile proxy down",

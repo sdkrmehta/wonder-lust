@@ -147,7 +147,7 @@ class PaymentService {
 		// Extract billing details
 		const rawBilling = paymentData.billingDetails || {};
 		const billingDetails = {
-			fullName: rawBilling.fullName || paymentData.cardHolderName || user.username || "Wander-Lust Traveler",
+			fullName: rawBilling.fullName || paymentData.cardHolderName || user.username || "Wonder-Lust Traveler",
 			email: rawBilling.email || user.email || `${user.username || "guest"}@example.com`,
 			phone: rawBilling.phone || paymentData.phone || "+91 9876543210",
 			address: rawBilling.address || paymentData.address || "123 Commercial Boulevard",
@@ -270,8 +270,8 @@ class PaymentService {
 			paymentMethod,
 			status: requireGatewayConfirmation ? "pending" : "succeeded",
 			gateway: requireGatewayConfirmation
-				? "wanderlust_pay_gateway"
-				: "wanderlust_pay_sandbox",
+				? "wonderlust_pay_gateway"
+				: "wonderlust_pay_sandbox",
 			webhookVerified: false,
 			cardDetails,
 			upiDetails,

@@ -180,7 +180,7 @@ async function geocodeAddress(locationStr = "", countryStr = "") {
 	try {
 		const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
 		const res = await fetch(url, {
-			headers: { "User-Agent": "Wanderlust-Travel-Platform/1.0" },
+			headers: { "User-Agent": "Wonderlust-Travel-Platform/1.0" },
 			signal: AbortSignal.timeout(2500),
 		});
 		if (res.ok) {
