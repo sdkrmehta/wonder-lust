@@ -18,7 +18,7 @@
 					</div>
 
 					<div class="text-md-end mt-3 mt-md-0">
-						<% if (payment.status === 'succeeded') { %>
+						<% if (payment.status === 'paid' || payment.status === 'succeeded') { %>
 							<span class="stamp stamp-confirmed fs-6 py-2 px-3 shadow-sm">
 								<i class="fa-solid fa-circle-check me-1"></i> PAYMENT CONFIRMED
 							</span>
@@ -82,14 +82,28 @@
 					<div class="col-12 col-md-6">
 						<div class="p-3 rounded-3 h-100" style="background-color: var(--paper-50); border: 1px solid var(--border-color);">
 							<h6 class="fw-bold text-muted small text-uppercase mb-2" style="letter-spacing: 0.05em;">Billed To (Guest)</h6>
-							<div class="fw-bold fs-6 text-dark mb-1"><%= payment.billingDetails ? payment.billingDetails.fullName : (currUser ? currUser.username : 'Traveler') %></div>
-							<div class="text-muted small"><%= payment.billingDetails ? payment.billingDetails.email : '' %></div>
-							<div class="text-muted small"><%= payment.billingDetails ? payment.billingDetails.phone : '' %></div>
+							<% const bd = payment.billingDetails || {}; %>
+							<div class="fw-bold fs-6 text-dark mb-1"><%= bd.fullName || (currUser ? (currUser.fullName || currUser.username) : 'Traveler') %></div>
+							<% if (bd.email) { %>
+								<div class="text-muted small"><%= bd.email %></div>
+							<% } %>
+							<% if (bd.phone) { %>
+								<div class="text-muted small"><%= bd.phone %></div>
+							<% } %>
 							<div class="text-muted small mt-1">
-								<%= payment.billingDetails ? payment.billingDetails.address : '' %>,
-								<%= payment.billingDetails ? payment.billingDetails.city : '' %>,
-								<%= payment.billingDetails ? payment.billingDetails.state : '' %>
-								<%= payment.billingDetails ? payment.billingDetails.postalCode : '' %>
+								<% if (bd.addressLine1 || bd.address) { %>
+									<div><%= bd.addressLine1 || bd.address %></div>
+								<% } %>
+								<% if (bd.addressLine2) { %>
+									<div><%= bd.addressLine2 %></div>
+								<% } %>
+								<% if (bd.landmark) { %>
+									<div>Landmark: <%= bd.landmark %></div>
+								<% } %>
+								<div>
+									<%= [bd.city, bd.state, bd.postalCode].filter(Boolean).join(', ') %>
+									<%= bd.country ? ` (${bd.country})` : '' %>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -141,13 +155,16 @@
 							<% } else if (payment.paymentMethod === 'netbanking') { %>
 								<i class="fa-solid fa-building-columns me-1 text-primary"></i>
 								NetBanking (<%= payment.netbankingDetails ? payment.netbankingDetails.bankName : 'Bank' %>)
+							<% } else if (payment.paymentMethod === 'razorpay_payment_link') { %>
+								<i class="fa-solid fa-shield-halved me-1 text-success"></i>
+								Razorpay Hosted Payment Link
 							<% } else { %>
-								<%= payment.paymentMethod.toUpperCase() %>
+								<%= (payment.paymentMethod || 'ONLINE').toUpperCase() %>
 							<% } %>
 						</strong>
 					</div>
 					<div class="text-muted mt-1 mt-sm-0">
-						Gateway: <strong class="text-dark">Wonder-Lust Pay &bull; 256-Bit SSL</strong>
+						Gateway: <strong class="text-dark"><%= (payment.gateway === 'razorpay_payment_link' || payment.gateway === 'razorpay') ? 'Razorpay' : 'Wonder-Lust Pay' %> &bull; 256-Bit SSL</strong>
 					</div>
 				</div>
 

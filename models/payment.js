@@ -38,17 +38,21 @@ const paymentSchema = new Schema(
 		},
 		paymentMethod: {
 			type: String,
-			enum: ["card", "upi", "netbanking", "wallet"],
+			enum: ["card", "upi", "netbanking", "wallet", "emi", "bank_transfer", "razorpay_payment_link"],
 			default: "card",
 		},
 		status: {
 			type: String,
-			enum: ["pending", "succeeded", "failed", "refunded"],
+			enum: ["pending", "created", "paid", "succeeded", "failed", "cancelled", "expired", "refunded"],
 			default: "succeeded",
 		},
 		gateway: {
 			type: String,
 			default: "wonderlust_pay",
+		},
+		gatewayStatus: {
+			type: String,
+			default: null,
 		},
 		gatewayOrderId: {
 			type: String,
@@ -58,6 +62,27 @@ const paymentSchema = new Schema(
 			type: String,
 			default: null,
 		},
+		paymentLinkId: {
+			type: String,
+			default: null,
+		},
+		paymentLinkReferenceId: {
+			type: String,
+			default: null,
+		},
+		paymentLinkShortUrl: {
+			type: String,
+			default: null,
+		},
+		paymentLinkStatus: {
+			type: String,
+			enum: ["created", "partially_paid", "paid", "cancelled", "expired", null],
+			default: null,
+		},
+		paymentLinkExpiresAt: {
+			type: Date,
+			default: null,
+		},
 		webhookVerified: {
 			type: Boolean,
 			default: false,
@@ -65,6 +90,10 @@ const paymentSchema = new Schema(
 		webhookEventId: {
 			type: String,
 			default: null,
+		},
+		processedWebhookEvents: {
+			type: [String],
+			default: [],
 		},
 		gatewaySignatureVerifiedAt: {
 			type: Date,
@@ -85,6 +114,9 @@ const paymentSchema = new Schema(
 			fullName: { type: String, trim: true },
 			email: { type: String, trim: true, lowercase: true },
 			phone: { type: String, trim: true },
+			addressLine1: { type: String, trim: true },
+			addressLine2: { type: String, trim: true },
+			landmark: { type: String, trim: true },
 			address: { type: String, trim: true },
 			city: { type: String, trim: true },
 			state: { type: String, trim: true },
@@ -113,6 +145,8 @@ paymentSchema.index({ transactionId: 1 }, { unique: true });
 paymentSchema.index({ orderId: 1 }, { unique: true });
 paymentSchema.index({ gatewayOrderId: 1 }, { sparse: true });
 paymentSchema.index({ gatewayPaymentId: 1 }, { sparse: true });
+paymentSchema.index({ paymentLinkId: 1 }, { sparse: true });
+paymentSchema.index({ paymentLinkReferenceId: 1 }, { sparse: true });
 paymentSchema.index({ booking: 1 });
 paymentSchema.index({ booking: 1, status: 1 });
 paymentSchema.index({ user: 1, createdAt: -1 });

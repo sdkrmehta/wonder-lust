@@ -4,11 +4,16 @@ const { fork } = require("child_process");
 const mongoose = require("mongoose");
 const env = require("../config/env");
 const { cleanNoSql, cleanXss } = require("../middleware/sanitize.middleware");
+const {
+	startMockResendServer,
+	signupAndVerifyClient,
+} = require("./helpers/testHarness");
 
 const PORT = 8093; // Dedicated port for Phase 13 test suite
 const BASE_URL = `http://localhost:${PORT}`;
 
 let serverProc;
+let mockResend;
 
 function createClient() {
 	let cookies = {};
@@ -96,8 +101,18 @@ async function runTests() {
 
 	// 1. Spawning Wonder-Lust server on port 8093
 	console.log(`1. Starting Wonder-Lust test server on port ${PORT}...`);
+	mockResend = await startMockResendServer();
 	serverProc = fork(path.join(__dirname, "../server.js"), [], {
-		env: { ...process.env, PORT: String(PORT) },
+		env: {
+			...process.env,
+			PORT: String(PORT),
+			PAYMENT_PROVIDER: "sandbox",
+			APP_BASE_URL: BASE_URL,
+			RESEND_API_KEY: "re_test_mock_key",
+			RESEND_FROM_EMAIL: "Wonder-Lust <no-reply@wonderlust.test>",
+			RESEND_BASE_URL: mockResend.url,
+			OTP_HASH_SECRET: "test-otp-hash-secret-phase13",
+		},
 		stdio: "pipe",
 	});
 
@@ -205,9 +220,10 @@ async function runTests() {
 
 	// 6. User Signup & Stored XSS Protection in Listing Pipeline
 	console.log("6. Testing End-to-End Stored XSS Sanitization in Listing Creation...");
-	const signupRes = await client("/signup", {
-		method: "POST",
-		body: `username=${testUser.username}&email=${testUser.email}&password=${testUser.password}`,
+	const { signupRes } = await signupAndVerifyClient(client, mockResend, {
+		username: testUser.username,
+		email: testUser.email,
+		password: testUser.password,
 	});
 	assert(signupRes.status === 302, "User signup must succeed");
 
@@ -264,9 +280,10 @@ async function runTests() {
 	console.log("8. Testing Review Comment Stored XSS Sanitization...");
 	const reviewerClient = createClient();
 	const reviewerUser = `sec_reviewer_${Date.now()}`;
-	await reviewerClient("/signup", {
-		method: "POST",
-		body: `username=${reviewerUser}&email=${reviewerUser}@example.com&password=Password123!`,
+	await signupAndVerifyClient(reviewerClient, mockResend, {
+		username: reviewerUser,
+		email: `${reviewerUser}@example.com`,
+		password: "Password123!",
 	});
 
 	const reviewWithXss = {
@@ -296,9 +313,10 @@ async function runTests() {
 	console.log("9. Testing Messaging Stored XSS Sanitization...");
 	const msgClient2 = createClient();
 	const user2Name = `sec_sender_${Date.now()}`;
-	await msgClient2("/signup", {
-		method: "POST",
-		body: `username=${user2Name}&email=${user2Name}@example.com&password=Password123!`,
+	await signupAndVerifyClient(msgClient2, mockResend, {
+		username: user2Name,
+		email: `${user2Name}@example.com`,
+		password: "Password123!",
 	});
 
 	const msgRes = await msgClient2("/api/v1/conversations/inquiry", {
@@ -392,6 +410,9 @@ runTests()
 	.finally(async () => {
 		if (serverProc) {
 			serverProc.kill("SIGTERM");
+		}
+		if (mockResend) {
+			await mockResend.close().catch(() => {});
 		}
 		try {
 			await mongoose.disconnect();

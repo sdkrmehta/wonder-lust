@@ -21,6 +21,7 @@
 		"audit:kdf": "node scripts/audit-password-migration.js",
 		"test": "node tests/runAllTests.js",
 		"test:all": "node tests/runAllTests.js",
+		"test:phase17": "node tests/phase17.test.js",
 		"test:phase16": "node tests/phase16.test.js",
 		"test:phase15": "node tests/phase15.test.js",
 		"test:phase14": "node tests/phase14.test.js",
@@ -68,6 +69,7 @@
 		"passport-local": "^1.0.0",
 		"passport-local-mongoose": "^8.0.0",
 		"rate-limit-redis": "^6.0.2",
-		"razorpay": "^2.9.8"
+		"razorpay": "^2.9.8",
+		"resend": "^6.41.0"
 	}
 }

@@ -94,7 +94,11 @@ async function runTests() {
 	// 1. Start Server on port 8083
 	console.log("1. Starting Wonder-Lust test server on port 8083...");
 	serverProc = fork(path.join(__dirname, "../server.js"), [], {
-		env: { ...process.env, PORT: String(PORT) },
+		env: {
+			...process.env,
+			PORT: String(PORT),
+			PAYMENT_PROVIDER: "sandbox",
+		},
 		stdio: "pipe",
 	});
 

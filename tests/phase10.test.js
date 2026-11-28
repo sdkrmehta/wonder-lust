@@ -1,11 +1,16 @@
 const http = require("http");
 const path = require("path");
 const { fork } = require("child_process");
+const {
+	startMockResendServer,
+	signupAndVerifyClient,
+} = require("./helpers/testHarness");
 
 const PORT = 8090; // Dedicated port for Phase 10 test suite
 const BASE_URL = `http://localhost:${PORT}`;
 
 let serverProc;
+let mockResend;
 
 function createClient() {
 	let cookies = {};
@@ -93,8 +98,18 @@ async function runTests() {
 
 	// 1. Start Server on port 8090
 	console.log("1. Starting Wonder-Lust test server on port 8090...");
+	mockResend = await startMockResendServer();
 	serverProc = fork(path.join(__dirname, "../server.js"), [], {
-		env: { ...process.env, PORT: String(PORT) },
+		env: {
+			...process.env,
+			PORT: String(PORT),
+			PAYMENT_PROVIDER: "sandbox",
+			APP_BASE_URL: BASE_URL,
+			RESEND_API_KEY: "re_test_mock_key",
+			RESEND_FROM_EMAIL: "Wonder-Lust <no-reply@wonderlust.test>",
+			RESEND_BASE_URL: mockResend.url,
+			OTP_HASH_SECRET: "test-otp-hash-secret-phase10",
+		},
 		stdio: "pipe",
 	});
 
@@ -136,19 +151,22 @@ async function runTests() {
 	const guest1Name = `traveler_msg1_${Date.now()}`;
 	const guest2Name = `traveler_msg2_${Date.now()}`;
 
-	await hostClient("/signup", {
-		method: "POST",
-		body: `username=${hostName}&email=${hostName}@example.com&password=Password123`,
+	await signupAndVerifyClient(hostClient, mockResend, {
+		username: hostName,
+		email: `${hostName}@example.com`,
+		password: "Password123",
 	});
 
-	await guestClient1("/signup", {
-		method: "POST",
-		body: `username=${guest1Name}&email=${guest1Name}@example.com&password=Password123`,
+	await signupAndVerifyClient(guestClient1, mockResend, {
+		username: guest1Name,
+		email: `${guest1Name}@example.com`,
+		password: "Password123",
 	});
 
-	await guestClient2("/signup", {
-		method: "POST",
-		body: `username=${guest2Name}&email=${guest2Name}@example.com&password=Password123`,
+	await signupAndVerifyClient(guestClient2, mockResend, {
+		username: guest2Name,
+		email: `${guest2Name}@example.com`,
+		password: "Password123",
 	});
 
 	console.log("   [PASS] Host and 2 Guest travelers authenticated.\n");
@@ -311,9 +329,12 @@ runTests()
 		if (err.stack) console.error(err.stack);
 		exitCode = 1;
 	})
-	.finally(() => {
+	.finally(async () => {
 		if (serverProc) {
 			serverProc.kill("SIGTERM");
+		}
+		if (mockResend) {
+			await mockResend.close().catch(() => {});
 		}
 		process.exit(exitCode);
 	});

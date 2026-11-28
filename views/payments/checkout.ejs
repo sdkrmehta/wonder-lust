@@ -1,4 +1,13 @@
 <% layout("layouts/boilerplate") %>
+<%
+	const b = (typeof billingDefaults !== "undefined" && billingDefaults) ? billingDefaults : {};
+	const countryList = (typeof countries !== "undefined" && Array.isArray(countries) && countries.length > 0)
+		? countries
+		: ["India", "Australia", "Canada", "France", "Germany", "Japan", "Singapore", "United Arab Emirates", "United Kingdom", "United States"];
+	const selectedCountry = b.country || "India";
+	const isIndia = selectedCountry.toLowerCase() === "india";
+	const isGatewayReady = (typeof gatewayConfigured === "undefined") ? true : Boolean(gatewayConfigured);
+%>
 
 <div class="container my-4 my-md-5">
 	<!-- Page Heading & Breadcrumb -->
@@ -7,17 +16,17 @@
 			<ol class="breadcrumb small">
 				<li class="breadcrumb-item"><a href="/listings" class="text-decoration-none text-muted">Explore</a></li>
 				<li class="breadcrumb-item"><a href="/listings/<%= listing._id %>" class="text-decoration-none text-muted"><%= listing.title %></a></li>
-				<li class="breadcrumb-item active fw-semibold text-dark" aria-current="page">Confirm &amp; Pay</li>
+				<li class="breadcrumb-item active fw-semibold text-dark" aria-current="page">Checkout &amp; Billing</li>
 			</ol>
 		</nav>
 		<h1 class="editorial-title text-dark mb-1" style="font-size: 2.2rem;">
 			<i class="fa-solid fa-shield-halved me-2" style="color: var(--forest-800);"></i>Confirm and Pay
 		</h1>
-		<p class="text-muted small">Complete your payment securely with 256-bit SSL encrypted checkout.</p>
+		<p class="text-muted small">Review your billing details and proceed to Razorpay's hosted secure payment page.</p>
 	</div>
 
 	<div class="row g-4 g-lg-5">
-		<!-- Left Column: Payment Form -->
+		<!-- Left Column: Editable Billing Details & Hosted Payment Redirect -->
 		<div class="col-12 col-lg-7 order-2 order-lg-1">
 			<form
 				action="/payments/process/<%= booking._id %>"
@@ -27,258 +36,221 @@
 				class="needs-validation"
 			>
 				<input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
-				<!-- Hidden field to verify price integrity -->
-				<input type="hidden" name="amount" value="<%= booking.totalPrice %>" />
-
-				<!-- Payment Method Selection Card -->
-				<div class="checkout-section-card">
-					<div class="d-flex align-items-center justify-content-between mb-3">
-						<h5 class="fw-bold mb-0" style="color: var(--ink-900);">1. Select Payment Method</h5>
-						<span class="stamp stamp-info" style="font-size: 0.7rem;">
-							<%= (typeof paymentProvider !== 'undefined' && paymentProvider === 'razorpay') ? 'Razorpay Checkout' : ((typeof paymentGatewayMode !== 'undefined' && paymentGatewayMode === 'strict') ? 'Webhook Gateway' : 'Simulated Gateway') %>
-						</span>
-					</div>
-
-					<div class="method-pill-group d-flex gap-1 mb-4" role="tablist">
-						<button
-							type="button"
-							class="method-tab-btn active-method-btn"
-							id="methodCardBtn"
-							data-payment-method="card"
-						>
-							<i class="fa-regular fa-credit-card text-danger"></i> Card
-						</button>
-						<button
-							type="button"
-							class="method-tab-btn"
-							id="methodUpiBtn"
-							data-payment-method="upi"
-						>
-							<i class="fa-solid fa-mobile-screen-button text-success"></i> UPI
-						</button>
-						<button
-							type="button"
-							class="method-tab-btn"
-							id="methodNetbankingBtn"
-							data-payment-method="netbanking"
-						>
-							<i class="fa-solid fa-building-columns text-primary"></i> NetBanking
-						</button>
-					</div>
-
-					<input type="hidden" name="paymentMethod" id="selectedPaymentMethod" value="card" />
-
-					<!-- Card Payment Tab Content -->
-					<div id="cardPaymentSection">
-						<div class="mb-3">
-							<label for="cardNumber" class="form-label small fw-semibold text-muted">Card Number</label>
-							<div class="input-group">
-								<span class="input-group-text bg-white border-end-0 text-muted">
-									<i class="fa-regular fa-credit-card" id="cardBrandIcon"></i>
-								</span>
-								<input
-									type="text"
-									class="form-control border-start-0 tabular-nums"
-									id="cardNumber"
-									name="cardNumber"
-									placeholder="4532 &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; 4242"
-									maxlength="19"
-									value="4111 2222 3333 4242"
-									required
-								/>
-							</div>
-							<div class="form-text small">Test Visa, Mastercard, or RuPay card numbers accepted.</div>
-						</div>
-
-						<div class="row g-2 mb-3">
-							<div class="col-6">
-								<label for="cardExpiry" class="form-label small fw-semibold text-muted">Expiration Date</label>
-								<input
-									type="text"
-									class="form-control tabular-nums"
-									id="cardExpiry"
-									name="cardExpiry"
-									placeholder="MM / YY"
-									maxlength="7"
-									value="12/28"
-									required
-								/>
-							</div>
-							<div class="col-6">
-								<label for="cardCvc" class="form-label small fw-semibold text-muted">CVV / CVC</label>
-								<div class="input-group">
-									<input
-										type="password"
-										class="form-control tabular-nums"
-										id="cardCvc"
-										name="cardCvc"
-										placeholder="123"
-										maxlength="4"
-										value="888"
-										required
-									/>
-									<span class="input-group-text bg-white text-muted">
-										<i class="fa-solid fa-lock text-success small"></i>
-									</span>
-								</div>
-							</div>
-						</div>
-
-						<div class="mb-2">
-							<label for="cardHolderName" class="form-label small fw-semibold text-muted">Name on Card</label>
-							<input
-								type="text"
-								class="form-control"
-								id="cardHolderName"
-								name="cardHolderName"
-								value="<%= currUser ? currUser.username : 'Traveler' %>"
-								placeholder="Full name as printed on card"
-								required
-							/>
-						</div>
-					</div>
-
-					<!-- UPI Payment Tab Content -->
-					<div id="upiPaymentSection" class="d-none">
-						<div class="mb-3">
-							<label for="upiId" class="form-label small fw-semibold text-muted">Virtual Payment Address (VPA / UPI ID)</label>
-							<div class="input-group">
-								<span class="input-group-text bg-white text-muted">@</span>
-								<input
-									type="text"
-									class="form-control"
-									id="upiId"
-									name="upiId"
-									placeholder="username@okhdfcbank"
-									value="<%= currUser ? currUser.username : 'traveler' %>@okhdfcbank"
-								/>
-							</div>
-							<div class="d-flex flex-wrap gap-2 mt-2">
-								<button type="button" class="btn btn-outline-secondary btn-sm rounded-pill py-0 px-2" style="font-size: 0.75rem;" data-upi-handle="okhdfcbank">@okhdfcbank</button>
-								<button type="button" class="btn btn-outline-secondary btn-sm rounded-pill py-0 px-2" style="font-size: 0.75rem;" data-upi-handle="okicici">@okicici</button>
-								<button type="button" class="btn btn-outline-secondary btn-sm rounded-pill py-0 px-2" style="font-size: 0.75rem;" data-upi-handle="oksbi">@oksbi</button>
-								<button type="button" class="btn btn-outline-secondary btn-sm rounded-pill py-0 px-2" style="font-size: 0.75rem;" data-upi-handle="paytm">@paytm</button>
-							</div>
-						</div>
-						<div class="p-3 rounded-3 small text-muted" style="background-color: var(--paper-100); border: 1px solid var(--border-color);">
-							<i class="fa-solid fa-qrcode me-1 text-primary"></i> A payment request notification will be delivered to your UPI app. Approve within 5 minutes to confirm.
-						</div>
-					</div>
-
-					<!-- NetBanking Payment Tab Content -->
-					<div id="netbankingPaymentSection" class="d-none">
-						<label class="form-label small fw-semibold text-muted mb-2">Select Your Bank</label>
-						<div class="row row-cols-1 row-cols-sm-2 g-2 mb-3">
-							<div class="col">
-								<label class="bank-select-card">
-									<input type="radio" name="bankName" value="HDFC Bank" checked />
-									<span class="small fw-semibold">HDFC Bank</span>
-								</label>
-							</div>
-							<div class="col">
-								<label class="bank-select-card">
-									<input type="radio" name="bankName" value="State Bank of India" />
-									<span class="small fw-semibold">State Bank of India</span>
-								</label>
-							</div>
-							<div class="col">
-								<label class="bank-select-card">
-									<input type="radio" name="bankName" value="ICICI Bank" />
-									<span class="small fw-semibold">ICICI Bank</span>
-								</label>
-							</div>
-							<div class="col">
-								<label class="bank-select-card">
-									<input type="radio" name="bankName" value="Axis Bank" />
-									<span class="small fw-semibold">Axis Bank</span>
-								</label>
-							</div>
-						</div>
-					</div>
-				</div>
 
 				<!-- Billing Details Card -->
 				<div class="checkout-section-card">
-					<h5 class="fw-bold mb-3" style="color: var(--ink-900);">2. Billing Details</h5>
+					<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+						<div>
+							<h5 class="fw-bold mb-1" style="color: var(--ink-900);">1. Billing Address &amp; Invoice Details</h5>
+							<p class="text-muted small mb-0">Prefilled from your saved profile. You can edit any details for this reservation.</p>
+						</div>
+						<span class="stamp stamp-info" style="font-size: 0.7rem;">
+							<i class="fa-solid fa-file-invoice me-1"></i> Tax Invoice Ready
+						</span>
+					</div>
+
 					<div class="row g-3">
 						<div class="col-12 col-md-6">
-							<label class="form-label small fw-semibold text-muted">Full Name</label>
+							<label for="billingFullName" class="form-label small fw-semibold text-dark">
+								Full Name <span class="text-danger">*</span>
+							</label>
 							<input
 								type="text"
 								class="form-control"
+								id="billingFullName"
 								name="billingDetails[fullName]"
-								value="<%= currUser ? currUser.username : '' %>"
+								value="<%= b.fullName || '' %>"
+								placeholder="Full name for invoice"
+								minlength="2"
+								maxlength="120"
 								required
 							/>
+							<div class="invalid-feedback">Please enter the billing full name.</div>
 						</div>
+
 						<div class="col-12 col-md-6">
-							<label class="form-label small fw-semibold text-muted">Email Address (for tax invoice)</label>
+							<label for="billingEmail" class="form-label small fw-semibold text-dark">
+								Billing Email Address <span class="text-danger">*</span>
+							</label>
 							<input
 								type="email"
 								class="form-control"
+								id="billingEmail"
 								name="billingDetails[email]"
-								value="<%= currUser ? currUser.email : '' %>"
+								value="<%= b.email || '' %>"
+								placeholder="name@example.com"
 								required
 							/>
+							<div class="form-text small text-muted">For this tax invoice only; does not alter your login email.</div>
+							<div class="invalid-feedback">Please enter a valid billing email address.</div>
 						</div>
+
 						<div class="col-12">
-							<label class="form-label small fw-semibold text-muted">Street Address</label>
+							<label for="billingAddressLine1" class="form-label small fw-semibold text-dark">
+								Address Line 1 <span class="text-danger">*</span>
+							</label>
 							<input
 								type="text"
 								class="form-control"
-								name="billingDetails[address]"
-								placeholder="Flat, suite, street name"
-								value="104 Sea View Promenade"
+								id="billingAddressLine1"
+								name="billingDetails[addressLine1]"
+								placeholder="House / Flat No., Building, Street"
+								value="<%= b.addressLine1 || '' %>"
+								minlength="3"
+								maxlength="200"
+								required
+							/>
+							<div class="invalid-feedback">Please enter Address Line 1.</div>
+						</div>
+
+						<div class="col-12 col-md-6">
+							<label for="billingAddressLine2" class="form-label small fw-semibold text-dark">
+								Address Line 2 <span class="badge bg-light text-muted border fw-normal ms-1">Optional</span>
+							</label>
+							<input
+								type="text"
+								class="form-control"
+								id="billingAddressLine2"
+								name="billingDetails[addressLine2]"
+								placeholder="Apartment, Suite, Locality"
+								value="<%= b.addressLine2 || '' %>"
+								maxlength="200"
 							/>
 						</div>
-						<div class="col-6 col-md-4">
-							<label class="form-label small fw-semibold text-muted">City</label>
+
+						<div class="col-12 col-md-6">
+							<label for="billingLandmark" class="form-label small fw-semibold text-dark">
+								Landmark <span class="badge bg-light text-muted border fw-normal ms-1">Optional</span>
+							</label>
 							<input
 								type="text"
 								class="form-control"
+								id="billingLandmark"
+								name="billingDetails[landmark]"
+								placeholder="Nearby landmark"
+								value="<%= b.landmark || '' %>"
+								maxlength="150"
+							/>
+						</div>
+
+						<div class="col-12 col-sm-6">
+							<label for="billingCity" class="form-label small fw-semibold text-dark">
+								City <span class="text-danger">*</span>
+							</label>
+							<input
+								type="text"
+								class="form-control"
+								id="billingCity"
 								name="billingDetails[city]"
-								value="Mumbai"
+								value="<%= b.city || '' %>"
+								placeholder="e.g. Mumbai"
+								minlength="2"
+								maxlength="100"
+								required
 							/>
+							<div class="invalid-feedback">Please enter your city.</div>
 						</div>
-						<div class="col-6 col-md-4">
-							<label class="form-label small fw-semibold text-muted">State</label>
+
+						<div class="col-12 col-sm-6">
+							<label for="billingState" class="form-label small fw-semibold text-dark">
+								State / Province <span class="text-danger">*</span>
+							</label>
 							<input
 								type="text"
 								class="form-control"
+								id="billingState"
 								name="billingDetails[state]"
-								value="Maharashtra"
+								value="<%= b.state || '' %>"
+								placeholder="e.g. Maharashtra"
+								minlength="2"
+								maxlength="100"
+								required
 							/>
+							<div class="invalid-feedback">Please enter your state or province.</div>
 						</div>
-						<div class="col-12 col-md-4">
-							<label class="form-label small fw-semibold text-muted">PIN Code</label>
+
+						<div class="col-12 col-sm-6">
+							<label for="billingCountry" class="form-label small fw-semibold text-dark">
+								Country <span class="text-danger">*</span>
+							</label>
+							<select
+								class="form-select"
+								id="billingCountry"
+								name="billingDetails[country]"
+								data-checkout-postal-target="billingPostalCode"
+								required
+							>
+								<% for (const c of countryList) { %>
+									<option value="<%= c %>" <%= selectedCountry === c ? 'selected' : '' %>><%= c %></option>
+								<% } %>
+								<% if (!countryList.includes(selectedCountry)) { %>
+									<option value="<%= selectedCountry %>" selected><%= selectedCountry %></option>
+								<% } %>
+							</select>
+						</div>
+
+						<div class="col-12 col-sm-6">
+							<label for="billingPostalCode" class="form-label small fw-semibold text-dark">
+								<span id="billingPostalCodeLabel"><%= isIndia ? 'PIN Code' : 'Postal Code' %></span> <span class="text-danger">*</span>
+							</label>
 							<input
 								type="text"
 								class="form-control tabular-nums"
+								id="billingPostalCode"
 								name="billingDetails[postalCode]"
-								value="400001"
+								value="<%= b.postalCode || '' %>"
+								placeholder="<%= isIndia ? '6-digit PIN code (e.g. 400001)' : 'Enter postal / ZIP code' %>"
+								maxlength="20"
+								required
 							/>
+							<div class="invalid-feedback" id="billingPostalCodeFeedback">Please enter a valid PIN / postal code.</div>
+						</div>
+
+						<div class="col-12 pt-2 border-top mt-3">
+							<div class="form-check">
+								<input
+									class="form-check-input"
+									type="checkbox"
+									name="saveAsDefaultAddress"
+									value="true"
+									id="saveAsDefaultAddress"
+								/>
+								<label class="form-check-label small fw-medium text-dark" for="saveAsDefaultAddress">
+									Save this address as my default billing address for future bookings.
+								</label>
+							</div>
 						</div>
 					</div>
 				</div>
 
-				<!-- Trust & Security Badges -->
-				<div class="d-flex align-items-center gap-3 p-3 rounded-4 mb-4" style="background-color: var(--forest-50); border: 1px solid var(--forest-100);">
-					<i class="fa-solid fa-lock fa-2x" style="color: var(--forest-800);"></i>
-					<div>
-						<div class="fw-semibold text-dark" style="font-size: 0.92rem;">PCI-DSS 3.2 Level 1 Certified &bull; 256-Bit SSL Encryption</div>
-						<div class="text-muted small">Your payment credentials are tokenized and encrypted end-to-end.</div>
+				<!-- Hosted Payment Link Overview Card -->
+				<div class="checkout-section-card">
+					<div class="d-flex align-items-center justify-content-between mb-3">
+						<h5 class="fw-bold mb-0" style="color: var(--ink-900);">2. Hosted Secure Payment</h5>
+						<span class="stamp stamp-info" style="font-size: 0.7rem;">
+							<%= (typeof paymentProvider !== 'undefined' && paymentProvider === 'razorpay') ? 'Razorpay Payment Link' : 'Sandbox Gateway' %>
+						</span>
+					</div>
+
+					<div class="p-3 rounded-4 d-flex align-items-start gap-3" style="background-color: var(--forest-50); border: 1px solid var(--forest-100);">
+						<i class="fa-solid fa-up-right-from-square fa-lg mt-1" style="color: var(--forest-800);"></i>
+						<div class="small">
+							<div class="fw-semibold text-dark mb-1">You will be redirected to Razorpay's official hosted payment page</div>
+							<p class="text-muted mb-0">
+								Pay securely using UPI, Credit/Debit Cards, NetBanking, or Wallets directly on Razorpay. Wonder-Lust never collects or stores your card numbers, CVV, or banking PINs. Razorpay may ask you to confirm contact details on its hosted checkout page.
+							</p>
+						</div>
 					</div>
 				</div>
 
-				<% const isGatewayReady = (typeof gatewayConfigured === 'undefined') ? true : Boolean(gatewayConfigured); %>
-				<!-- Async Payment Status Banner (used during Razorpay Checkout & confirmation polling) -->
+				<!-- Async / Config Status Banner -->
 				<div
 					id="paymentStatusAlert"
 					class="alert <%= isGatewayReady ? 'alert-info d-none' : 'alert-warning' %> mb-3 small"
 					role="status"
 				><% if (!isGatewayReady) { %><% if (typeof paymentProvider !== 'undefined' && paymentProvider === 'razorpay') { %>Razorpay checkout is currently disabled because <code>RAZORPAY_KEY_ID</code> or <code>RAZORPAY_KEY_SECRET</code> is missing in the server environment.<% } else { %>Payment checkout is currently disabled because webhook verification credentials are not configured in the server environment.<% } %><% } %></div>
 
-				<!-- CTA Pay Button -->
+				<!-- CTA Continue Button -->
 				<button
 					type="submit"
 					class="btn btn-forest w-100 rounded-pill py-3 fw-bold fs-5 shadow-sm"
@@ -286,13 +258,13 @@
 					<%= isGatewayReady ? '' : 'disabled' %>
 				>
 					<% if (isGatewayReady) { %>
-						<i class="fa-solid fa-lock me-2"></i>Pay &#x20B9;<%= booking.totalPrice.toLocaleString("en-IN") %>
+						<i class="fa-solid fa-lock me-2"></i>Continue to secure payment (&\#x20B9;<%= booking.totalPrice.toLocaleString("en-IN") %>)
 					<% } else { %>
 						<i class="fa-solid fa-triangle-exclamation me-2"></i>Payment Gateway Not Configured
 					<% } %>
 				</button>
 				<p class="text-center text-muted small mt-2">
-					By clicking Pay, you agree to the Wonder-Lust Guest Refund Policy and Terms of Service.
+					By continuing, you agree to the Wonder-Lust Guest Refund Policy and <a href="/terms" class="text-forest text-decoration-none fw-semibold">Terms of Service</a>.
 				</p>
 			</form>
 		</div>
@@ -327,15 +299,24 @@
 				<!-- Dates & Guests Row -->
 				<div class="row g-2 pb-3 border-bottom mb-3 small" style="border-color: var(--border-color) !important;">
 					<div class="col-6">
-						<span class="text-muted d-block">Stay Dates</span>
+						<span class="text-muted d-block">Check-in</span>
 						<span class="fw-semibold text-dark">
-							<%= new Date(booking.checkIn).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' }) %> &ndash;
-							<%= new Date(booking.checkOut).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' }) %>
+							<%= new Date(booking.checkIn).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' }) %>
 						</span>
 					</div>
 					<div class="col-6">
-						<span class="text-muted d-block">Accommodations</span>
-						<span class="fw-semibold text-dark"><%= booking.guests %> guest<%= booking.guests > 1 ? 's' : '' %> &bull; <%= booking.totalNights %> night<%= booking.totalNights > 1 ? 's' : '' %></span>
+						<span class="text-muted d-block">Check-out</span>
+						<span class="fw-semibold text-dark">
+							<%= new Date(booking.checkOut).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' }) %>
+						</span>
+					</div>
+					<div class="col-6 mt-2">
+						<span class="text-muted d-block">Guests</span>
+						<span class="fw-semibold text-dark"><%= booking.guests %> guest<%= booking.guests > 1 ? 's' : '' %></span>
+					</div>
+					<div class="col-6 mt-2">
+						<span class="text-muted d-block">Duration</span>
+						<span class="fw-semibold text-dark"><%= booking.totalNights %> night<%= booking.totalNights > 1 ? 's' : '' %></span>
 					</div>
 				</div>
 
@@ -344,19 +325,19 @@
 				<table class="table table-borderless table-sm mb-3">
 					<tbody>
 						<tr>
-							<td class="text-muted">&#x20B9;<%= booking.nightlyPrice.toLocaleString("en-IN") %> &times; <%= booking.totalNights %> nights</td>
+							<td class="text-muted">&#x20B9;<%= booking.nightlyPrice.toLocaleString("en-IN") %> &times; <%= booking.totalNights %> night<%= booking.totalNights > 1 ? 's' : '' %></td>
 							<td class="text-end fw-medium tabular-nums">&#x20B9;<%= (booking.nightlyPrice * booking.totalNights).toLocaleString("en-IN") %></td>
 						</tr>
 						<tr>
-							<td class="text-muted">Standard Cleaning Fee</td>
+							<td class="text-muted">Cleaning Fee</td>
 							<td class="text-end fw-medium tabular-nums">&#x20B9;<%= (booking.cleaningFee || 500).toLocaleString("en-IN") %></td>
 						</tr>
 						<tr>
-							<td class="text-muted">GST &amp; State Taxes (18%)</td>
+							<td class="text-muted">GST &amp; Applicable Taxes (18%)</td>
 							<td class="text-end fw-medium tabular-nums">&#x20B9;<%= (booking.taxAmount || 0).toLocaleString("en-IN") %></td>
 						</tr>
 						<tr class="border-top" style="border-color: var(--border-color) !important;">
-							<td class="fw-bold fs-6 pt-2">Total Due (INR)</td>
+							<td class="fw-bold fs-6 pt-2">Total Payable (INR)</td>
 							<td class="text-end fw-bold fs-5 pt-2 tabular-nums" style="color: var(--forest-900);">&#x20B9;<%= booking.totalPrice.toLocaleString("en-IN") %></td>
 						</tr>
 					</tbody>
@@ -365,28 +346,11 @@
 				<!-- Cancellation Guarantee -->
 				<div class="p-3 rounded-3 small text-muted" style="background-color: var(--paper-100); border: 1px solid var(--border-color);">
 					<i class="fa-solid fa-circle-check text-success me-1"></i>
-					<strong class="text-dark">Free cancellation:</strong> Cancel anytime before check-in for a 100% instant refund.
+					<strong class="text-dark">Verified pricing &amp; free cancellation:</strong> Final payable amount is verified server-side. Cancel anytime before check-in for a full refund.
 				</div>
 			</div>
 		</div>
 	</div>
 </div>
 
-<script id="checkoutConfigData" type="application/json"><%- safeJson({
-	provider: typeof paymentProvider !== "undefined" ? paymentProvider : "sandbox",
-	gatewayMode: typeof paymentGatewayMode !== "undefined" ? paymentGatewayMode : "sandbox",
-	bookingId: String(booking._id),
-	amount: booking.totalPrice,
-	listingTitle: listing && listing.title ? listing.title : "Wonder-Lust Reservation",
-	bookingUrl: `/bookings/${booking._id}`,
-	csrfToken: csrfToken || "",
-	prefill: {
-		name: currUser && currUser.username ? currUser.username : "",
-		email: currUser && currUser.email ? currUser.email : "",
-		contact: currUser && currUser.phone ? currUser.phone : "",
-	},
-}) %></script>
-<% if (typeof paymentProvider !== "undefined" && paymentProvider === "razorpay") { %>
-	<script nonce="<%= cspNonce || '' %>" src="https://checkout.razorpay.com/v1/checkout.js"></script>
-<% } %>
-<script nonce="<%= cspNonce || '' %>" src="/js/checkout.js"></script>
+<script nonce="<%= cspNonce || '' %>" src="/js/checkout.js?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : '1' %>"></script>

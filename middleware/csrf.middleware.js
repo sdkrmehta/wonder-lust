@@ -154,7 +154,11 @@ function csrfProtection(req, res, next) {
 	res.locals.csrfToken = (req.session && req.session.csrfToken) || "";
 
 	// Payment webhooks authenticate via cryptographic HMAC signatures over raw wire bytes
-	if (req.originalUrl && req.originalUrl.startsWith("/api/v1/payments/webhook")) {
+	if (
+		req.originalUrl &&
+		(req.originalUrl.startsWith("/api/v1/payments/webhook") ||
+			req.originalUrl.startsWith("/payments/webhook"))
+	) {
 		return next();
 	}
 

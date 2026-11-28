@@ -3,11 +3,16 @@ const fs = require("fs");
 const path = require("path");
 const mongoose = require("mongoose");
 const env = require("../config/env");
+const {
+	startMockResendServer,
+	signupAndVerifyClient,
+} = require("./helpers/testHarness");
 
 const PORT = 8082; // Independent port for Phase 2 test suite
 const BASE_URL = `http://localhost:${PORT}`;
 
 let serverProc;
+let mockResend;
 
 function createClient() {
 	let cookies = {};
@@ -99,6 +104,16 @@ async function runTests() {
 
 	// 2. Start server instance via server.js on test port
 	console.log(`2. Spawning server.js instance on port ${PORT}...`);
+	mockResend = await startMockResendServer();
+	process.env.RESEND_API_KEY = "re_test_mock_key";
+	process.env.RESEND_FROM_EMAIL = "Wonder-Lust <no-reply@wonderlust.test>";
+	process.env.RESEND_BASE_URL = mockResend.url;
+	process.env.OTP_HASH_SECRET = "test-otp-hash-secret-phase2";
+	env.RESEND_API_KEY = process.env.RESEND_API_KEY;
+	env.RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL;
+	env.RESEND_BASE_URL = process.env.RESEND_BASE_URL;
+	env.OTP_HASH_SECRET = process.env.OTP_HASH_SECRET;
+
 	const { spawn } = require("child_process");
 	serverProc = spawn("node", ["server.js"], {
 		cwd: path.join(__dirname, ".."),
@@ -106,6 +121,12 @@ async function runTests() {
 			...process.env,
 			PORT: String(PORT),
 			UPLOAD_STORAGE: process.env.TEST_UPLOAD_STORAGE || "local",
+			PAYMENT_PROVIDER: "sandbox",
+			APP_BASE_URL: BASE_URL,
+			RESEND_API_KEY: "re_test_mock_key",
+			RESEND_FROM_EMAIL: "Wonder-Lust <no-reply@wonderlust.test>",
+			RESEND_BASE_URL: mockResend.url,
+			OTP_HASH_SECRET: "test-otp-hash-secret-phase2",
 		},
 		stdio: ["ignore", "pipe", "pipe"],
 	});
@@ -163,14 +184,25 @@ async function runTests() {
 	const ListingService = require("../services/listing.service");
 	const ReviewService = require("../services/review.service");
 	const User = require("../models/user");
+	const OtpService = require("../services/otp.service");
 
 	const serviceTestUser = "service_user_" + Date.now();
-	const registeredUser = await UserService.registerUser({
+	const { user: registeredUser } = await UserService.registerUser({
+		fullName: `Service ${serviceTestUser}`,
 		username: serviceTestUser,
 		email: `${serviceTestUser}@example.com`,
 		password: "ServicePassword123!",
+		confirmPassword: "ServicePassword123!",
+		addressLine1: "42 MG Road",
+		city: "Mumbai",
+		state: "Maharashtra",
+		postalCode: "400001",
+		country: "India",
+		termsAccepted: true,
 	});
 	assert(registeredUser && registeredUser._id, "UserService failed to register user");
+	const directOtp = await mockResend.waitForOtp(registeredUser.email);
+	await OtpService.verifySignupOtp({ email: registeredUser.email, otp: directOtp });
 	console.log(`   [PASS] UserService successfully registered user '${serviceTestUser}'.`);
 
 	// 6. Test Service Layer: ListingService Direct Operations
@@ -230,9 +262,10 @@ async function runTests() {
 	// 8. Test HTTP Client Integration: User A Registration, Login, Logout
 	console.log("8. Testing HTTP Authentication Workflow via Modular Controllers...");
 	const userA = "arch_host_" + Date.now();
-	const signupResA = await clientA("/signup", {
-		method: "POST",
-		body: `username=${userA}&email=${userA}@example.com&password=SecurePassword123!`,
+	const { signupRes: signupResA } = await signupAndVerifyClient(clientA, mockResend, {
+		username: userA,
+		email: `${userA}@example.com`,
+		password: "SecurePassword123!",
 	});
 	assert(signupResA.status === 302, `Expected 302, got ${signupResA.status}`);
 	console.log(`   [PASS] User A (${userA}) signed up and authenticated.`);
@@ -332,16 +365,22 @@ function assert(condition, message) {
 }
 
 runTests()
-	.then(() => {
+	.then(async () => {
 		if (serverProc) {
 			serverProc.kill("SIGTERM");
 		}
+		if (mockResend) {
+			await mockResend.close().catch(() => {});
+		}
 		process.exit(0);
 	})
-	.catch((err) => {
+	.catch(async (err) => {
 		console.error("\n[TEST RUNNER FATAL ERROR]:", err.message);
 		if (serverProc) {
 			serverProc.kill("SIGTERM");
+		}
+		if (mockResend) {
+			await mockResend.close().catch(() => {});
 		}
 		process.exit(1);
 	});

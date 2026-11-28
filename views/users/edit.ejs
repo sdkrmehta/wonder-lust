@@ -1,4 +1,11 @@
 <% layout("layouts/boilerplate") %>
+<%
+	const countryList = (typeof countries !== "undefined" && Array.isArray(countries) && countries.length > 0)
+		? countries
+		: ["India", "Australia", "Canada", "France", "Germany", "Japan", "Singapore", "United Arab Emirates", "United Kingdom", "United States"];
+	const selectedCountry = user.country || "India";
+	const isIndia = selectedCountry.toLowerCase() === "india";
+%>
 
 <div class="container-standard my-4 my-md-5">
 	<div class="row">
@@ -78,7 +85,9 @@
 					<div class="row g-3 mb-4">
 						<!-- Full Name -->
 						<div class="col-12 col-md-6">
-							<label for="fullName" class="form-label small fw-semibold text-dark">Full Name</label>
+							<label for="fullName" class="form-label small fw-semibold text-dark">
+								Full Name <span class="text-danger">*</span>
+							</label>
 							<div class="input-group">
 								<span class="input-group-text bg-light text-muted border-end-0"><i class="fa-regular fa-id-badge"></i></span>
 								<input
@@ -87,8 +96,12 @@
 									id="fullName"
 									name="user[fullName]"
 									value="<%= user.fullName || '' %>"
-									placeholder="e.g. Jane Doe"
+									placeholder="e.g. Maya Sharma"
+									minlength="2"
+									maxlength="100"
+									required
 								/>
+								<div class="invalid-feedback">Please enter your full name (at least 2 characters).</div>
 							</div>
 						</div>
 
@@ -113,7 +126,10 @@
 						<!-- Email (Immutable) -->
 						<div class="col-12 col-md-6">
 							<label for="email" class="form-label small fw-semibold text-muted">
-								Email Address <span class="badge bg-light text-muted border ms-1">Immutable</span>
+								Email Address
+								<% if (user.emailVerified !== false) { %>
+									<span class="badge bg-success-subtle text-success border border-success-subtle ms-1">Verified</span>
+								<% } %>
 							</label>
 							<div class="input-group">
 								<span class="input-group-text bg-light text-muted border-end-0"><i class="fa-regular fa-envelope"></i></span>
@@ -125,11 +141,14 @@
 									disabled
 								/>
 							</div>
+							<div class="form-text small">Login email cannot be changed without dedicated verification.</div>
 						</div>
 
-						<!-- Phone Number -->
+						<!-- Phone Number (Optional) -->
 						<div class="col-12 col-md-6">
-							<label for="phone" class="form-label small fw-semibold text-dark">Phone Number</label>
+							<label for="phone" class="form-label small fw-semibold text-dark">
+								Phone Number <span class="badge bg-light text-muted border fw-normal ms-1">Optional</span>
+							</label>
 							<div class="input-group">
 								<span class="input-group-text bg-light text-muted border-end-0"><i class="fa-solid fa-phone"></i></span>
 								<input
@@ -145,7 +164,9 @@
 
 						<!-- Bio / About -->
 						<div class="col-12">
-							<label for="bio" class="form-label small fw-semibold text-dark">About You (Bio)</label>
+							<label for="bio" class="form-label small fw-semibold text-dark">
+								About You (Bio) <span class="badge bg-light text-muted border fw-normal ms-1">Optional</span>
+							</label>
 							<textarea
 								class="form-control"
 								id="bio"
@@ -156,25 +177,71 @@
 							<div class="form-text small text-muted">Displayed publicly on your profile and beside your reviews.</div>
 						</div>
 
-						<!-- Address -->
+						<!-- Structured Address Section -->
+						<div class="col-12 pt-3 mt-2 border-top">
+							<h2 class="h6 fw-bold text-dark mb-1">Saved Address &amp; Default Billing Details</h2>
+							<p class="text-muted small mb-0">Used automatically to prefill checkout billing details for future bookings.</p>
+						</div>
+
+						<!-- Address Line 1 -->
 						<div class="col-12">
-							<label for="address" class="form-label small fw-semibold text-dark">Street Address</label>
+							<label for="addressLine1" class="form-label small fw-semibold text-dark">
+								Address Line 1 <span class="text-danger">*</span>
+							</label>
 							<div class="input-group">
 								<span class="input-group-text bg-light text-muted border-end-0"><i class="fa-solid fa-map-pin"></i></span>
 								<input
 									type="text"
 									class="form-control border-start-0 ps-0"
-									id="address"
-									name="user[address]"
-									value="<%= user.address || '' %>"
-									placeholder="Street address, building, or locality"
+									id="addressLine1"
+									name="user[addressLine1]"
+									value="<%= user.addressLine1 || user.address || '' %>"
+									placeholder="House / Flat No., Building Name, Street"
+									minlength="3"
+									maxlength="200"
+									required
 								/>
+								<div class="invalid-feedback">Please enter Address Line 1 (at least 3 characters).</div>
 							</div>
+						</div>
+
+						<!-- Address Line 2 (Optional) -->
+						<div class="col-12 col-sm-6">
+							<label for="addressLine2" class="form-label small fw-semibold text-dark">
+								Address Line 2 <span class="badge bg-light text-muted border fw-normal ms-1">Optional</span>
+							</label>
+							<input
+								type="text"
+								class="form-control"
+								id="addressLine2"
+								name="user[addressLine2]"
+								value="<%= user.addressLine2 || '' %>"
+								placeholder="Apartment, Suite, Locality"
+								maxlength="200"
+							/>
+						</div>
+
+						<!-- Landmark (Optional) -->
+						<div class="col-12 col-sm-6">
+							<label for="landmark" class="form-label small fw-semibold text-dark">
+								Landmark <span class="badge bg-light text-muted border fw-normal ms-1">Optional</span>
+							</label>
+							<input
+								type="text"
+								class="form-control"
+								id="landmark"
+								name="user[landmark]"
+								value="<%= user.landmark || '' %>"
+								placeholder="e.g. Near Metro Station"
+								maxlength="150"
+							/>
 						</div>
 
 						<!-- City -->
 						<div class="col-12 col-sm-6">
-							<label for="city" class="form-label small fw-semibold text-dark">City</label>
+							<label for="city" class="form-label small fw-semibold text-dark">
+								City <span class="text-danger">*</span>
+							</label>
 							<div class="input-group">
 								<span class="input-group-text bg-light text-muted border-end-0"><i class="fa-solid fa-city"></i></span>
 								<input
@@ -184,24 +251,71 @@
 									name="user[city]"
 									value="<%= user.city || '' %>"
 									placeholder="e.g. Mumbai"
+									minlength="2"
+									maxlength="100"
+									required
 								/>
+								<div class="invalid-feedback">Please enter your city.</div>
 							</div>
+						</div>
+
+						<!-- State -->
+						<div class="col-12 col-sm-6">
+							<label for="state" class="form-label small fw-semibold text-dark">
+								State / Province <span class="text-danger">*</span>
+							</label>
+							<input
+								type="text"
+								class="form-control"
+								id="state"
+								name="user[state]"
+								value="<%= user.state || '' %>"
+								placeholder="e.g. Maharashtra"
+								minlength="2"
+								maxlength="100"
+								required
+							/>
+							<div class="invalid-feedback">Please enter your state or province.</div>
 						</div>
 
 						<!-- Country -->
 						<div class="col-12 col-sm-6">
-							<label for="country" class="form-label small fw-semibold text-dark">Country</label>
-							<div class="input-group">
-								<span class="input-group-text bg-light text-muted border-end-0"><i class="fa-solid fa-earth-americas"></i></span>
-								<input
-									type="text"
-									class="form-control border-start-0 ps-0"
-									id="country"
-									name="user[country]"
-									value="<%= user.country || 'India' %>"
-									placeholder="e.g. India"
-								/>
-							</div>
+							<label for="country" class="form-label small fw-semibold text-dark">
+								Country <span class="text-danger">*</span>
+							</label>
+							<select
+								class="form-select"
+								id="country"
+								name="user[country]"
+								data-postal-target="postalCode"
+								required
+							>
+								<% for (const c of countryList) { %>
+									<option value="<%= c %>" <%= selectedCountry === c ? 'selected' : '' %>><%= c %></option>
+								<% } %>
+								<% if (!countryList.includes(selectedCountry)) { %>
+									<option value="<%= selectedCountry %>" selected><%= selectedCountry %></option>
+								<% } %>
+							</select>
+							<div class="invalid-feedback">Please select your country.</div>
+						</div>
+
+						<!-- PIN Code / Postal Code -->
+						<div class="col-12 col-sm-6">
+							<label for="postalCode" class="form-label small fw-semibold text-dark">
+								<span id="postalCodeLabel"><%= isIndia ? 'PIN Code' : 'Postal Code' %></span> <span class="text-danger">*</span>
+							</label>
+							<input
+								type="text"
+								class="form-control tabular-nums"
+								id="postalCode"
+								name="user[postalCode]"
+								value="<%= user.postalCode || '' %>"
+								placeholder="<%= isIndia ? '6-digit PIN code (e.g. 400001)' : 'Enter postal / ZIP code' %>"
+								maxlength="20"
+								required
+							/>
+							<div class="invalid-feedback" id="postalCodeFeedback">Please enter a valid PIN / postal code.</div>
 						</div>
 					</div>
 
@@ -296,7 +410,7 @@
 									minlength="6"
 									required
 								/>
-								<div class="invalid-feedback">
+								<div class="invalid-feedback" id="confirmNewPasswordFeedback">
 									Please confirm your new password.
 								</div>
 							</div>

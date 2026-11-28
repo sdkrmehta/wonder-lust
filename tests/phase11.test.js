@@ -1,11 +1,16 @@
 const http = require("http");
 const path = require("path");
 const { fork } = require("child_process");
+const {
+	startMockResendServer,
+	signupAndVerifyClient,
+} = require("./helpers/testHarness");
 
 const PORT = 8091; // Dedicated port for Phase 11 test suite
 const BASE_URL = `http://localhost:${PORT}`;
 
 let serverProc;
+let mockResend;
 
 function createClient() {
 	let cookies = {};
@@ -93,8 +98,18 @@ async function runTests() {
 
 	// 1. Spawning Wonder-Lust server on port 8091
 	console.log(`1. Starting Wonder-Lust test server on port ${PORT}...`);
+	mockResend = await startMockResendServer();
 	serverProc = fork(path.join(__dirname, "../server.js"), [], {
-		env: { ...process.env, PORT: String(PORT) },
+		env: {
+			...process.env,
+			PORT: String(PORT),
+			PAYMENT_PROVIDER: "sandbox",
+			APP_BASE_URL: BASE_URL,
+			RESEND_API_KEY: "re_test_mock_key",
+			RESEND_FROM_EMAIL: "Wonder-Lust <no-reply@wonderlust.test>",
+			RESEND_BASE_URL: mockResend.url,
+			OTP_HASH_SECRET: "test-otp-hash-secret-phase11",
+		},
 		stdio: "pipe",
 	});
 
@@ -148,22 +163,25 @@ async function runTests() {
 
 	// 2. Setting up accounts
 	console.log("2. Setting up Host and Guest traveler accounts...");
-	let res = await hostClient("/signup", {
-		method: "POST",
-		body: `username=${hostUser.username}&email=${hostUser.email}&password=${hostUser.password}`,
+	let { signupRes: res } = await signupAndVerifyClient(hostClient, mockResend, {
+		username: hostUser.username,
+		email: hostUser.email,
+		password: hostUser.password,
 	});
 	assert(res.status === 302, "Host signup must succeed");
 
-	res = await guestClient1("/signup", {
-		method: "POST",
-		body: `username=${guestUser1.username}&email=${guestUser1.email}&password=${guestUser1.password}`,
-	});
+	({ signupRes: res } = await signupAndVerifyClient(guestClient1, mockResend, {
+		username: guestUser1.username,
+		email: guestUser1.email,
+		password: guestUser1.password,
+	}));
 	assert(res.status === 302, "Guest 1 signup must succeed");
 
-	res = await guestClient2("/signup", {
-		method: "POST",
-		body: `username=${guestUser2.username}&email=${guestUser2.email}&password=${guestUser2.password}`,
-	});
+	({ signupRes: res } = await signupAndVerifyClient(guestClient2, mockResend, {
+		username: guestUser2.username,
+		email: guestUser2.email,
+		password: guestUser2.password,
+	}));
 	assert(res.status === 302, "Guest 2 signup must succeed");
 	console.log("   [PASS] Host and Guest travelers authenticated.\n");
 
@@ -429,9 +447,12 @@ runTests()
 		if (err.stack) console.error(err.stack);
 		exitCode = 1;
 	})
-	.finally(() => {
+	.finally(async () => {
 		if (serverProc) {
 			serverProc.kill("SIGTERM");
+		}
+		if (mockResend) {
+			await mockResend.close().catch(() => {});
 		}
 		process.exit(exitCode);
 	});

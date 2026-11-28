@@ -1,11 +1,16 @@
 const http = require("http");
 const path = require("path");
 const { fork } = require("child_process");
+const {
+	startMockResendServer,
+	signupAndVerifyClient,
+} = require("./helpers/testHarness");
 
 const PORT = 8088; // Dedicated port for Phase 8 test suite
 const BASE_URL = `http://localhost:${PORT}`;
 
 let serverProc;
+let mockResend;
 
 function createClient() {
 	let cookies = {};
@@ -93,8 +98,18 @@ async function runTests() {
 
 	// 1. Start Server on port 8088
 	console.log("1. Starting Wonder-Lust test server on port 8088...");
+	mockResend = await startMockResendServer();
 	serverProc = fork(path.join(__dirname, "../server.js"), [], {
-		env: { ...process.env, PORT: String(PORT) },
+		env: {
+			...process.env,
+			PORT: String(PORT),
+			PAYMENT_PROVIDER: "sandbox",
+			APP_BASE_URL: BASE_URL,
+			RESEND_API_KEY: "re_test_mock_key",
+			RESEND_FROM_EMAIL: "Wonder-Lust <no-reply@wonderlust.test>",
+			RESEND_BASE_URL: mockResend.url,
+			OTP_HASH_SECRET: "test-otp-hash-secret-phase8",
+		},
 		stdio: "pipe",
 	});
 
@@ -134,14 +149,16 @@ async function runTests() {
 	const hostName = `superhost_${Date.now()}`;
 	const guestName = `wanderer_${Date.now()}`;
 
-	await hostClient("/signup", {
-		method: "POST",
-		body: `username=${hostName}&email=${hostName}@example.com&password=Password123`,
+	await signupAndVerifyClient(hostClient, mockResend, {
+		username: hostName,
+		email: `${hostName}@example.com`,
+		password: "Password123",
 	});
 
-	await guestClient("/signup", {
-		method: "POST",
-		body: `username=${guestName}&email=${guestName}@example.com&password=Password123`,
+	await signupAndVerifyClient(guestClient, mockResend, {
+		username: guestName,
+		email: `${guestName}@example.com`,
+		password: "Password123",
 	});
 
 	console.log("   [PASS] Host and Traveler authenticated.\n");
@@ -362,9 +379,12 @@ runTests()
 		if (err.stack) console.error(err.stack);
 		exitCode = 1;
 	})
-	.finally(() => {
+	.finally(async () => {
 		if (serverProc) {
 			serverProc.kill("SIGTERM");
+		}
+		if (mockResend) {
+			await mockResend.close().catch(() => {});
 		}
 		process.exit(exitCode);
 	});

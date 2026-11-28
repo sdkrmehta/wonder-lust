@@ -1,0 +1,127 @@
+<% layout("/layouts/boilerplate") %>
+<%
+	const targetEmail = (typeof email !== "undefined" && email) ? email : "";
+	const remainingCooldown = Math.max(0, Number(typeof cooldownSeconds !== "undefined" ? cooldownSeconds : 0) || 0);
+	const expireMinutes = Math.max(1, Number(typeof ttlMinutes !== "undefined" ? ttlMinutes : 5) || 5);
+%>
+
+<div class="container-narrow py-5 my-md-4" style="max-width: 560px;">
+	<div class="text-center mb-4">
+		<span class="badge rounded-pill px-3 py-2 mb-2 border text-uppercase tracking-wider fw-semibold" style="background-color: var(--forest-100); color: var(--forest-900); font-size: 0.75rem; letter-spacing: 0.05em;">
+			<i class="fa-solid fa-envelope-circle-check me-1"></i> Email Verification
+		</span>
+		<h1 class="editorial-title display-6 fw-bold mb-2">Verify your email address</h1>
+		<p class="text-muted small mx-auto mb-0" style="max-width: 460px;">
+			Enter the 6-digit one-time verification code sent to
+			<% if (targetEmail) { %>
+				<strong class="text-dark"><%= targetEmail %></strong>.
+			<% } else { %>
+				your registered email address.
+			<% } %>
+		</p>
+	</div>
+
+	<div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white mb-4">
+		<div class="alert alert-info d-flex align-items-center gap-2 small mb-4" role="status">
+			<i class="fa-regular fa-clock text-primary flex-shrink-0"></i>
+			<div>
+				Your verification code expires in <strong><%= expireMinutes %> minute<%= expireMinutes > 1 ? 's' : '' %></strong> and can be used only once.
+			</div>
+		</div>
+
+		<form
+			action="/verify-email"
+			method="POST"
+			id="verifyOtpForm"
+			class="needs-validation"
+			novalidate
+		>
+			<input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
+
+			<div class="mb-3">
+				<label for="verifyEmailInput" class="form-label small fw-semibold text-dark mb-1">
+					Registered Email Address <span class="text-danger">*</span>
+				</label>
+				<% if (targetEmail) { %>
+					<input type="hidden" name="email" value="<%= targetEmail %>" />
+					<input
+						type="email"
+						id="verifyEmailInput"
+						class="form-control bg-light text-muted"
+						value="<%= targetEmail %>"
+						readonly
+						aria-readonly="true"
+					/>
+				<% } else { %>
+					<input
+						type="email"
+						name="email"
+						id="verifyEmailInput"
+						class="form-control"
+						placeholder="name@example.com"
+						autocomplete="email"
+						required
+					/>
+					<div class="invalid-feedback">Please enter your registered email address.</div>
+				<% } %>
+			</div>
+
+			<div class="mb-4">
+				<label for="otpInput" class="form-label small fw-semibold text-dark mb-1">
+					6-Digit Verification Code <span class="text-danger">*</span>
+				</label>
+				<input
+					type="text"
+					name="otp"
+					id="otpInput"
+					class="form-control form-control-lg text-center font-monospace fw-bold fs-3 tabular-nums"
+					style="letter-spacing: 0.4em;"
+					inputmode="numeric"
+					autocomplete="one-time-code"
+					pattern="\d{6}"
+					maxlength="6"
+					placeholder="000000"
+					required
+				/>
+				<div class="invalid-feedback">
+					Please enter the 6-digit numeric verification code.
+				</div>
+				<div class="form-text small text-muted mt-1">
+					Up to 5 verification attempts are allowed per code.
+				</div>
+			</div>
+
+			<button type="submit" class="btn btn-forest add-btn w-100 py-2 fw-semibold fs-6 shadow-sm mb-3">
+				<i class="fa-solid fa-circle-check me-2"></i>Verify &amp; Activate Account
+			</button>
+		</form>
+
+		<div class="border-top pt-3 mt-2 text-center">
+			<form action="/verify-email/resend" method="POST" id="resendOtpForm" class="d-inline">
+				<input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
+				<input type="hidden" name="email" id="resendEmailHidden" value="<%= targetEmail %>" />
+				<p class="text-muted small mb-2">Didn't receive the code? Check spam or request another one.</p>
+				<button
+					type="submit"
+					id="resendOtpBtn"
+					class="btn btn-sm btn-forest-outline rounded-pill px-4"
+					data-cooldown-seconds="<%= remainingCooldown %>"
+					<%= remainingCooldown > 0 ? 'disabled' : '' %>
+				>
+					<i class="fa-solid fa-rotate-right me-1"></i>
+					<span id="resendBtnLabel">
+						<%= remainingCooldown > 0 ? `Resend OTP in ${remainingCooldown}s` : 'Resend Verification Code' %>
+					</span>
+				</button>
+			</form>
+		</div>
+	</div>
+
+	<div class="text-center small text-muted">
+		<a href="/signup" class="text-forest text-decoration-none fw-semibold">Register with a different email</a>
+		<span class="mx-2">&bull;</span>
+		<a href="/login" class="text-forest text-decoration-none fw-semibold">Back to Log in</a>
+	</div>
+</div>
+
+<script nonce="<%= cspNonce || '' %>" src="/js/auth-profile.js?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : '1' %>"></script>

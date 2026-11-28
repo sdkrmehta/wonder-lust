@@ -68,7 +68,11 @@ app.use(
 	express.json({
 		limit: "256kb",
 		verify: (req, _res, buf) => {
-			if (req.originalUrl && req.originalUrl.startsWith("/api/v1/payments/webhook")) {
+			if (
+				req.originalUrl &&
+				(req.originalUrl.startsWith("/api/v1/payments/webhook") ||
+					req.originalUrl.startsWith("/payments/webhook"))
+			) {
 				req.rawBody = buf;
 			}
 		},
@@ -108,8 +112,22 @@ passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
-// Invalidate stale sessions after password changes
+// Invalidate stale sessions after password changes or unverified email state
 app.use((req, res, next) => {
+	if (req.isAuthenticated && req.isAuthenticated() && req.user && req.user.emailVerified === false) {
+		const pendingEmail = req.user.email || "";
+		return req.logout((err) => {
+			if (err) return next(err);
+			if (req.session && pendingEmail) {
+				req.session.pendingVerificationEmail = pendingEmail;
+			}
+			if (isJsonOrBackgroundRequest(req)) {
+				return res.status(403).json({ status: "fail", message: "Email verification required" });
+			}
+			req.flash("error", "Please verify your email address before accessing your account.");
+			return res.redirect("/verify-email");
+		});
+	}
 	if (
 		req.isAuthenticated &&
 		req.isAuthenticated() &&
@@ -145,7 +163,7 @@ app.locals.filters = {};
 app.locals.csrfToken = "";
 app.locals.cspNonce = "";
 const assetHash = crypto.createHash("sha256");
-for (const assetRel of ["public/css/style.css", "public/css/rating.css", "public/js/script.js", "public/js/search.js", "public/js/listing-form.js", "public/js/listing-show.js"]) {
+for (const assetRel of ["public/css/style.css", "public/css/rating.css", "public/js/script.js", "public/js/search.js", "public/js/listing-form.js", "public/js/listing-show.js", "public/js/auth-profile.js", "public/js/checkout.js"]) {
 	try {
 		assetHash.update(fs.readFileSync(path.join(__dirname, assetRel)));
 	} catch {}

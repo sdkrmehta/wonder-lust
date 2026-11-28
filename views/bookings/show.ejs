@@ -13,7 +13,7 @@
 					<p class="text-muted small mb-3">Your booking reference ID: <span class="font-monospace fw-bold text-dark"><%= booking._id %></span></p>
 					
 					<div class="d-flex justify-content-center gap-2 flex-wrap">
-						<% if (booking.payment && booking.payment.status === 'succeeded') { %>
+						<% if (booking.payment && (booking.payment.status === 'paid' || booking.payment.status === 'succeeded')) { %>
 							<a href="/payments/receipt/<%= booking.payment._id || booking.payment %>" class="btn btn-sm btn-forest rounded-pill px-3 py-1">
 								<i class="fa-solid fa-file-invoice me-1"></i> Paid &bull; View Tax Invoice &rarr;
 							</a>
@@ -136,13 +136,31 @@
 					</div>
 				</div>
 
+				<!-- Billing Snapshot (preserved independently per booking) -->
+				<% const snap = (booking.billingAddress && booking.billingAddress.addressLine1) ? booking.billingAddress : (booking.payment && booking.payment.billingDetails ? booking.payment.billingDetails : null); %>
+				<% if (snap && (snap.fullName || snap.addressLine1 || snap.address)) { %>
+					<div class="p-3 rounded-4 mb-4 small" style="background-color: var(--paper-50); border: 1px solid var(--border-color);">
+						<h6 class="fw-bold mb-2" style="color: var(--ink-900);">Billing Address Snapshot</h6>
+						<div class="fw-semibold text-dark"><%= snap.fullName || '' %></div>
+						<% if (snap.email) { %>
+							<div class="text-muted"><%= snap.email %></div>
+						<% } %>
+						<div class="text-secondary mt-1">
+							<%= [snap.addressLine1 || snap.address, snap.addressLine2, snap.landmark ? `Landmark: ${snap.landmark}` : ''].filter(Boolean).join(', ') %>
+						</div>
+						<div class="text-secondary">
+							<%= [snap.city, snap.state, snap.postalCode, snap.country].filter(Boolean).join(', ') %>
+						</div>
+					</div>
+				<% } %>
+
 				<!-- Actions Bar -->
 				<div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3 pt-3 border-top" style="border-color: var(--border-color) !important;">
 					<a href="/bookings" class="btn btn-outline-dark rounded-pill px-4 w-100 w-sm-auto text-center">
 						<i class="fa-solid fa-arrow-left me-1"></i> Back to My Trips
 					</a>
 					<div class="d-flex flex-wrap gap-2 w-100 w-sm-auto justify-content-center justify-content-sm-end">
-						<% if (booking.payment && (booking.payment.status === 'succeeded' || booking.payment.status === 'refunded')) { %>
+						<% if (booking.payment && (booking.payment.status === 'paid' || booking.payment.status === 'succeeded' || booking.payment.status === 'refunded')) { %>
 							<a href="/payments/receipt/<%= booking.payment._id || booking.payment %>" class="btn btn-forest-outline rounded-pill px-3">
 								<i class="fa-solid fa-file-invoice me-1"></i> Invoice
 							</a>

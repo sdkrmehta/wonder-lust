@@ -16,10 +16,10 @@
 	<div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white mb-4">
 		<form action="/login" method="POST" class="needs-validation" novalidate>
 			<input type="hidden" name="_csrf" value="<%= csrfToken || '' %>" />
-			<!-- Username Field -->
+			<!-- Email or Username Field -->
 			<div class="mb-3">
 				<label for="username" class="form-label small fw-semibold text-dark mb-1">
-					Username <span class="text-danger">*</span>
+					Email Address or Username <span class="text-danger">*</span>
 				</label>
 				<div class="input-group">
 					<span class="input-group-text bg-light text-muted border-end-0">
@@ -30,12 +30,12 @@
 						id="username"
 						type="text"
 						class="form-control border-start-0 ps-0"
-						placeholder="Enter your username"
+						placeholder="name@example.com or username"
 						autocomplete="username"
 						required
 					/>
 					<div class="invalid-feedback">
-						Please enter your username.
+						Please enter your registered email address or username.
 					</div>
 				</div>
 			</div>
@@ -96,8 +96,11 @@
 
 	<!-- Signup Alternative -->
 	<div class="text-center">
-		<p class="text-muted small mb-3">
+		<p class="text-muted small mb-2">
 			Don't have an account? <a href="/signup" class="text-forest text-decoration-none fw-bold">Sign up</a>
+		</p>
+		<p class="text-muted small mb-3">
+			Need to verify your email? <a href="/verify-email" class="text-forest text-decoration-none fw-semibold">Verify email OTP</a>
 		</p>
 
 		<!-- Trust Badges Strip -->

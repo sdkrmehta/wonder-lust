@@ -1,11 +1,18 @@
 const http = require("http");
 const path = require("path");
 const { fork } = require("child_process");
+const {
+	startMockResendServer,
+	startMockRazorpayServer,
+	signupAndVerifyClient,
+} = require("./helpers/testHarness");
 
 const PORT = 8087; // Dedicated port for Phase 7 test suite
 const BASE_URL = `http://localhost:${PORT}`;
 
 let serverProc;
+let mockResend;
+let mockRazorpay;
 
 function createClient() {
 	let cookies = {};
@@ -93,8 +100,24 @@ async function runTests() {
 
 	// 1. Start Server on port 8087
 	console.log("1. Starting Wonder-Lust test server on port 8087...");
+	mockResend = await startMockResendServer();
+	mockRazorpay = await startMockRazorpayServer();
 	serverProc = fork(path.join(__dirname, "../server.js"), [], {
-		env: { ...process.env, PORT: String(PORT) },
+		env: {
+			...process.env,
+			PORT: String(PORT),
+			PAYMENT_PROVIDER: "razorpay",
+			PAYMENT_GATEWAY_MODE: "strict",
+			APP_BASE_URL: BASE_URL,
+			RESEND_API_KEY: "re_test_mock_key",
+			RESEND_FROM_EMAIL: "Wonder-Lust <no-reply@wonderlust.test>",
+			RESEND_BASE_URL: mockResend.url,
+			OTP_HASH_SECRET: "test-otp-hash-secret-phase7",
+			RAZORPAY_API_BASE: mockRazorpay.url,
+			RAZORPAY_KEY_ID: mockRazorpay.keyId,
+			RAZORPAY_KEY_SECRET: mockRazorpay.keySecret,
+			RAZORPAY_WEBHOOK_SECRET: mockRazorpay.webhookSecret,
+		},
 		stdio: "pipe",
 	});
 
@@ -135,19 +158,22 @@ async function runTests() {
 	const guest1Name = `traveler_alpha_${Date.now()}`;
 	const guest2Name = `traveler_beta_${Date.now()}`;
 
-	await hostClient("/signup", {
-		method: "POST",
-		body: `username=${hostName}&email=${hostName}@example.com&password=Password123`,
+	await signupAndVerifyClient(hostClient, mockResend, {
+		username: hostName,
+		email: `${hostName}@example.com`,
+		password: "Password123",
 	});
 
-	await guestClient1("/signup", {
-		method: "POST",
-		body: `username=${guest1Name}&email=${guest1Name}@example.com&password=Password123`,
+	await signupAndVerifyClient(guestClient1, mockResend, {
+		username: guest1Name,
+		email: `${guest1Name}@example.com`,
+		password: "Password123",
 	});
 
-	await guestClient2("/signup", {
-		method: "POST",
-		body: `username=${guest2Name}&email=${guest2Name}@example.com&password=Password123`,
+	await signupAndVerifyClient(guestClient2, mockResend, {
+		username: guest2Name,
+		email: `${guest2Name}@example.com`,
+		password: "Password123",
 	});
 	console.log("   [PASS] Host and 2 Guest accounts authenticated.\n");
 
@@ -201,20 +227,30 @@ async function runTests() {
 	assert(checkoutPageRes.body.includes("Udaipur Royal Heritage Palace"), "Checkout must display property title");
 	assert(checkoutPageRes.body.includes("35,990"), "Checkout must display total amount ₹35,990");
 	assert(checkoutPageRes.body.includes("checkoutPaymentForm"), "Checkout must render payment form");
-	assert(checkoutPageRes.body.includes("methodCardBtn"), "Checkout must render Card payment method");
-	assert(checkoutPageRes.body.includes("methodUpiBtn"), "Checkout must render UPI payment method");
-	assert(checkoutPageRes.body.includes("methodNetbankingBtn"), "Checkout must render NetBanking payment method");
+	assert(checkoutPageRes.body.includes("billingFullName"), "Checkout must render editable billing full name");
+	assert(checkoutPageRes.body.includes("billingAddressLine1"), "Checkout must render editable billing address line 1");
+	assert(checkoutPageRes.body.includes("Continue to secure payment"), "Checkout must render hosted payment CTA button");
+	assert(!checkoutPageRes.body.includes("cardNumberInput"), "Checkout must not collect raw card numbers");
+	assert(!checkoutPageRes.body.includes("methodCardBtn"), "Checkout must not show legacy card/UPI selector");
 	console.log("   [PASS] Web UI Checkout page verified.\n");
 
 	// 6. Test Security: Unauthorized User Cannot Pay For Someone Else's Booking
 	console.log("6. Testing Payment Authorization (Guest 2 attempting to pay Guest 1's booking)...");
-	const unauthorizedPayRes = await guestClient2("/api/v1/payments/create-order", {
+	const unauthorizedPayRes = await guestClient2("/api/v1/payments/payment-links", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({
 			bookingId: bookingId,
 			amount: 35990,
-			paymentMethod: "card",
+			billingDetails: {
+				fullName: "Unauthorized User",
+				email: `${guest2Name}@example.com`,
+				addressLine1: "42 Park Street",
+				city: "Kolkata",
+				state: "West Bengal",
+				postalCode: "700016",
+				country: "India",
+			},
 		}),
 	});
 	assert(unauthorizedPayRes.status === 403, "Paying for another user's booking must return HTTP 403 Forbidden");
@@ -222,63 +258,91 @@ async function runTests() {
 
 	// 7. Test Price Tampering Guard (Submitting lower amount)
 	console.log("7. Testing Price Tampering Guard (Submitting amount lower than booking total)...");
-	const tamperRes = await guestClient1("/api/v1/payments/create-order", {
+	const tamperRes = await guestClient1("/api/v1/payments/payment-links", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({
 			bookingId: bookingId,
 			amount: 100, // Tampered amount
-			paymentMethod: "card",
+			billingDetails: {
+				fullName: "Alpha Traveler",
+				email: "alpha@example.com",
+				addressLine1: "Flat 101 Lake View",
+				city: "Udaipur",
+				state: "Rajasthan",
+				postalCode: "313001",
+				country: "India",
+			},
 		}),
 	});
 	assert(tamperRes.status === 400, "Amount mismatch must be rejected with HTTP 400 Bad Request");
 	console.log("   [PASS] Price tampering rejected.\n");
 
-	// 8. Test Successful Payment Order via REST API (POST /api/v1/payments/create-order)
-	console.log("8. Testing Successful Payment Processing (Credit Card)...");
-	const payRes = await guestClient1("/api/v1/payments/create-order", {
+	// 8. Test Successful Razorpay Hosted Payment Link & Callback Verification
+	console.log("8. Testing Razorpay Payment Link Creation & Callback Verification...");
+	const payRes = await guestClient1("/api/v1/payments/payment-links", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({
 			bookingId: bookingId,
 			amount: 35990,
-			paymentMethod: "card",
-			cardNumber: "4111222233334242",
-			cardExpiry: "12/28",
-			cardCvc: "888",
-			cardHolderName: "Alpha Traveler",
 			billingDetails: {
 				fullName: "Alpha Traveler",
 				email: "alpha@example.com",
 				phone: "+91 9876543210",
-				address: "Flat 101 Lake View",
+				addressLine1: "Flat 101 Lake View",
 				city: "Udaipur",
 				state: "Rajasthan",
 				postalCode: "313001",
+				country: "India",
 			},
 		}),
 	});
-	assert(payRes.status === 201, "Payment order must return HTTP 201 Created");
-	const payment = payRes.json().data;
-	const paymentId = payment._id;
-	assert(payment.status === "succeeded", "Payment status must be succeeded");
+	assert(payRes.status === 201, `Payment link creation must return HTTP 201 Created, got ${payRes.status}`);
+	const initiatedPayment = payRes.json().data;
+	const paymentId = initiatedPayment._id;
+	assert(initiatedPayment.paymentLinkId && initiatedPayment.paymentLinkId.startsWith("plink_"), "Payment Link ID must follow plink_ format");
+	assert(initiatedPayment.paymentLink && initiatedPayment.paymentLink.shortUrl, "Must return Razorpay shortUrl");
+	assert(initiatedPayment.status === "created" || initiatedPayment.status === "pending", "Payment must remain pending until Razorpay callback/webhook verification");
+
+	const simulatedCapture = mockRazorpay.simulatePaymentCaptured(initiatedPayment.paymentLinkId, {
+		method: "card",
+	});
+	const callbackRes = await guestClient1(`/payments/razorpay/callback?${simulatedCapture.callbackQueryString}`);
+	assert(
+		callbackRes.status === 302 && callbackRes.headers.location === `/payments/receipt/${paymentId}`,
+		`Verified callback must redirect to /payments/receipt/${paymentId}, got ${callbackRes.status} -> ${callbackRes.headers.location}`,
+	);
+
+	const confirmedPayRes = await guestClient1(`/api/v1/payments/${paymentId}`);
+	assert(confirmedPayRes.status === 200, "Confirmed payment lookup must return 200");
+	const payment = confirmedPayRes.json().data;
+	assert(payment.status === "paid" || payment.status === "succeeded", "Payment status must be paid after callback verification");
 	assert(payment.amount === 35990, "Payment amount must be 35990");
-	assert(payment.transactionId.startsWith("txn_"), "Transaction ID must follow txn_ format");
-	assert(payment.orderId.startsWith("order_"), "Order ID must follow order_ format");
+	assert(payment.transactionId === simulatedCapture.paymentId, "Transaction ID must match verified Razorpay payment ID");
+	assert(payment.paymentLinkId === simulatedCapture.paymentLinkId, "Payment Link ID must match");
 	assert(payment.receiptNumber.startsWith("INV-"), "Receipt number must start with INV-");
-	assert(payment.cardDetails.brand === "Visa", "Card brand should be detected as Visa");
-	assert(payment.cardDetails.last4 === "4242", "Card last 4 should be 4242");
-	console.log(`   [PASS] Payment succeeded! Txn ID: ${payment.transactionId}, Invoice: ${payment.receiptNumber}.\n`);
+	assert(payment.cardDetails && payment.cardDetails.brand === "Visa", "Card brand should be populated from verified Razorpay payment");
+	assert(payment.cardDetails && payment.cardDetails.last4 === "4242", "Card last 4 should be 4242");
+	console.log(`   [PASS] Razorpay Payment Link verified! Txn ID: ${payment.transactionId}, Invoice: ${payment.receiptNumber}.\n`);
 
 	// 9. Test Duplicate Payment Rejection
 	console.log("9. Testing Duplicate Payment Rejection...");
-	const duplicatePayRes = await guestClient1("/api/v1/payments/create-order", {
+	const duplicatePayRes = await guestClient1("/api/v1/payments/payment-links", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({
 			bookingId: bookingId,
 			amount: 35990,
-			paymentMethod: "card",
+			billingDetails: {
+				fullName: "Alpha Traveler",
+				email: "alpha@example.com",
+				addressLine1: "Flat 101 Lake View",
+				city: "Udaipur",
+				state: "Rajasthan",
+				postalCode: "313001",
+				country: "India",
+			},
 		}),
 	});
 	assert(duplicatePayRes.status === 400, "Paying again for an already paid booking must return HTTP 400");
@@ -365,9 +429,15 @@ runTests()
 		if (err.stack) console.error(err.stack);
 		exitCode = 1;
 	})
-	.finally(() => {
+	.finally(async () => {
 		if (serverProc) {
 			serverProc.kill("SIGTERM");
+		}
+		if (mockResend) {
+			await mockResend.close().catch(() => {});
+		}
+		if (mockRazorpay) {
+			await mockRazorpay.close().catch(() => {});
 		}
 		process.exit(exitCode);
 	});

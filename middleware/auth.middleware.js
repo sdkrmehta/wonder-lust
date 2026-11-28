@@ -24,6 +24,8 @@ function isNonPageRedirectTarget(target) {
 		pathOnly === "/login" ||
 		pathOnly === "/logout" ||
 		pathOnly === "/signup" ||
+		pathOnly === "/verify-email" ||
+		pathOnly === "/verify-email/resend" ||
 		pathOnly === "/favicon.ico" ||
 		pathOnly.endsWith(".json")
 	);
@@ -68,6 +70,23 @@ module.exports.isLoggedIn = (req, res, next) => {
 		req.flash("error", "Please log in to continue.");
 		return res.redirect("/login");
 	}
+	if (req.user && req.user.emailVerified === false) {
+		const pendingEmail = req.user.email || "";
+		return req.logout((err) => {
+			if (err) return next(err);
+			if (req.session && pendingEmail) {
+				req.session.pendingVerificationEmail = pendingEmail;
+			}
+			if (isJsonOrBackgroundRequest(req)) {
+				return res.status(403).json({
+					status: "fail",
+					message: "Please verify your email address before accessing protected resources.",
+				});
+			}
+			req.flash("error", "Please verify your email address before continuing.");
+			return res.redirect("/verify-email");
+		});
+	}
 	next();
 };
 
@@ -81,6 +100,24 @@ module.exports.isAdmin = (req, res, next) => {
 		}
 		req.flash("error", "Please log in to continue.");
 		return res.redirect("/login");
+	}
+
+	if (req.user && req.user.emailVerified === false) {
+		const pendingEmail = req.user.email || "";
+		return req.logout((err) => {
+			if (err) return next(err);
+			if (req.session && pendingEmail) {
+				req.session.pendingVerificationEmail = pendingEmail;
+			}
+			if (isJsonOrBackgroundRequest(req)) {
+				return res.status(403).json({
+					status: "fail",
+					message: "Email verification is required.",
+				});
+			}
+			req.flash("error", "Please verify your email address before continuing.");
+			return res.redirect("/verify-email");
+		});
 	}
 
 	if (req.user.role !== "admin") {

@@ -54,6 +54,21 @@ const userSchema = new Schema(
 			trim: true,
 			default: "",
 		},
+		addressLine1: {
+			type: String,
+			trim: true,
+			default: "",
+		},
+		addressLine2: {
+			type: String,
+			trim: true,
+			default: "",
+		},
+		landmark: {
+			type: String,
+			trim: true,
+			default: "",
+		},
 		address: {
 			type: String,
 			trim: true,
@@ -64,10 +79,31 @@ const userSchema = new Schema(
 			trim: true,
 			default: "",
 		},
+		state: {
+			type: String,
+			trim: true,
+			default: "",
+		},
+		postalCode: {
+			type: String,
+			trim: true,
+			default: "",
+		},
 		country: {
 			type: String,
 			trim: true,
 			default: "India",
+		},
+		emailVerified: {
+			type: Boolean,
+		},
+		emailVerifiedAt: {
+			type: Date,
+			default: null,
+		},
+		termsAcceptedAt: {
+			type: Date,
+			default: null,
 		},
 		role: {
 			type: String,
@@ -106,6 +142,7 @@ const userSchema = new Schema(
 userSchema.index({ role: 1 });
 userSchema.index({ isSuperhost: 1 });
 userSchema.index({ createdAt: -1 });
+userSchema.index({ emailVerified: 1 });
 
 function stripSensitiveFields(_doc, ret) {
 	delete ret.hash;
@@ -125,6 +162,7 @@ userSchema.set("toJSON", { transform: stripSensitiveFields });
 userSchema.set("toObject", { transform: stripSensitiveFields });
 
 userSchema.plugin(passportLocalMongoose, {
+	usernameQueryFields: ["email"],
 	limitAttempts: true,
 	maxAttempts: 10,
 	interval: 100,
@@ -254,6 +292,16 @@ userSchema.methods.authenticate = function (password, cb) {
 			userDoc.set("attempts", 0);
 			userDoc.set("last", Date.now());
 			await userDoc.save();
+
+			if (userDoc.emailVerified === false) {
+				const unverifiedError = new Error(
+					"Please verify your email address before signing in. Check your inbox for the 6-digit OTP.",
+				);
+				unverifiedError.name = "EmailNotVerifiedError";
+				unverifiedError.email = userDoc.email;
+				return { user: false, error: unverifiedError };
+			}
+
 			return { user: userDoc, error: undefined };
 		}
 
@@ -284,8 +332,16 @@ const DUMMY_PBKDF2_SALT = "00000000000000000000000000000000000000000000000000000
 
 userSchema.statics.authenticate = function () {
 	return (username, password, cb) => {
+		const rawIdentifier = typeof username === "string" ? username.trim() : "";
+		const normalizedEmail = rawIdentifier.toLowerCase();
+		const lookupPromise = rawIdentifier
+			? this.findOne({
+					$or: [{ username: rawIdentifier }, { email: normalizedEmail }],
+				}).select("+hash +salt")
+			: Promise.resolve(null);
+
 		const promise = Promise.resolve()
-			.then(() => this.findByUsername(username, true))
+			.then(() => lookupPromise)
 			.then(async (user) => {
 				if (user) {
 					return user.authenticate(password);

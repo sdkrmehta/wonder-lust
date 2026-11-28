@@ -63,6 +63,8 @@ async function syncAllIndexes() {
 		require("../models/rateLimitHit"),
 		require("../models/review"),
 		require("../models/user"),
+		require("../models/emailOtp"),
+		require("../models/webhookEvent"),
 		require("../models/notification"),
 		require("../models/conversation"),
 		require("../models/message"),

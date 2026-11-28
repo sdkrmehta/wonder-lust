@@ -4,6 +4,7 @@ const BookingNightLock = require("../models/bookingNightLock");
 const Listing = require("../models/listing");
 const AppError = require("../utils/AppError");
 const env = require("../config/env");
+const { extractAddressSnapshot } = require("../utils/addressValidation");
 
 function toUtcMidnight(dateInput) {
 	const d = new Date(dateInput);
@@ -206,13 +207,22 @@ class BookingService {
 		}
 
 		const initialStatus =
-			env.isProduction || env.PAYMENT_GATEWAY_MODE === "strict"
+			env.isProduction ||
+			env.PAYMENT_GATEWAY_MODE === "strict" ||
+			env.PAYMENT_PROVIDER === "razorpay"
 				? "pending"
 				: "confirmed";
 		const pendingExpiresAt =
 			initialStatus === "pending"
 				? new Date(Date.now() + env.PENDING_BOOKING_TTL_MS)
 				: null;
+
+		const defaultBillingAddress = {
+			fullName: (user && (user.fullName || user.username)) || "",
+			email: (user && user.email) || "",
+			phone: (user && user.phone) || "",
+			...extractAddressSnapshot(user || {}),
+		};
 
 		const bookingId = new mongoose.Types.ObjectId();
 		const lockDocs = nights.map((night) => ({
@@ -236,6 +246,7 @@ class BookingService {
 				totalPrice: pricing.totalPrice,
 				status: initialStatus,
 				expiresAt: pendingExpiresAt,
+				billingAddress: defaultBillingAddress,
 			});
 
 		let savedBooking;

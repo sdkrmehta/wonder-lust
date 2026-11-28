@@ -6,11 +6,16 @@ const {
 } = require("./review.validator");
 const { bookingSchema } = require("./booking.validator");
 const {
+	billingDetailsSchema,
 	paymentSchema,
+	checkoutPaymentLinkSchema,
 	razorpayVerifySchema,
+	razorpayPaymentLinkCallbackSchema,
 } = require("./payment.validator");
 const {
 	signupSchema,
+	verifyEmailOtpSchema,
+	resendOtpSchema,
 	profileUpdateSchema,
 	passwordChangeSchema,
 } = require("./user.validator");
@@ -26,9 +31,14 @@ module.exports = {
 	hostReplySchema,
 	flagReviewSchema,
 	bookingSchema,
+	billingDetailsSchema,
 	paymentSchema,
+	checkoutPaymentLinkSchema,
 	razorpayVerifySchema,
+	razorpayPaymentLinkCallbackSchema,
 	signupSchema,
+	verifyEmailOtpSchema,
+	resendOtpSchema,
 	profileUpdateSchema,
 	passwordChangeSchema,
 	sendMessageSchema,

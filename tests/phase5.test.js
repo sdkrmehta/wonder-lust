@@ -1,11 +1,16 @@
 const http = require("http");
 const path = require("path");
 const { fork } = require("child_process");
+const {
+	startMockResendServer,
+	signupAndVerifyClient,
+} = require("./helpers/testHarness");
 
 const PORT = 8085; // Independent port for Phase 5 test suite
 const BASE_URL = `http://localhost:${PORT}`;
 
 let serverProc;
+let mockResend;
 
 function createClient() {
 	let cookies = {};
@@ -93,8 +98,18 @@ async function runTests() {
 
 	// 1. Start Server on port 8085
 	console.log("1. Starting Wonder-Lust test server on port 8085...");
+	mockResend = await startMockResendServer();
 	serverProc = fork(path.join(__dirname, "../server.js"), [], {
-		env: { ...process.env, PORT: String(PORT) },
+		env: {
+			...process.env,
+			PORT: String(PORT),
+			PAYMENT_PROVIDER: "sandbox",
+			APP_BASE_URL: BASE_URL,
+			RESEND_API_KEY: "re_test_mock_key",
+			RESEND_FROM_EMAIL: "Wonder-Lust <no-reply@wonderlust.test>",
+			RESEND_BASE_URL: mockResend.url,
+			OTP_HASH_SECRET: "test-otp-hash-secret-phase5",
+		},
 		stdio: "pipe",
 	});
 
@@ -195,9 +210,10 @@ async function runTests() {
 	// 10. Test User Sign-in Dropdown State Transformation
 	console.log("10. Testing User Sign-in Dropdown State Transformation...");
 	const testUser = `ux_user_${Date.now()}`;
-	const signupRes = await client("/signup", {
-		method: "POST",
-		body: `username=${testUser}&email=${testUser}@example.com&password=ValidPassword123`,
+	const { signupRes } = await signupAndVerifyClient(client, mockResend, {
+		username: testUser,
+		email: `${testUser}@example.com`,
+		password: "ValidPassword123",
 	});
 	assert(signupRes.status === 302, "User signup should redirect");
 
@@ -218,9 +234,12 @@ runTests()
 		if (err.stack) console.error(err.stack);
 		exitCode = 1;
 	})
-	.finally(() => {
+	.finally(async () => {
 		if (serverProc) {
 			serverProc.kill("SIGTERM");
+		}
+		if (mockResend) {
+			await mockResend.close().catch(() => {});
 		}
 		process.exit(exitCode);
 	});

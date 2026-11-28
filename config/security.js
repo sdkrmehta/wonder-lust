@@ -84,6 +84,8 @@ function createHelmetConfig() {
 					"https://api.razorpay.com",
 					"https://checkout.razorpay.com",
 					"https://*.razorpay.com",
+					"https://rzp.io",
+					"https://*.rzp.io",
 				],
 				frameAncestors: ["'self'"],
 				upgradeInsecureRequests: env.isProduction ? [] : null,
@@ -212,10 +214,102 @@ const newsletterLimiter = rateLimit({
 	},
 });
 
+/**
+ * Email OTP Verification Attempts Rate Limiter (by IP + normalized email).
+ */
+const otpVerifyLimiterStore = createRateLimitStore("rl:otp-verify:");
+const otpVerifyLimiter = rateLimit({
+	windowMs: env.RATE_LIMIT_WINDOW_MS,
+	max: (req) =>
+		!env.isProduction && req.headers["x-test-rate-limit"]
+			? 3
+			: 15,
+	...(otpVerifyLimiterStore ? { store: otpVerifyLimiterStore } : {}),
+	passOnStoreError: true,
+	keyGenerator: (req) => {
+		const useTestBucket =
+			!env.isProduction && Boolean(req.headers["x-test-rate-limit"]);
+		const prefix = useTestBucket ? "test-rl-otp-verify:" : "std-otp-verify:";
+		const ip = req.ip || req.socket?.remoteAddress || "127.0.0.1";
+		const email =
+			typeof req.body?.email === "string"
+				? req.body.email.trim().toLowerCase()
+				: typeof req.session?.pendingVerificationEmail === "string"
+					? req.session.pendingVerificationEmail.trim().toLowerCase()
+					: "";
+		return `${prefix}${ip}:${email}`;
+	},
+	validate: { keyGeneratorIpFallback: false },
+	standardHeaders: true,
+	legacyHeaders: false,
+	message: {
+		status: "fail",
+		message: "Too many OTP verification attempts. Please wait and try again later.",
+	},
+	handler: (req, res, _next, options) => {
+		if (
+			req.originalUrl.startsWith("/api/") ||
+			req.xhr ||
+			req.headers.accept?.includes("application/json")
+		) {
+			return res.status(429).json(options.message);
+		}
+		req.flash("error", options.message.message);
+		return res.status(429).redirect("/verify-email");
+	},
+});
+
+/**
+ * Email OTP Resend Rate Limiter (by IP + normalized email).
+ */
+const otpResendLimiterStore = createRateLimitStore("rl:otp-resend:");
+const otpResendLimiter = rateLimit({
+	windowMs: env.RATE_LIMIT_WINDOW_MS,
+	max: (req) =>
+		!env.isProduction && req.headers["x-test-rate-limit"]
+			? 3
+			: 8,
+	...(otpResendLimiterStore ? { store: otpResendLimiterStore } : {}),
+	passOnStoreError: true,
+	keyGenerator: (req) => {
+		const useTestBucket =
+			!env.isProduction && Boolean(req.headers["x-test-rate-limit"]);
+		const prefix = useTestBucket ? "test-rl-otp-resend:" : "std-otp-resend:";
+		const ip = req.ip || req.socket?.remoteAddress || "127.0.0.1";
+		const email =
+			typeof req.body?.email === "string"
+				? req.body.email.trim().toLowerCase()
+				: typeof req.session?.pendingVerificationEmail === "string"
+					? req.session.pendingVerificationEmail.trim().toLowerCase()
+					: "";
+		return `${prefix}${ip}:${email}`;
+	},
+	validate: { keyGeneratorIpFallback: false },
+	standardHeaders: true,
+	legacyHeaders: false,
+	message: {
+		status: "fail",
+		message: "Too many OTP resend requests. Please wait before trying again.",
+	},
+	handler: (req, res, _next, options) => {
+		if (
+			req.originalUrl.startsWith("/api/") ||
+			req.xhr ||
+			req.headers.accept?.includes("application/json")
+		) {
+			return res.status(429).json(options.message);
+		}
+		req.flash("error", options.message.message);
+		return res.status(429).redirect("/verify-email");
+	},
+});
+
 module.exports = {
 	createHelmetConfig,
 	createCorsConfig,
 	apiLimiter,
 	authLimiter,
 	newsletterLimiter,
+	otpVerifyLimiter,
+	otpResendLimiter,
 };

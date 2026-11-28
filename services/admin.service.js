@@ -50,7 +50,7 @@ class AdminService {
 				.populate("listing", "title location")
 				.populate("user", "username email")
 				.lean(),
-			Payment.find({ status: { $in: ["succeeded", "refunded"] } }).select("amount").lean(),
+			Payment.find({ status: { $in: ["paid", "succeeded", "refunded"] } }).select("amount").lean(),
 			Payment.find({ status: "refunded" }).select("refundAmount amount").lean(),
 		]);
 

@@ -96,9 +96,71 @@ if (isProduction && effectiveRateLimitStore === "memory") {
 	);
 }
 
+function isRealRazorpayCredential(val) {
+	if (typeof val !== "string") return false;
+	const t = val.trim();
+	return Boolean(t && !/^rzp_(?:test|live)_replace_with_/i.test(t) && !/^replace_with_/i.test(t));
+}
+
+function parseTrustedHttpUrl(rawUrl, fallbackUrl, requireHttpsInProd = false) {
+	const candidate = String(rawUrl || "").trim();
+	if (!candidate) return fallbackUrl;
+	try {
+		const parsed = new URL(candidate);
+		const isLoopback = parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost";
+		if (parsed.protocol === "https:") {
+			return parsed.origin;
+		}
+		if (parsed.protocol === "http:" && (!requireHttpsInProd || isLoopback)) {
+			return parsed.origin;
+		}
+		console.warn(`[CONFIG WARNING] Ignoring untrusted URL protocol for '${candidate}'.`);
+		return fallbackUrl;
+	} catch {
+		console.warn(`[CONFIG WARNING] Ignoring invalid URL '${candidate}'.`);
+		return fallbackUrl;
+	}
+}
+
+const port = parseInt(process.env.PORT, 10) || 8080;
+const defaultAppBaseUrl = isProduction
+	? "https://wonderlust.surajdeepkumarmehta.dev"
+	: `http://localhost:${port}`;
+const appBaseUrl = parseTrustedHttpUrl(
+	process.env.APP_BASE_URL || process.env.APP_URL,
+	defaultAppBaseUrl,
+	isProduction,
+);
+
+const resendApiKey = resolveEnvSecret("RESEND_API_KEY");
+const resendFromEmail = String(process.env.RESEND_FROM_EMAIL || "").trim();
+const resendBaseUrl = parseTrustedHttpUrl(
+	process.env.RESEND_BASE_URL,
+	"https://api.resend.com",
+	true,
+);
+
+const rawOtpHashSecret = resolveEnvSecret("OTP_HASH_SECRET");
+const otpHashSecret =
+	rawOtpHashSecret ||
+	(isProduction ? "" : cryptoFallbackSecret(sessionSecret));
+
+function cryptoFallbackSecret(baseSecret) {
+	return `dev-otp-${baseSecret || "wonderlust-local-otp-secret"}`;
+}
+
+const otpTtlSeconds = Math.max(60, parseInt(process.env.OTP_TTL_SECONDS, 10) || 300);
+const otpMaxAttempts = Math.min(20, Math.max(1, parseInt(process.env.OTP_MAX_ATTEMPTS, 10) || 5));
+const otpResendCooldownSeconds = Math.max(
+	5,
+	parseInt(process.env.OTP_RESEND_COOLDOWN_SECONDS, 10) || 60,
+);
+
 const razorpayKeyId = resolveEnvSecret("RAZORPAY_KEY_ID");
 const razorpayKeySecret = resolveEnvSecret("RAZORPAY_KEY_SECRET");
 const razorpayWebhookSecret = resolveEnvSecret("RAZORPAY_WEBHOOK_SECRET");
+const hasRazorpayKeys =
+	isRealRazorpayCredential(razorpayKeyId) && isRealRazorpayCredential(razorpayKeySecret);
 const rawRazorpayApiBase = (process.env.RAZORPAY_API_BASE || "https://api.razorpay.com").trim();
 let razorpayApiBase = "https://api.razorpay.com";
 if (rawRazorpayApiBase) {
@@ -121,7 +183,7 @@ const paymentGatewayMode =
 const requestedProvider = String(process.env.PAYMENT_PROVIDER || "").trim().toLowerCase();
 const paymentProvider = requestedProvider
 	? requestedProvider
-	: (isProduction || paymentGatewayMode === "strict") && razorpayKeyId && razorpayKeySecret
+	: hasRazorpayKeys
 		? "razorpay"
 		: isProduction || paymentGatewayMode === "strict"
 			? "internal"
@@ -158,6 +220,16 @@ if (isProduction) {
 	if (!cookieSecure) {
 		throw new Error(
 			"[CONFIG FATAL] COOKIE_SECURE must be true in production.",
+		);
+	}
+	if (!resendApiKey || !resendFromEmail) {
+		console.warn(
+			"[CONFIG WARNING] RESEND_API_KEY or RESEND_FROM_EMAIL is missing in production: signup OTP delivery will fail closed (HTTP 503) until configured.",
+		);
+	}
+	if (!otpHashSecret || otpHashSecret.length < 32) {
+		console.warn(
+			"[CONFIG WARNING] OTP_HASH_SECRET (< 32 chars or unset) in production: OTP issuance/verification will fail closed (HTTP 503) until configured.",
 		);
 	}
 	if (paymentProvider === "razorpay" && (!razorpayKeyId || !razorpayKeySecret || !razorpayWebhookSecret)) {
@@ -211,7 +283,15 @@ const effectiveUploadStorage =
 
 const env = {
 	NODE_ENV: process.env.NODE_ENV || "development",
-	PORT: parseInt(process.env.PORT, 10) || 8080,
+	PORT: port,
+	APP_BASE_URL: appBaseUrl,
+	RESEND_API_KEY: resendApiKey,
+	RESEND_FROM_EMAIL: resendFromEmail,
+	RESEND_BASE_URL: resendBaseUrl,
+	OTP_HASH_SECRET: otpHashSecret,
+	OTP_TTL_SECONDS: otpTtlSeconds,
+	OTP_MAX_ATTEMPTS: otpMaxAttempts,
+	OTP_RESEND_COOLDOWN_SECONDS: otpResendCooldownSeconds,
 	DB_URL: dbUrl,
 	REDIS_URL: redisUrl,
 	RATE_LIMIT_STORE: effectiveRateLimitStore,

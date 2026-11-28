@@ -98,6 +98,12 @@ const SUITES = [
 		title: "Production Readiness & Deployment Verification",
 		expectedTests: 10,
 	},
+	{
+		file: "phase17.test.js",
+		phase: "Phase 17",
+		title: "Email OTP, Customer Profile, Billing Address & Razorpay Links",
+		expectedTests: 14,
+	},
 ];
 
 function runSuite(suite) {

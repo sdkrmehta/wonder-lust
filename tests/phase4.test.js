@@ -2,11 +2,16 @@ const http = require("http");
 const path = require("path");
 const fs = require("fs");
 const { fork } = require("child_process");
+const {
+	startMockResendServer,
+	signupAndVerifyClient,
+} = require("./helpers/testHarness");
 
 const PORT = 8084; // Independent port for Phase 4 test suite
 const BASE_URL = `http://localhost:${PORT}`;
 
 let serverProc;
+let mockResend;
 
 function createClient() {
 	let cookies = {};
@@ -94,11 +99,18 @@ async function runTests() {
 
 	// 1. Start Server on port 8084
 	console.log("1. Starting Wonder-Lust test server on port 8084...");
+	mockResend = await startMockResendServer();
 	serverProc = fork(path.join(__dirname, "../server.js"), [], {
 		env: {
 			...process.env,
 			PORT: String(PORT),
 			UPLOAD_STORAGE: process.env.TEST_UPLOAD_STORAGE || "local",
+			PAYMENT_PROVIDER: "sandbox",
+			APP_BASE_URL: BASE_URL,
+			RESEND_API_KEY: "re_test_mock_key",
+			RESEND_FROM_EMAIL: "Wonder-Lust <no-reply@wonderlust.test>",
+			RESEND_BASE_URL: mockResend.url,
+			OTP_HASH_SECRET: "test-otp-hash-secret-phase4",
 		},
 		stdio: "pipe",
 	});
@@ -135,9 +147,10 @@ async function runTests() {
 	// 2. Authenticate Test Host
 	console.log("2. Registering and Authenticating Test Host...");
 	const testUsername = `media_host_${Date.now()}`;
-	const signupRes = await client("/signup", {
-		method: "POST",
-		body: `username=${testUsername}&email=${testUsername}@example.com&password=SecretPassword123`,
+	const { signupRes } = await signupAndVerifyClient(client, mockResend, {
+		username: testUsername,
+		email: `${testUsername}@example.com`,
+		password: "SecretPassword123",
 	});
 	assert(signupRes.status === 302, "Host signup should succeed and redirect");
 	console.log(`   [PASS] Host '${testUsername}' authenticated.\n`);
@@ -392,9 +405,12 @@ runTests()
 		if (err.stack) console.error(err.stack);
 		exitCode = 1;
 	})
-	.finally(() => {
+	.finally(async () => {
 		if (serverProc) {
 			serverProc.kill("SIGTERM");
+		}
+		if (mockResend) {
+			await mockResend.close().catch(() => {});
 		}
 		process.exit(exitCode);
 	});

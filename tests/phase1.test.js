@@ -3,11 +3,18 @@ const fs = require("fs");
 const path = require("path");
 const mongoose = require("mongoose");
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
+const {
+	startMockResendServer,
+	signupAndVerifyClient,
+	buildDefaultSignupPayload,
+	encodeForm,
+} = require("./helpers/testHarness");
 
 const PORT = 8081; // Use separate port for tests to avoid collision
 const BASE_URL = `http://localhost:${PORT}`;
 
 let serverProc;
+let mockResend;
 
 function sleep(ms) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
@@ -89,6 +96,7 @@ async function runTests() {
 
 	// 1. Start App on test port
 	console.log(`[INFO] Spawning app instance on port ${PORT}...`);
+	mockResend = await startMockResendServer();
 	const { spawn } = require("child_process");
 	serverProc = spawn("node", ["app.js"], {
 		cwd: path.join(__dirname, ".."),
@@ -96,6 +104,12 @@ async function runTests() {
 			...process.env,
 			PORT: String(PORT),
 			UPLOAD_STORAGE: process.env.TEST_UPLOAD_STORAGE || "local",
+			PAYMENT_PROVIDER: "sandbox",
+			APP_BASE_URL: BASE_URL,
+			RESEND_API_KEY: "re_test_mock_key",
+			RESEND_FROM_EMAIL: "Wonder-Lust <no-reply@wonderlust.test>",
+			RESEND_BASE_URL: mockResend.url,
+			OTP_HASH_SECRET: "test-otp-hash-secret-phase1",
 		},
 		stdio: ["ignore", "pipe", "pipe"],
 	});
@@ -152,8 +166,11 @@ async function runTests() {
 	// Test 4: User A Registration & Auto-login
 	console.log("4. Testing User Registration (User A)...");
 	const userA = "host_tester_" + Date.now();
-	const signupBodyA = `username=${userA}&email=${userA}@example.com&password=ValidPassword123!`;
-	const signupResA = await clientA("/signup", { method: "POST", body: signupBodyA });
+	const { signupRes: signupResA } = await signupAndVerifyClient(clientA, mockResend, {
+		username: userA,
+		email: `${userA}@example.com`,
+		password: "ValidPassword123!",
+	});
 	assert(signupResA.status === 302, `Expected 302 on signup, got ${signupResA.status}`);
 	console.log(`   [PASS] Registered User A (${userA}) and received session.`);
 
@@ -161,7 +178,13 @@ async function runTests() {
 	console.log("5. Testing Duplicate Email Validation...");
 	const duplicateRes = await clientB("/signup", {
 		method: "POST",
-		body: `username=another_user_${Date.now()}&email=${userA}@example.com&password=Password123!`,
+		body: encodeForm(
+			buildDefaultSignupPayload({
+				username: `another_user_${Date.now()}`,
+				email: `${userA}@example.com`,
+				password: "Password123!",
+			}),
+		),
 	});
 	assert(duplicateRes.status === 302 && duplicateRes.headers.location === "/signup", "Expected rejection redirect to /signup");
 	console.log("   [PASS] Duplicate registration rejected appropriately.");
@@ -169,8 +192,11 @@ async function runTests() {
 	// Test 6: User B Registration
 	console.log("6. Testing User B Registration (to verify authorization boundaries)...");
 	const userB = "guest_tester_" + Date.now();
-	const signupBodyB = `username=${userB}&email=${userB}@example.com&password=ValidPassword123!`;
-	await clientB("/signup", { method: "POST", body: signupBodyB });
+	await signupAndVerifyClient(clientB, mockResend, {
+		username: userB,
+		email: `${userB}@example.com`,
+		password: "ValidPassword123!",
+	});
 	console.log(`   [PASS] Registered User B (${userB}).`);
 
 	// Test 7: Listing Creation with Multer Local File Upload (by User A)
@@ -351,16 +377,22 @@ function assert(condition, message) {
 }
 
 runTests()
-	.then(() => {
+	.then(async () => {
 		if (serverProc) {
 			serverProc.kill("SIGTERM");
 		}
+		if (mockResend) {
+			await mockResend.close().catch(() => {});
+		}
 		process.exit(0);
 	})
-	.catch((err) => {
+	.catch(async (err) => {
 		console.error("\n[TEST RUNNER FATAL ERROR]:", err.message);
 		if (serverProc) {
 			serverProc.kill("SIGTERM");
+		}
+		if (mockResend) {
+			await mockResend.close().catch(() => {});
 		}
 		process.exit(1);
 	});

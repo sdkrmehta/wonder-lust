@@ -3,11 +3,16 @@ const path = require("path");
 const { fork } = require("child_process");
 const mongoose = require("mongoose");
 const env = require("../config/env");
+const {
+	startMockResendServer,
+	signupAndVerifyClient,
+} = require("./helpers/testHarness");
 
 const PORT = 8092; // Dedicated port for Phase 12 test suite
 const BASE_URL = `http://localhost:${PORT}`;
 
 let serverProc;
+let mockResend;
 
 function createClient() {
 	let cookies = {};
@@ -95,8 +100,18 @@ async function runTests() {
 
 	// 1. Spawning Wonder-Lust server on port 8092
 	console.log(`1. Starting Wonder-Lust test server on port ${PORT}...`);
+	mockResend = await startMockResendServer();
 	serverProc = fork(path.join(__dirname, "../server.js"), [], {
-		env: { ...process.env, PORT: String(PORT) },
+		env: {
+			...process.env,
+			PORT: String(PORT),
+			PAYMENT_PROVIDER: "sandbox",
+			APP_BASE_URL: BASE_URL,
+			RESEND_API_KEY: "re_test_mock_key",
+			RESEND_FROM_EMAIL: "Wonder-Lust <no-reply@wonderlust.test>",
+			RESEND_BASE_URL: mockResend.url,
+			OTP_HASH_SECRET: "test-otp-hash-secret-phase12",
+		},
 		stdio: "pipe",
 	});
 
@@ -151,22 +166,25 @@ async function runTests() {
 	// 2. Setting up accounts
 	console.log("2. Setting up Admin, Host, and Traveler accounts...");
 	await mongoose.connect(env.DB_URL);
-	let res = await adminClient("/signup", {
-		method: "POST",
-		body: `username=${adminUser.username}&email=${adminUser.email}&password=${adminUser.password}`,
+	let { signupRes: res } = await signupAndVerifyClient(adminClient, mockResend, {
+		username: adminUser.username,
+		email: adminUser.email,
+		password: adminUser.password,
 	});
 	assert(res.status === 302, "Admin signup must succeed");
 
-	res = await hostClient("/signup", {
-		method: "POST",
-		body: `username=${hostUser.username}&email=${hostUser.email}&password=${hostUser.password}`,
-	});
+	({ signupRes: res } = await signupAndVerifyClient(hostClient, mockResend, {
+		username: hostUser.username,
+		email: hostUser.email,
+		password: hostUser.password,
+	}));
 	assert(res.status === 302, "Host signup must succeed");
 
-	res = await travelerClient("/signup", {
-		method: "POST",
-		body: `username=${travelerUser.username}&email=${travelerUser.email}&password=${travelerUser.password}`,
-	});
+	({ signupRes: res } = await signupAndVerifyClient(travelerClient, mockResend, {
+		username: travelerUser.username,
+		email: travelerUser.email,
+		password: travelerUser.password,
+	}));
 	assert(res.status === 302, "Traveler signup must succeed");
 
 	// Elevate adminUser to admin role directly in database
@@ -410,6 +428,9 @@ runTests()
 	.finally(async () => {
 		if (serverProc) {
 			serverProc.kill("SIGTERM");
+		}
+		if (mockResend) {
+			await mockResend.close().catch(() => {});
 		}
 		try {
 			await mongoose.disconnect();
