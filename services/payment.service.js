@@ -346,16 +346,35 @@ class PaymentService {
 			const callbackUrl = `${trustedBaseUrl}/payments/razorpay/callback`;
 			const listingTitle = booking.listing?.title || "Wonder-Lust Stay";
 			const contact = this._normalizeContactForGateway(billingDetails.phone);
+			const billingStreet = formatAddressSummary({
+				addressLine1: billingDetails.addressLine1,
+				addressLine2: billingDetails.addressLine2,
+				landmark: billingDetails.landmark,
+			});
+			const billingRegion = [
+				billingDetails.city,
+				billingDetails.state,
+				billingDetails.postalCode,
+				billingDetails.country,
+			]
+				.filter(Boolean)
+				.join(", ");
+			const fullBillingSummary = [billingStreet, billingRegion].filter(Boolean).join(", ");
+			const linkDescription = [
+				`Wonder-Lust Booking #${String(booking._id).slice(-8)} - ${listingTitle}`,
+				`Guest: ${billingDetails.fullName} (${billingDetails.email})`,
+				fullBillingSummary ? `Billing: ${fullBillingSummary}` : "",
+			]
+				.filter(Boolean)
+				.join(" | ")
+				.slice(0, 500);
 
 			const linkPayload = {
 				amount: amountPaise,
 				currency: "INR",
 				accept_partial: false,
 				reference_id: referenceId,
-				description: `Wonder-Lust Booking #${String(booking._id).slice(-8)} - ${listingTitle}`.slice(
-					0,
-					200,
-				),
+				description: linkDescription,
 				customer: {
 					name: billingDetails.fullName,
 					email: billingDetails.email,
@@ -366,11 +385,19 @@ class PaymentService {
 					email: true,
 				},
 				reminder_enable: false,
+				options: {
+					checkout: {
+						name: env.APP_NAME || "Wonder-Lust",
+					},
+				},
 				notes: {
 					bookingId: String(booking._id),
 					listingId: String(booking.listing?._id || booking.listing),
 					userId: String(user._id),
 					receiptNumber,
+					customerName: String(billingDetails.fullName || "").slice(0, 250),
+					customerEmail: String(billingDetails.email || "").slice(0, 250),
+					billingAddress: String(fullBillingSummary || "").slice(0, 250),
 				},
 				expire_by: expireBySec,
 				callback_url: callbackUrl,

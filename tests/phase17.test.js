@@ -947,6 +947,22 @@ async function runTests() {
 		assert(rzpLink1.callback_method === "get", "Callback method must be get");
 		assert(rzpLink1.reference_id === payment1Doc.paymentLinkReferenceId, "Reference ID must match");
 		assert(rzpLink1.expire_by > Math.floor(Date.now() / 1000), "expire_by must be in the future");
+		assert(
+			rzpLink1.options && rzpLink1.options.checkout && rzpLink1.options.checkout.name === "Wonder-Lust",
+			"Razorpay checkout header option must override merchant name to Wonder-Lust",
+		);
+		assert(
+			rzpLink1.customer &&
+				rzpLink1.customer.name === "Corporate Travel Desk" &&
+				rzpLink1.customer.email === "corp-billing@example.com",
+			"Razorpay customer object must carry edited guest name and email",
+		);
+		assert(
+			rzpLink1.description.includes("Corporate Travel Desk") &&
+				rzpLink1.description.includes("corp-billing@example.com") &&
+				rzpLink1.description.includes("99 Churchgate Street"),
+			`Razorpay payment link description must surface guest name, email, and billing address, got: ${rzpLink1.description}`,
+		);
 
 		// Confirm User profile was NOT modified since saveBillingAsDefault was unchecked
 		const userAfterOneTime = await User.findById(verifiedUserDoc._id).lean();

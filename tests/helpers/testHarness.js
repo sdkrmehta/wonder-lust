@@ -354,6 +354,7 @@ async function startMockRazorpayServer(options = {}) {
 					description: body.description || "Wonder-Lust Booking",
 					reference_id: body.reference_id,
 					customer: body.customer || {},
+					options: body.options || {},
 					notes: body.notes || {},
 					callback_url: body.callback_url,
 					callback_method: body.callback_method || "get",

@@ -283,6 +283,7 @@ const effectiveUploadStorage =
 
 const env = {
 	NODE_ENV: process.env.NODE_ENV || "development",
+	APP_NAME: String(process.env.APP_NAME || "Wonder-Lust").trim() || "Wonder-Lust",
 	PORT: port,
 	APP_BASE_URL: appBaseUrl,
 	RESEND_API_KEY: resendApiKey,
