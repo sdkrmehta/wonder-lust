@@ -155,7 +155,11 @@ module.exports.validateCheckoutPaymentLink = (req, res, next) => {
 	const { error, value } = checkoutPaymentLinkSchema.validate(req.body, { abortEarly: false });
 	if (error) {
 		const errMsg = error.details.map((el) => el.message).join(", ");
-		throw new ExpressError(400, errMsg);
+		if (isJsonOrBackgroundRequest(req) || !req.params?.bookingId) {
+			throw new ExpressError(400, errMsg);
+		}
+		req.flash("error", errMsg);
+		return res.redirect(`/payments/checkout/${req.params.bookingId}`);
 	}
 	req.body = value;
 	next();

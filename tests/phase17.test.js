@@ -787,6 +787,17 @@ async function runTests() {
 		}
 		assert(!checkout1Res.body.includes("cardNumber"), "Checkout must NOT render raw card input");
 		assert(!checkout1Res.body.includes("cardCvc"), "Checkout must NOT render raw CVV input");
+		assert(
+			!checkout1Res.body.includes("&\\#x20B9;"),
+			"Checkout button must not contain escaped backslash before rupee entity",
+		);
+		const checkoutCsp = String(checkout1Res.headers["content-security-policy"] || "");
+		assert(
+			checkoutCsp.includes("https://razorpay.com") && checkoutCsp.includes("https://rzp.io"),
+			`Checkout CSP form-action must allow apex https://razorpay.com and https://rzp.io, got: ${checkoutCsp}`,
+		);
+		const checkoutCsrfToken = extractCsrfToken(checkout1Res.body);
+		assert(checkoutCsrfToken.length >= 32, "Checkout page must embed valid CSRF token");
 		console.log("   [PASS] Checkout prefills saved address cleanly with hosted payment link UI.\n");
 
 		// 10. Editable Billing Without Updating Default Profile, Payment Link API Verification & Gateway Errors
@@ -843,7 +854,63 @@ async function runTests() {
 		);
 		mockRazorpay.setFailureMode({});
 
-		// Browser form POST /payments/process/:bookingId with one-time billing edits (saveBillingAsDefault unchecked)
+		// Simulated browser fetch() call (as used by public/js/checkout.js) with CSRF token + Origin + JSON Accept
+		const badBrowserJsonRes = await customerClient(`/payments/process/${booking1._id}`, {
+			method: "POST",
+			headers: {
+				Accept: "application/json",
+				"Content-Type": "application/json",
+				"User-Agent": "Mozilla/5.0 Chrome/125.0",
+				Origin: BASE_URL,
+				"X-CSRF-Token": checkoutCsrfToken,
+			},
+			body: {
+				saveAsDefaultAddress: false,
+				billingDetails: {
+					fullName: "Corporate Travel Desk",
+					email: "corp-billing@example.com",
+					addressLine1: "99 Churchgate Street",
+					city: "Mumbai",
+					state: "Maharashtra",
+					postalCode: "000",
+					country: "India",
+				},
+			},
+		});
+		assert(badBrowserJsonRes.status === 400 && badBrowserJsonRes.json()?.success === false, "Browser JSON checkout validation error must return 400 JSON");
+
+		const browserJsonCheckoutRes = await customerClient(`/payments/process/${booking1._id}`, {
+			method: "POST",
+			headers: {
+				Accept: "application/json",
+				"Content-Type": "application/json",
+				"User-Agent": "Mozilla/5.0 Chrome/125.0",
+				Origin: BASE_URL,
+				"X-CSRF-Token": checkoutCsrfToken,
+			},
+			body: {
+				saveAsDefaultAddress: false,
+				billingDetails: {
+					fullName: "Corporate Travel Desk",
+					email: "corp-billing@example.com",
+					addressLine1: "99 Churchgate Street",
+					addressLine2: "Floor 8",
+					landmark: "Near Eros Cinema",
+					city: "Mumbai",
+					state: "Maharashtra",
+					postalCode: "400020",
+					country: "India",
+				},
+			},
+		});
+		assert(
+			browserJsonCheckoutRes.status === 201 &&
+				browserJsonCheckoutRes.json()?.redirectUrl?.startsWith("https://rzp.io/i/plink_"),
+			`Browser JSON checkout must return 201 + Razorpay redirectUrl, got ${browserJsonCheckoutRes.status}: ${browserJsonCheckoutRes.body}`,
+		);
+		createdPaymentIds.push(browserJsonCheckoutRes.json().data._id);
+
+		// Fallback HTML form POST /payments/process/:bookingId (non-JS) with one-time billing edits (saveAsDefaultAddress unchecked)
 		const browserCheckoutRes = await customerClient(`/payments/process/${booking1._id}`, {
 			method: "POST",
 			body: encodeForm({
@@ -865,7 +932,7 @@ async function runTests() {
 			`Browser checkout must redirect directly to Razorpay Hosted Payment Link short_url, got ${browserCheckoutRes.status} -> ${browserCheckoutRes.headers.location}`,
 		);
 
-		const payment1Doc = await Payment.findOne({ booking: booking1._id }).lean();
+		const payment1Doc = await Payment.findOne({ booking: booking1._id, status: { $in: ["pending", "created"] } }).lean();
 		assert(payment1Doc && payment1Doc.paymentLinkId, "Payment 1 must store paymentLinkId");
 		createdPaymentIds.push(payment1Doc._id);
 

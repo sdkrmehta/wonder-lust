@@ -14,6 +14,12 @@
 		return /^[A-Za-z0-9][A-Za-z0-9\s-]{1,10}[A-Za-z0-9]$/.test(clean);
 	}
 
+	function setStatusAlert(alertEl, type, message) {
+		if (!alertEl) return;
+		alertEl.className = `alert alert-${type} mb-3 small`;
+		alertEl.textContent = message;
+	}
+
 	document.addEventListener("DOMContentLoaded", () => {
 		const countrySelect = document.getElementById("billingCountry");
 		const postalInput = document.getElementById("billingPostalCode");
@@ -37,12 +43,12 @@
 					valid
 						? ""
 						: isIndia
-							? "PIN code for India must be 6 numeric digits"
+							? "PIN code for India must be a valid 6-digit PIN code"
 							: "Please enter a valid postal code",
 				);
 				if (postalFeedback && !valid) {
 					postalFeedback.textContent = isIndia
-						? "PIN code for India must be exactly 6 numeric digits (e.g. 400001)."
+						? "PIN code for India must be a valid 6-digit PIN code (e.g. 400001)."
 						: "Please enter a valid postal code for the selected country.";
 				}
 			} else {
@@ -57,26 +63,122 @@
 		}
 
 		const form = document.getElementById("checkoutPaymentForm");
-		if (form) {
-			form.addEventListener("submit", (e) => {
-				syncBillingPostalValidation();
-				if (!form.checkValidity()) {
-					e.preventDefault();
-					e.stopPropagation();
-					form.classList.add("was-validated");
+		if (!form) return;
+
+		form.addEventListener("submit", async (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+
+			const btn = document.getElementById("submitPaymentBtn");
+			const statusAlert = document.getElementById("paymentStatusAlert");
+
+			syncBillingPostalValidation();
+			if (!form.checkValidity()) {
+				form.classList.add("was-validated");
+				const firstInvalid = form.querySelector(":invalid");
+				if (firstInvalid) {
+					firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
+					if (typeof firstInvalid.focus === "function") {
+						firstInvalid.focus({ preventScroll: true });
+					}
+				}
+				setStatusAlert(
+					statusAlert,
+					"danger",
+					"Please complete all required billing fields accurately before proceeding to payment.",
+				);
+				return;
+			}
+
+			const origBtnHtml = btn ? btn.innerHTML : "";
+			if (btn) {
+				btn.disabled = true;
+				btn.textContent = "Connecting to Razorpay...";
+			}
+			setStatusAlert(
+				statusAlert,
+				"info",
+				"Creating secure Razorpay payment link and verifying reservation details...",
+			);
+
+			try {
+				const val = (id) => (document.getElementById(id)?.value || "").trim();
+				const csrfInput = form.querySelector('input[name="_csrf"]');
+				const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+				const csrfToken =
+					(csrfInput && csrfInput.value) ||
+					(csrfMeta && csrfMeta.getAttribute("content")) ||
+					"";
+
+				const payload = {
+					saveAsDefaultAddress: Boolean(
+						document.getElementById("saveAsDefaultAddress")?.checked,
+					),
+					billingDetails: {
+						fullName: val("billingFullName"),
+						email: val("billingEmail"),
+						addressLine1: val("billingAddressLine1"),
+						addressLine2: val("billingAddressLine2"),
+						landmark: val("billingLandmark"),
+						city: val("billingCity"),
+						state: val("billingState"),
+						country: document.getElementById("billingCountry")?.value || "India",
+						postalCode: val("billingPostalCode"),
+					},
+				};
+
+				const response = await fetch(form.getAttribute("action"), {
+					method: "POST",
+					credentials: "same-origin",
+					headers: {
+						"Content-Type": "application/json",
+						Accept: "application/json",
+						...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
+					},
+					body: JSON.stringify(payload),
+				});
+
+				if (response.redirected && response.url) {
+					window.location.assign(response.url);
 					return;
 				}
-				const btn = document.getElementById("submitPaymentBtn");
-				const statusAlert = document.getElementById("paymentStatusAlert");
+
+				let data = null;
+				try {
+					data = await response.json();
+				} catch {
+					data = null;
+				}
+
+				if (response.ok && data && data.redirectUrl) {
+					setStatusAlert(
+						statusAlert,
+						"info",
+						"Redirecting to Razorpay's hosted payment page...",
+					);
+					window.location.assign(data.redirectUrl);
+					return;
+				}
+
+				const errorMsg =
+					(data && data.message) ||
+					"Unable to create Razorpay payment link right now. Please try again.";
+				setStatusAlert(statusAlert, "danger", errorMsg);
 				if (statusAlert) {
-					statusAlert.className = "alert alert-info mb-3 small";
-					statusAlert.textContent = "Redirecting to Razorpay secure hosted payment page...";
+					statusAlert.scrollIntoView({ behavior: "smooth", block: "nearest" });
 				}
-				if (btn) {
-					btn.disabled = true;
-					btn.textContent = "Redirecting to Secure Payment...";
-				}
-			});
-		}
+			} catch (networkErr) {
+				setStatusAlert(
+					statusAlert,
+					"danger",
+					"Network error while contacting payment server. Please check your connection and try again.",
+				);
+			}
+
+			if (btn) {
+				btn.disabled = false;
+				btn.innerHTML = origBtnHtml;
+			}
+		});
 	});
 })();

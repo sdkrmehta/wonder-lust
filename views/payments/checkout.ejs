@@ -32,6 +32,7 @@
 				action="/payments/process/<%= booking._id %>"
 				method="POST"
 				id="checkoutPaymentForm"
+				data-booking-id="<%= booking._id %>"
 				novalidate
 				class="needs-validation"
 			>
@@ -258,7 +259,7 @@
 					<%= isGatewayReady ? '' : 'disabled' %>
 				>
 					<% if (isGatewayReady) { %>
-						<i class="fa-solid fa-lock me-2"></i>Continue to secure payment (&\#x20B9;<%= booking.totalPrice.toLocaleString("en-IN") %>)
+						<i class="fa-solid fa-lock me-2"></i>Continue to secure payment (&#x20B9;<%= booking.totalPrice.toLocaleString("en-IN") %>)
 					<% } else { %>
 						<i class="fa-solid fa-triangle-exclamation me-2"></i>Payment Gateway Not Configured
 					<% } %>

@@ -4,6 +4,8 @@ const UserService = require("../services/user.service");
 const env = require("../config/env");
 const { SUPPORTED_COUNTRIES } = require("../utils/addressValidation");
 
+const { isJsonOrBackgroundRequest } = require("../middleware/auth.middleware");
+
 function buildBillingDefaults(booking, user) {
 	const savedBilling = booking && booking.billingAddress && booking.billingAddress.addressLine1
 		? booking.billingAddress
@@ -81,6 +83,7 @@ module.exports.renderCheckout = async (req, res) => {
 
 module.exports.processPayment = async (req, res) => {
 	const { bookingId } = req.params;
+	const expectsJson = isJsonOrBackgroundRequest(req);
 	try {
 		const requestBaseUrl = `${req.protocol}://${req.get("host")}`;
 		const payment = await PaymentService.createPaymentLink(
@@ -94,10 +97,26 @@ module.exports.processPayment = async (req, res) => {
 		);
 
 		if (payment.paymentLink && payment.paymentLink.shortUrl) {
+			if (expectsJson) {
+				return res.status(201).json({
+					success: true,
+					status: "success",
+					redirectUrl: payment.paymentLink.shortUrl,
+					data: payment,
+				});
+			}
 			return res.redirect(payment.paymentLink.shortUrl);
 		}
 
 		if (payment.status === "pending" || payment.status === "created") {
+			if (expectsJson) {
+				return res.status(201).json({
+					success: true,
+					status: "success",
+					redirectUrl: `/bookings/${bookingId}`,
+					data: payment,
+				});
+			}
 			req.flash(
 				"info",
 				"Payment initiated. Reservation awaits confirmed payment webhook from gateway.",
@@ -105,10 +124,27 @@ module.exports.processPayment = async (req, res) => {
 			return res.redirect(`/bookings/${bookingId}`);
 		}
 
+		if (expectsJson) {
+			return res.status(201).json({
+				success: true,
+				status: "success",
+				redirectUrl: `/payments/receipt/${payment._id}`,
+				data: payment,
+			});
+		}
 		req.flash("success", "Payment Successful! Your reservation is fully confirmed.");
 		return res.redirect(`/payments/receipt/${payment._id}`);
 	} catch (err) {
-		req.flash("error", err.message || "Payment processing failed. Please try again.");
+		const message = err.message || "Payment processing failed. Please try again.";
+		if (expectsJson) {
+			const statusCode = err.statusCode || 400;
+			return res.status(statusCode).json({
+				success: false,
+				status: `${statusCode}`.startsWith("4") ? "fail" : "error",
+				message,
+			});
+		}
+		req.flash("error", message);
 		return res.redirect(`/payments/checkout/${bookingId}`);
 	}
 };

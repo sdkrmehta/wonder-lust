@@ -18,6 +18,7 @@ function createHelmetConfig() {
 					"https://cdn.jsdelivr.net",
 					"https://unpkg.com",
 					"https://cdnjs.cloudflare.com",
+					"https://razorpay.com",
 					"https://checkout.razorpay.com",
 					"https://*.razorpay.com",
 				],
@@ -56,6 +57,7 @@ function createHelmetConfig() {
 				],
 				connectSrc: [
 					"'self'",
+					"https://razorpay.com",
 					"https://api.razorpay.com",
 					"https://lumberjack.razorpay.com",
 					"https://checkout.razorpay.com",
@@ -73,6 +75,7 @@ function createHelmetConfig() {
 				],
 				frameSrc: [
 					"'self'",
+					"https://razorpay.com",
 					"https://api.razorpay.com",
 					"https://checkout.razorpay.com",
 					"https://*.razorpay.com",
@@ -81,6 +84,7 @@ function createHelmetConfig() {
 				baseUri: ["'self'"],
 				formAction: [
 					"'self'",
+					"https://razorpay.com",
 					"https://api.razorpay.com",
 					"https://checkout.razorpay.com",
 					"https://*.razorpay.com",
